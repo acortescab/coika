@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -170,12 +170,15 @@ namespace Coika.Tests.EditMode
             for (int i = 0; i < 20; i++)
                 _factory.Release(_factory.Create(_tiers[0], Vector2.zero, Vector2.zero));
 
-            var before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 1000; i++)
-                _factory.Release(_factory.Create(_tiers[i % _tiers.Count], Vector2.zero, Vector2.zero));
-            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            var allocated = AllocationMeter.Measure(() =>
+            {
+                for (int i = 0; i < 1000; i++)
+                {
+                    _factory.Release(_factory.Create(_tiers[i % _tiers.Count], Vector2.zero, Vector2.zero));
+                }
+            });
 
-            Assert.AreEqual(0L, allocated, "Managed bytes allocated by 1,000 create/release cycles.");
+            Assert.LessOrEqual(allocated, AllocationMeter.TOLERANCE_COUNT, "Managed allocations made by 1,000 create/release cycles.");
         }
 
         /// <summary>

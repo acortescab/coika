@@ -28,7 +28,10 @@ MonoBehaviour:
   - 8
   _spawnableTierCount: 5
   _antiStreakMax: 3
-  _forcedOpeningTiers: {x: 0, y: 1, z: 0}
+  _forcedOpeningTiers:
+  - 0
+  - 1
+  - 0
   _jarSize: {x: 10, y: 12.5}
   _dropLineOffset: 1.5
   _superNovaBonus: 500

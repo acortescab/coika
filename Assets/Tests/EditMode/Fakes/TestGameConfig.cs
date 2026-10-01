@@ -26,5 +26,40 @@ namespace Coika.Tests.EditMode
             serializedConfig.ApplyModifiedPropertiesWithoutUndo();
             return config;
         }
+
+        /// <summary>
+        /// Creates a GameConfig with the given spawn values by writing its serialized fields. Applying them runs the
+        /// config's OnValidate, which logs an error for every invalid value, so a test that passes invalid values
+        /// must expect those logs.
+        /// </summary>
+        /// <param name="weights">Relative weight of each spawnable tier.</param>
+        /// <param name="spawnableTierCount">Number of spawnable tiers.</param>
+        /// <param name="antiStreakMax">How many times in a row the same tier may appear.</param>
+        /// <param name="forcedOpening">Tiers of the first pieces of a run.</param>
+        /// <returns>The config. The caller must destroy it.</returns>
+        public static GameConfig CreateWithSpawn(float[] weights, int spawnableTierCount, int antiStreakMax, int[] forcedOpening)
+        {
+            var config = ScriptableObject.CreateInstance<GameConfig>();
+            var serializedConfig = new SerializedObject(config);
+
+            var weightsProperty = serializedConfig.FindProperty("_spawnWeights");
+            weightsProperty.arraySize = weights.Length;
+            for (int i = 0; i < weights.Length; i++)
+            {
+                weightsProperty.GetArrayElementAtIndex(i).floatValue = weights[i];
+            }
+
+            var openingProperty = serializedConfig.FindProperty("_forcedOpeningTiers");
+            openingProperty.arraySize = forcedOpening.Length;
+            for (int i = 0; i < forcedOpening.Length; i++)
+            {
+                openingProperty.GetArrayElementAtIndex(i).intValue = forcedOpening[i];
+            }
+
+            serializedConfig.FindProperty("_spawnableTierCount").intValue = spawnableTierCount;
+            serializedConfig.FindProperty("_antiStreakMax").intValue = antiStreakMax;
+            serializedConfig.ApplyModifiedPropertiesWithoutUndo();
+            return config;
+        }
     }
 }
