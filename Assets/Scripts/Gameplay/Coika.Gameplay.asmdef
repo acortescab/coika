@@ -3,6 +3,8 @@
 	"references": [
 		"Coika.Core",
 		"Coika.Data",
+		"Unity.Addressables",
+		"Unity.InputSystem",
 		"Unity.RenderPipelines.Universal.2D.Runtime"
 	]
 }

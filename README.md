@@ -41,7 +41,10 @@ Assets/
   Prefabs/
   Scenes/                  Boot (initial build) and GameScene (Addressable)
   Scripts/
-    Core/                  Services and composition root (Coika.Core)
+    Core/                  Shared services (Coika.Core), grouped by concern:
+      Assets/              Asset and scene loading (IAssetService, ISceneLoader)
+      Pooling/             Reusable prefab pool (PrefabPool)
+      Boot/                Composition root (GameInstaller)
     Data/                  ScriptableObject definitions (Coika.Data)
     Gameplay/              Game rules (Coika.Gameplay)
     UI/                    Views (Coika.UI)

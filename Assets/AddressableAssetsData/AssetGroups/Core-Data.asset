@@ -45,6 +45,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ad1e545af5eacc43be664921ca33777
+    m_Address: Assets/Prefabs/Piece.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7fd2aa7f950a4861b4029c10d91ccdec
     m_Address: Assets/Data/Tiers/Tier_05_RockyPlanet.asset
     m_ReadOnly: 0
