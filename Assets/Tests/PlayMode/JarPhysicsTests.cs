@@ -34,38 +34,42 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// A piece dropped straight down from the Drop Line lands on the floor and rests inside the interior.
+        /// A piece dropped straight down from the Drop Line lands on the floor, comes to rest and stays inside the
+        /// interior.
         /// </summary>
         [UnityTest]
-        public IEnumerator DropLargestPiece_FromDropLine_LandsOnFloorInsideInterior()
+        public IEnumerator DropLargestPiece_FromDropLine_LandsOnFloorAndRestsInsideInterior()
         {
-            yield return DropAndCheckRestingPlace(Vector2.zero);
+            yield return DropAndCheck(Vector2.zero, true);
         }
 
         /// <summary>
-        /// A piece thrown hard sideways at the right wall does not leave through it.
+        /// A piece thrown hard sideways at the right wall stays inside the interior at every physics step.
         /// </summary>
         [UnityTest]
         public IEnumerator DropLargestPiece_ThrownAtRightWall_StaysInsideInterior()
         {
-            yield return DropAndCheckRestingPlace(new Vector2(40f, 0f));
+            yield return DropAndCheck(new Vector2(40f, 0f), false);
         }
 
         /// <summary>
-        /// A piece thrown hard sideways at the left wall does not leave through it.
+        /// A piece thrown hard sideways at the left wall stays inside the interior at every physics step.
         /// </summary>
         [UnityTest]
         public IEnumerator DropLargestPiece_ThrownAtLeftWall_StaysInsideInterior()
         {
-            yield return DropAndCheckRestingPlace(new Vector2(-40f, 0f));
+            yield return DropAndCheck(new Vector2(-40f, 0f), false);
         }
 
         /// <summary>
-        /// Builds a jar, drops a piece with continuous collision detection from the Drop Line with the given
-        /// velocity, waits for it to settle, and checks that it rests on the floor inside the interior bounds.
+        /// Builds a jar and drops a piece with continuous collision detection from the Drop Line with the given
+        /// velocity. It checks at every physics step that the piece stays inside the interior bounds, and at the
+        /// end that it is on the floor. A thrown piece keeps rolling for a long time, because Box2D has no rolling
+        /// resistance, so rest is only required when the caller asks for it.
         /// </summary>
         /// <param name="initialVelocity">Velocity of the piece when it is released.</param>
-        private IEnumerator DropAndCheckRestingPlace(Vector2 initialVelocity)
+        /// <param name="expectRest">Whether the piece must be at rest at the end.</param>
+        private IEnumerator DropAndCheck(Vector2 initialVelocity, bool expectRest)
         {
             var material = new PhysicsMaterial2D("TestWall") { friction = 0.4f, bounciness = 0f };
             var config = CreateConfig(new Vector2(10f, 12.5f), 1.5f, material);
@@ -85,13 +89,31 @@ namespace Coika.Tests.PlayMode
             pieceObject.AddComponent<CircleCollider2D>().radius = PIECE_RADIUS;
             body.linearVelocity = initialVelocity;
 
-            yield return new WaitForSeconds(SETTLE_SECONDS);
+            var elapsed = 0f;
+            while (elapsed < SETTLE_SECONDS)
+            {
+                yield return new WaitForFixedUpdate();
+                elapsed += Time.fixedDeltaTime;
 
-            var position = pieceObject.transform.position;
-            Assert.Less(body.linearVelocity.magnitude, 0.2f, "The piece should be at rest.");
-            Assert.AreEqual(jar.FloorY + PIECE_RADIUS, position.y, POSITION_TOLERANCE, "The piece should rest on the floor.");
+                AssertInsideInterior(jar, pieceObject.transform.position);
+            }
+
+            Assert.AreEqual(jar.FloorY + PIECE_RADIUS, pieceObject.transform.position.y, POSITION_TOLERANCE, "The piece should be on the floor.");
+            if (expectRest)
+                Assert.Less(body.linearVelocity.magnitude, 0.2f, "The piece should be at rest.");
+        }
+
+        /// <summary>
+        /// Checks that a piece of the largest size centred at the given position is inside the interior bounds of
+        /// the jar, within a small tolerance.
+        /// </summary>
+        /// <param name="jar">The jar that holds the piece.</param>
+        /// <param name="position">Centre of the piece in world units.</param>
+        private static void AssertInsideInterior(Jar jar, Vector3 position)
+        {
             Assert.GreaterOrEqual(position.x - PIECE_RADIUS, jar.InteriorMin.x - POSITION_TOLERANCE, "The piece left through the left wall.");
             Assert.LessOrEqual(position.x + PIECE_RADIUS, jar.InteriorMax.x + POSITION_TOLERANCE, "The piece left through the right wall.");
+            Assert.GreaterOrEqual(position.y - PIECE_RADIUS, jar.FloorY - POSITION_TOLERANCE, "The piece fell through the floor.");
         }
 
         /// <summary>
