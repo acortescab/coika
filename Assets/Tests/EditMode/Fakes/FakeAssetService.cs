@@ -19,6 +19,12 @@ namespace Coika.Tests.EditMode
         /// <summary>1-based load attempt that fails with an AssetLoadException; 0 means never fail.</summary>
         public int FailOnAttempt { get; set; }
 
+        /// <summary>
+        /// Creates the asset for a requested type, for types a plain ScriptableObject cannot stand in for (a prefab
+        /// GameObject, a Sprite). When null, every load creates a ScriptableObject of the requested type.
+        /// </summary>
+        public Func<Type, UnityEngine.Object> Provider { get; set; }
+
         /// <summary>Number of loads that succeeded.</summary>
         public int LoadCount { get; private set; }
 
@@ -30,13 +36,14 @@ namespace Coika.Tests.EditMode
 
         /// <summary>
         /// Returns a new in-memory instance of T for the reference, or a failed task when the attempt is the
-        /// one set in <see cref="FailOnAttempt"/>. T must be a ScriptableObject type.
+        /// one set in <see cref="FailOnAttempt"/>. T must be a ScriptableObject type unless a
+        /// <see cref="Provider"/> is set.
         /// </summary>
         /// <typeparam name="T">Type of the asset to create.</typeparam>
-        /// <param name="assetReference">Reference whose GUID is used as the key in the failure.</param>
+        /// <param name="assetReference">Reference whose GUID is used as the key in the failure. May be null.</param>
         public Task<T> LoadAsset<T>(AssetReference assetReference)
         {
-            return Load<T>(assetReference.AssetGUID);
+            return Load<T>(assetReference?.AssetGUID);
         }
 
         /// <summary>
@@ -95,7 +102,7 @@ namespace Coika.Tests.EditMode
             if (_attempts == FailOnAttempt)
                 return Task.FromException<T>(new AssetLoadException(key, null));
 
-            var asset = ScriptableObject.CreateInstance(typeof(T));
+            var asset = Provider != null ? Provider(typeof(T)) : ScriptableObject.CreateInstance(typeof(T));
             _created.Add(asset);
             LoadCount++;
             return Task.FromResult((T)(object)asset);
