@@ -6,6 +6,7 @@
         "UnityEditor.TestRunner",
         "Coika.Core",
         "Coika.Data",
+        "Coika.Gameplay",
         "Coika.Tools.Editor",
         "Unity.Addressables",
         "Unity.Addressables.Editor"

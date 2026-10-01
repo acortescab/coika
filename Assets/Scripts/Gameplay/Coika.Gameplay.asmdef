@@ -1,6 +1,7 @@
 {
 	"name": "Coika.Gameplay",
 	"references": [
-		"Coika.Core"
+		"Coika.Core",
+		"Coika.Data"
 	]
 }
