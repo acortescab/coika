@@ -34,6 +34,20 @@ namespace Coika.Gameplay
             Frame();
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Re-frames whenever a field is changed in the Inspector, so the camera and the background update as the
+        /// jar and the background are assigned and the HUD margin is tuned, without calling Frame Jar by hand.
+        /// Stays quiet until a jar is assigned, so setting the component up does not log errors. Changes to the
+        /// Pixel Perfect Camera are not detected: use Frame Jar after editing it. Editor only.
+        /// </summary>
+        private void OnValidate()
+        {
+            if (_jar != null)
+                Frame();
+        }
+#endif
+
         /// <summary>
         /// Moves the camera so the jar is centred and framed as described in the class summary. Keeps the camera
         /// depth. Logs an error when there is no jar, and a warning when the jar does not fit in the reference
