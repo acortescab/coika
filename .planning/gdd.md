@@ -239,6 +239,7 @@ Tier colours (for particles/UI), in order: `#8E8E8E, #B39B7A, #7A7A9E, #C8D0DC, 
 - **Background:** deep-space gradient with parallax star layers (2 layers, very slow scroll). Palette shifts slightly with the highest tier reached (subtle tint) as a progression cue.
 - **Jar:** drawn as a glass-like pixel container with a lighter inner rim; the Danger Line is part of the rim.
 - **Import settings:** Filter Mode **Point**, Compression **None**, Mip Maps **off**, Sprite Mode Single, Pivot **Center**, Pixels Per Unit **16**. Piece sprites pack in a **Sprite Atlas** (Padding ≥ 4, Tight Packing off).
+- **Android is the main target:** the default Android texture format (ASTC) smears pixel art. Set the **Android platform override** (importer and Sprite Atlas) to an uncompressed format (e.g. RGBA32) with Point filtering, and verify it after switching the build profile. Apply the same to iOS.
 - **Sprite sheets per tier:** idle (1 frame), plus separate small face frames: neutral, blink, surprised, happy. Total ≈ 11 body sprites + 4 faces + particles + UI.
 
 Placeholder policy: for the first milestone, **flat-colour circles** generated at runtime with a simple circle sprite, tinted by tier colour. No art blocks gameplay development.
@@ -427,7 +428,7 @@ Skins, balance pass with telemetry from playtesters (manual logs), accessibility
 | Input | Piece never leaves the jar bounds; a drop never triggers from a UI tap |
 | Perf | Zero GC alloc per frame in Profiler during a 2-minute run; 60 FPS target device |
 | Persistence | Killing the app mid-run and reopening keeps settings/best score (and offers continue after M3) |
-| Pixel quality | No blurry sprites, no gaps/shimmer at 1080×1920, 1080×2400, 720×1280 |
+| Pixel quality | No blurry sprites, no gaps/shimmer at 1080×1920, 1080×2400, 720×1280 — verified in an **Android build on a real device** (Android texture overrides applied), not only in the Game view |
 
 **Automated tests (minimum):** EditMode tests for `SpawnQueue` (weights, anti-streak, seed), `ScoreSystem` (merge/combos), `SaveSystem` (round-trip, corrupt file). PlayMode test for merge chain + overflow.
 

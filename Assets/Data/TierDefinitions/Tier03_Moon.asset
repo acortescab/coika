@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
+  m_Name: Tier03_Moon
+  m_EditorClassIdentifier: 
+  _index: 3
+  _displayName: Moon
+  _sprite: {fileID: 0}
+  _diameterUnits: 1.6875
+  _radius: 0.84375
+  _mergeScore: 10
+  _tierColor: {r: 0.784314, g: 0.815686, b: 0.862745, a: 1}
+  _loreLine: tier.moon.lore
