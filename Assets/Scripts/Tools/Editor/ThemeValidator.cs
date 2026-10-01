@@ -56,7 +56,8 @@ namespace Coika.Tools
 
         /// <summary>
         /// Lists every asset of the theme that is outside its Addressable group (C-01): the theme and the tiers
-        /// belong in Core-Data, the tier sprites in Theme-Cosmic.
+        /// it references belong in Core-Data, their sprites in Theme-Cosmic. Only the assets the theme itself
+        /// references are checked, wherever they live in the project.
         /// </summary>
         /// <param name="theme">The theme to check.</param>
         /// <returns>One message per misplaced asset; empty when every asset is in its group.</returns>
@@ -65,11 +66,22 @@ namespace Coika.Tools
             var errors = new List<string>();
             var settings = AddressableAssetSettingsDefaultObject.Settings;
 
+            if (settings == null)
+            {
+                errors.Add("Addressables settings not found.");
+                return errors;
+            }
+
             CheckEntry(settings, AssetDatabase.GetAssetPath(theme), TierDataSetup.DataGroupName, errors);
 
-            foreach (var tier in PlaceholderTierSpriteGenerator.FindTiers())
+            foreach (var tierGuid in GetTierGuids(theme))
             {
-                CheckEntry(settings, AssetDatabase.GetAssetPath(tier), TierDataSetup.DataGroupName, errors);
+                var tierPath = AssetDatabase.GUIDToAssetPath(tierGuid);
+                var tier = AssetDatabase.LoadAssetAtPath<TierDefinition>(tierPath);
+                if (tier == null)
+                    continue; // Empty or missing tiers are reported by ThemeDefinition.Validate
+
+                CheckEntry(settings, tierPath, TierDataSetup.DataGroupName, errors);
 
                 var spritePath = AssetDatabase.GUIDToAssetPath(tier.Sprite.AssetGUID);
                 if (string.IsNullOrEmpty(spritePath))
@@ -79,6 +91,22 @@ namespace Coika.Tools
             }
 
             return errors;
+        }
+
+        /// <summary>
+        /// Reads the GUIDs of the tier references of a theme, in slot order.
+        /// </summary>
+        /// <param name="theme">The theme to read.</param>
+        /// <returns>One GUID per slot; an empty slot gives an empty string.</returns>
+        private static List<string> GetTierGuids(ThemeDefinition theme)
+        {
+            var guids = new List<string>();
+            var tiers = new SerializedObject(theme).FindProperty("_tiers");
+
+            for (int i = 0; i < tiers.arraySize; i++)
+                guids.Add(tiers.GetArrayElementAtIndex(i).FindPropertyRelative("m_AssetGUID").stringValue);
+
+            return guids;
         }
 
         /// <summary>

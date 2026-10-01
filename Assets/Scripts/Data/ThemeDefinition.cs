@@ -103,10 +103,23 @@ namespace Coika.Data
         }
 
         /// <summary>
-        /// Logs every validation problem as an error whenever the asset is edited.
+        /// Schedules the validation log whenever the asset is loaded or edited. It is deferred because during a
+        /// load or an import the tiers and sprites this theme references may not be imported yet, which would
+        /// log false errors.
         /// </summary>
         private void OnValidate()
         {
+            UnityEditor.EditorApplication.delayCall += LogValidationErrors;
+        }
+
+        /// <summary>
+        /// Logs every validation problem as an error. Does nothing if the theme was destroyed in the meantime.
+        /// </summary>
+        private void LogValidationErrors()
+        {
+            if (this == null)
+                return;
+
             foreach (var error in Validate())
                 Debug.LogError($"{name}: {error}", this);
         }
