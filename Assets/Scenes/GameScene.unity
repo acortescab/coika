@@ -405,6 +405,93 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &622843836
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 622843840}
+  - component: {fileID: 622843839}
+  - component: {fileID: 622843838}
+  - component: {fileID: 622843837}
+  m_Layer: 0
+  m_Name: DropController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &622843837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622843836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79058dc5d3330f74586336df1934a166, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Coika.Gameplay::Coika.Gameplay.DropControllerBootstrap
+  _jar: {fileID: 2130574023}
+  _controller: {fileID: 622843838}
+  _input: {fileID: 622843839}
+  _config:
+    m_AssetGUID: 0f56718d57424ae6be016d7992404ce6
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _piecePrefab:
+    m_AssetGUID: 7ad1e545af5eacc43be664921ca33777
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+--- !u!114 &622843838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622843836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da1814b21ecdc4c44983f0f6c135df9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Coika.Gameplay::Coika.Gameplay.DropController
+--- !u!114 &622843839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622843836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca99aca045906394483aec0d1266b098, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Coika.Gameplay::Coika.Gameplay.PointerInputReader
+  _camera: {fileID: 519420031}
+  _actions: {fileID: -944628639613478452, guid: d57444bb214b57040bd123b317087664, type: 3}
+--- !u!4 &622843840
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622843836}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1662994288
 GameObject:
   m_ObjectHideFlags: 0
@@ -658,63 +745,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a9d313ec34587d4ea3d75f5d7461713, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Coika.Gameplay::Coika.Gameplay.Jar
---- !u!1001 &6882790362827864027
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 6174486345397744977, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_Name
-      value: PieceSpawner
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8988057408025490996, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 3380a72f810572341a66ce7089d0818b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -725,4 +755,4 @@ SceneRoots:
   - {fileID: 1662994289}
   - {fileID: 2130574022}
   - {fileID: 1918239437}
-  - {fileID: 6882790362827864027}
+  - {fileID: 622843840}

@@ -5,6 +5,7 @@
 		"Coika.Data",
 		"Unity.Addressables",
 		"Unity.InputSystem",
+		"Unity.ugui",
 		"Unity.RenderPipelines.Universal.2D.Runtime"
 	]
 }

@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Core-Data
   m_GUID: 95c8481802684e843bdfe3ecb754f519
   m_SerializeEntries:
+  - m_GUID: 0f56718d57424ae6be016d7992404ce6
+    m_Address: Assets/Data/GameConfig/GameConfig.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 17d21638cf4d4f039430a52f31712b41
     m_Address: Assets/Data/Tiers/Tier_02_Asteroid.asset
     m_ReadOnly: 0

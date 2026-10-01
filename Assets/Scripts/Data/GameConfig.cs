@@ -14,6 +14,10 @@ namespace Coika.Data
         private float _gravity = -20f;
         [SerializeField]
         private float _dropDownCooldown = 0.5f;
+        [SerializeField, Min(0.01f)]
+        private float _maxFollowSpeed = 40f;
+        [SerializeField, Min(0f)]
+        private float _scaleInDuration = 0.15f;
         [SerializeField]
         private float _overflowTime = 2f;
         [SerializeField]
@@ -70,6 +74,12 @@ namespace Coika.Data
 
         /// <summary>Seconds after releasing a piece before the next one is attached and controllable.</summary>
         public float DropCooldown => _dropDownCooldown;
+
+        /// <summary>Fastest the held piece moves sideways, in units per second, so it never teleports.</summary>
+        public float MaxFollowSpeed => _maxFollowSpeed;
+
+        /// <summary>Seconds the next piece takes to grow from nothing to full size while the drop cools down.</summary>
+        public float ScaleInDuration => _scaleInDuration;
 
         /// <summary>Seconds a settled piece must stay above the Danger Line before the game ends.</summary>
         public float OverflowTime => _overflowTime;
