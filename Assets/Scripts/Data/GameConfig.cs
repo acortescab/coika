@@ -61,5 +61,8 @@ namespace Coika.Data
 
         /// <summary>Physics material of the pieces.</summary>
         public PhysicsMaterial2D PieceMaterial => _pieceMaterial;
+
+        /// <summary>Speed in units per second below which a piece counts as settled.</summary>
+        public float SettledVelocity => _settledVelocity;
     }
 }
