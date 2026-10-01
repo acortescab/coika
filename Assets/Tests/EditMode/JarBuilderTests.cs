@@ -176,7 +176,7 @@ namespace Coika.Tests.EditMode
         /// Danger Line.
         /// </summary>
         [Test]
-        public void Build_Always_AddsTiledVisualsMatchingTheColliders()
+        public void Build_Always_AddsTiledVisualsBelowTheDangerLine()
         {
             JarBuilder.Build(_jar, _config);
 
@@ -187,8 +187,7 @@ namespace Coika.Tests.EditMode
 
                 Assert.IsNotNull(spriteRenderer, childName);
                 Assert.AreEqual(SpriteDrawMode.Tiled, spriteRenderer.drawMode, childName);
-                Assert.AreEqual(collider.size.x, spriteRenderer.size.x, TOLERANCE, childName + " width");
-                Assert.AreEqual(collider.size.y, spriteRenderer.size.y, TOLERANCE, childName + " height");
+                AssertVisualMatchesCollider(collider, spriteRenderer);
                 Assert.Less(spriteRenderer.sortingOrder, _jar.DangerLine.GetComponent<SpriteRenderer>().sortingOrder, childName);
             }
         }
@@ -218,8 +217,7 @@ namespace Coika.Tests.EditMode
                 var collider = GetCollider(childName);
                 var spriteRenderer = collider.GetComponent<SpriteRenderer>();
 
-                Assert.AreEqual(collider.size.x, spriteRenderer.size.x, TOLERANCE, childName + " width");
-                Assert.AreEqual(collider.size.y, spriteRenderer.size.y, TOLERANCE, childName + " height");
+                AssertVisualMatchesCollider(collider, spriteRenderer);
             }
         }
 
@@ -246,8 +244,7 @@ namespace Coika.Tests.EditMode
                     var collider = GetCollider(childName);
                     var spriteRenderer = collider.GetComponent<SpriteRenderer>();
 
-                    Assert.AreEqual(collider.size.x, spriteRenderer.size.x, TOLERANCE, childName + " width");
-                    Assert.AreEqual(collider.size.y, spriteRenderer.size.y, TOLERANCE, childName + " height");
+                    AssertVisualMatchesCollider(collider, spriteRenderer);
                 }
 
                 Assert.AreEqual(10f, _jar.DangerLine.GetComponent<SpriteRenderer>().size.x, TOLERANCE, "Danger Line width");
@@ -259,6 +256,37 @@ namespace Coika.Tests.EditMode
             }
         }
 
+        /// <summary>
+        /// With the GDD jar the interior plus the two 1-unit walls is 12 units wide, exactly the 192 px reference
+        /// frame: the floor is as wide as the frame and the outer faces of the walls are at its edges, so the walls
+        /// are fully visible.
+        /// </summary>
+        [Test]
+        public void Build_WithGddJar_FitsWallsAndFloorInTheReferenceFrameWidth()
+        {
+            const float frameHalfWidth = 192f / 16f * 0.5f;
+
+            JarBuilder.Build(_jar, _config);
+
+            var floor = GetCollider("Floor");
+            var left = GetCollider("WallLeft");
+            var right = GetCollider("WallRight");
+
+            Assert.AreEqual(2f * frameHalfWidth, floor.GetComponent<SpriteRenderer>().size.x, TOLERANCE, "Floor visual width = frame width");
+            Assert.AreEqual(frameHalfWidth, right.transform.localPosition.x + right.size.x * 0.5f, TOLERANCE, "Right wall outer face");
+            Assert.AreEqual(-frameHalfWidth, left.transform.localPosition.x - left.size.x * 0.5f, TOLERANCE, "Left wall outer face");
+        }
+
+        /// <summary>
+        /// Checks that the sprite renderer of a floor or wall child covers exactly the rectangle of its collider.
+        /// </summary>
+        /// <param name="collider">The collider of the floor or wall child.</param>
+        /// <param name="spriteRenderer">The sprite renderer of the same child.</param>
+        private static void AssertVisualMatchesCollider(BoxCollider2D collider, SpriteRenderer spriteRenderer)
+        {
+            Assert.AreEqual(collider.size.x, spriteRenderer.size.x, TOLERANCE, collider.name + " visual width");
+            Assert.AreEqual(collider.size.y, spriteRenderer.size.y, TOLERANCE, collider.name + " visual height");
+        }
         /// <summary>
         /// Returns the box collider of a named child of the jar.
         /// </summary>

@@ -5,8 +5,9 @@ namespace Coika.Gameplay
 {
     /// <summary>
     /// Positions the main camera so the jar is horizontally centred and everything from the floor up to the Drop
-    /// Line, plus the HUD margin above it, is inside the Pixel Perfect Camera reference frame (180 x 320 px at
-    /// PPU 16 in the GDD). It reads the frame size from the <see cref="PixelPerfectCamera"/> and the jar bounds
+    /// Line, plus the HUD margin above it, is inside the Pixel Perfect Camera reference frame (192 x 320 px at
+    /// PPU 16 in the GDD: the 160 px interior plus two 16 px walls). It reads the frame size from the
+    /// <see cref="PixelPerfectCamera"/> and the jar bounds
     /// from the <see cref="Jar"/>, so the framing follows <c>GameConfig</c> without touching the scene.
     /// <para>
     /// The frame is anchored at the top: its top edge is the Drop Line plus the HUD margin. Whatever height is
@@ -104,18 +105,19 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Whether the jar fits in the reference frame: the interior is not wider than the frame, and the span from
-        /// the underside of the floor to the Drop Line plus the HUD margin is not taller than the frame.
+        /// Whether the whole jar fits in the reference frame: the interior plus the two walls is not wider than the
+        /// frame, so the walls are fully visible, and the span from the underside of the floor to the Drop Line plus
+        /// the HUD margin is not taller than the frame.
         /// </summary>
         /// <param name="interiorWidth">Interior width of the jar in world units.</param>
         /// <param name="floorToDropLine">Distance from the floor surface to the Drop Line in world units.</param>
         /// <param name="referenceSize">Size of the reference frame in world units.</param>
         /// <param name="hudMargin">Space kept above the Drop Line for the HUD, in world units.</param>
-        /// <param name="floorThickness">Thickness of the floor in world units.</param>
+        /// <param name="wallThickness">Thickness of the walls and the floor in world units.</param>
         /// <returns>True when everything fits.</returns>
-        public static bool Fits(float interiorWidth, float floorToDropLine, Vector2 referenceSize, float hudMargin, float floorThickness)
+        public static bool Fits(float interiorWidth, float floorToDropLine, Vector2 referenceSize, float hudMargin, float wallThickness)
         {
-            return interiorWidth <= referenceSize.x && floorToDropLine + hudMargin + floorThickness <= referenceSize.y;
+            return interiorWidth + 2f * wallThickness <= referenceSize.x && floorToDropLine + hudMargin + wallThickness <= referenceSize.y;
         }
 
         /// <summary>

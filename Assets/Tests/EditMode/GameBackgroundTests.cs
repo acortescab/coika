@@ -8,13 +8,13 @@ namespace Coika.Tests.EditMode
 {
     /// <summary>
     /// Checks that the placeholder background covers the camera reference frame with room to spare (issue #3, scope 5).
-    /// The GDD frame is 180 x 320 px at PPU 16, which is 11.25 x 20 units.
+    /// The GDD frame is 192 x 320 px at PPU 16, which is 12 x 20 units.
     /// </summary>
     public class GameBackgroundTests
     {
         private const float TOLERANCE = 0.0001f;
 
-        private static readonly Vector2 ReferenceSize = new(11.25f, 20f);
+        private static readonly Vector2 ReferenceSize = new(12f, 20f);
 
         private GameObject _backgroundObject;
         private Texture2D _texture;
@@ -50,7 +50,7 @@ namespace Coika.Tests.EditMode
         {
             var size = GameBackground.ComputeSize(ReferenceSize);
 
-            Assert.AreEqual(22.5f, size.x, TOLERANCE);
+            Assert.AreEqual(24f, size.x, TOLERANCE);
             Assert.AreEqual(40f, size.y, TOLERANCE);
         }
 

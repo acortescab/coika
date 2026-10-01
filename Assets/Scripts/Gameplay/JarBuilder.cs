@@ -15,7 +15,11 @@ namespace Coika.Gameplay
         /// <summary>Name of the physics layer of the jar colliders.</summary>
         public const string WALL_LAYER_NAME = "Wall";
 
-        /// <summary>Thickness of the floor and the walls in world units. Thick colliders prevent tunnelling.</summary>
+        /// <summary>
+        /// Thickness of the floor and the walls in world units, for the colliders and for the visuals. Thick
+        /// colliders prevent tunnelling. With the interior width, the two walls make the jar 12 units (192 px) wide,
+        /// which is the width of the camera reference frame, so the walls are fully visible (GDD §8).
+        /// </summary>
         public const float WALL_THICKNESS = 1f;
 
         /// <summary>How far the walls rise above the Drop Line, so pieces can never escape sideways.</summary>
@@ -117,8 +121,8 @@ namespace Coika.Gameplay
         /// a sprite renderer that draws the same rectangle. Colliders have no Rigidbody2D, so they are static.
         /// </summary>
         /// <param name="parent">The jar transform that holds the child.</param>
-        /// <param name="childName">Name of the child object that holds the collider.</param>
-        /// <param name="localCenter">Centre of the collider in the parent's local space.</param>
+        /// <param name="childName">Name of the child object that holds the collider and the visual.</param>
+        /// <param name="localCenter">Centre of the collider and the visual in the parent's local space.</param>
         /// <param name="size">Size of the collider and of the visual in world units.</param>
         /// <param name="layer">Physics layer of the child.</param>
         /// <param name="material">Physics material of the collider. May be null.</param>

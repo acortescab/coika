@@ -6,7 +6,7 @@ namespace Coika.Tests.EditMode
 {
     /// <summary>
     /// Checks the camera framing maths of <see cref="JarCameraFramer"/> with the GDD values (issue #3, scope 4):
-    /// a 180 x 320 px reference frame at PPU 16 is 11.25 x 20 units, the HUD margin is 40 px (2.5 units) and the
+    /// a 192 x 320 px reference frame at PPU 16 is 12 x 20 units, the HUD margin is 40 px (2.5 units) and the
     /// jar interior is 10 x 12.5 units with the Drop Line 1.5 above the Danger Line.
     /// </summary>
     public class JarCameraFramerTests
@@ -16,7 +16,7 @@ namespace Coika.Tests.EditMode
         private const float REFERENCE_HEIGHT = 20f;
         private const float HUD_MARGIN = 2.5f;
 
-        private static readonly Vector2 ReferenceSize = new(11.25f, 20f);
+        private static readonly Vector2 ReferenceSize = new(12f, 20f);
 
         /// <summary>
         /// With the GDD jar on the origin the camera is centred on the jar and 6.5 units up, so the frame spans
@@ -58,7 +58,7 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// The GDD jar fits in the frame, with 10 px of margin on each side.
+        /// The GDD jar, 10 units of interior plus two 1-unit walls, fits the 12 unit frame width exactly.
         /// </summary>
         [Test]
         public void Fits_WithGddJar_ReturnsTrue()
@@ -67,12 +67,12 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// A jar wider than the frame does not fit.
+        /// A jar whose interior plus its two walls is wider than the frame does not fit.
         /// </summary>
         [Test]
         public void Fits_WithJarWiderThanFrame_ReturnsFalse()
         {
-            Assert.IsFalse(JarCameraFramer.Fits(12f, 14f, ReferenceSize, HUD_MARGIN, 1f));
+            Assert.IsFalse(JarCameraFramer.Fits(11f, 14f, ReferenceSize, HUD_MARGIN, 1f));
         }
 
         /// <summary>
