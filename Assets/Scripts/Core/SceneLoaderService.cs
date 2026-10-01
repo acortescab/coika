@@ -140,9 +140,11 @@ namespace Coika.Core
             if (!handle.IsValid())
                 return;
 
+            // Keep the unload handle alive so its status can be read, then release it manually.
+            AsyncOperationHandle<SceneInstance> unloadHandle = default;
             try
             {
-                var unloadHandle = Addressables.UnloadSceneAsync(handle);
+                unloadHandle = Addressables.UnloadSceneAsync(handle, false);
                 await unloadHandle.Task;
 
                 if (unloadHandle.Status != AsyncOperationStatus.Succeeded)
@@ -151,6 +153,11 @@ namespace Coika.Core
             catch (Exception e)
             {
                 Debug.LogError($"Failed to unload scene: {sceneKey}. {e.Message}");
+            }
+            finally
+            {
+                if (unloadHandle.IsValid())
+                    Addressables.Release(unloadHandle);
             }
         }
 

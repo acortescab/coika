@@ -45,6 +45,7 @@ Everything else, including the `Menu` and `Game` scenes, tiers, sprites, audio, 
 
 ### Code rules
 - Introduce a single `AssetService` (in `Coika.Core`) that wraps Addressables: load, release, preload, progress, error handling. Gameplay and UI code request assets through it and never call `Addressables.*` directly.
+  - **Only exception:** `GameInstaller` (the composition root in `Boot`) may call `Addressables.InitializeAsync()`, because initialization is a boot step and not an asset load. No retry is applied to it.
 - Reference assets with `AssetReference` / `AssetReferenceT<T>` / `AssetReferenceSprite` or Addressable labels, **never** with direct serialized object references to assets that live in a different group or in the initial build.
   - Exception: assets inside the **same** group/scene bundle may reference each other directly.
 - **Every load has a matching release.** Hold `AsyncOperationHandle`s, release them when the owner is destroyed or the scene unloads. Leaks are bugs.
@@ -69,7 +70,7 @@ These issues must be updated or read with this constraint in mind:
 - [ ] Build Settings contain **only** the `Boot` scene. No other scene is listed.
 - [ ] No usage of `SceneManager.LoadScene`/`LoadSceneAsync` outside `Boot` bootstrap/`SceneLoader` (grep check in review).
 - [ ] No `Resources/` folder or `Resources.Load` usage (grep check).
-- [ ] No direct `Addressables.*` calls outside `AssetService`/`SceneLoader` (grep check).
+- [ ] No direct `Addressables.*` calls outside `AssetService`/`SceneLoader` (grep check). Only exception: `Addressables.InitializeAsync()` in `GameInstaller`.
 - [ ] **Initial size budget:** the base Android AAB/APK and iOS install contain only the Boot scene + runtime; record the build size in the PR. Target budget: **base build ≤ 30 MB** for M1–M2 [TUNE: confirm after the first Android build].
 - [ ] Addressables **Analyze** rules (Check Duplicate Bundle Dependencies, Check Resources to Addressable Duplicate Dependencies) report no fixable issues.
 - [ ] Group sizes are reviewed in the **Addressables Report**; no single group exceeds the agreed size without justification.
