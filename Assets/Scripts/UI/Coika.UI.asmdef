@@ -1,0 +1,6 @@
+{
+	"name": "Coika.UI",
+	"references": [
+		"Coika.Core"
+	]
+}

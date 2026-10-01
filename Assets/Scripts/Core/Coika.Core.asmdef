@@ -1,0 +1,7 @@
+{
+	"name": "Coika.Core",
+	"references": [
+		"Unity.Addressables",
+		"Unity.ResourceManager"
+	]
+}

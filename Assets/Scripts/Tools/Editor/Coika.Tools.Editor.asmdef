@@ -1,0 +1,11 @@
+{
+	"name": "Coika.Tools.Editor",
+	"references": [
+		"Unity.Addressables",
+		"Unity.Addressables.Editor"
+	],
+	"includePlatforms": [
+		"Editor"
+	],
+	"autoReferenced": false
+}
