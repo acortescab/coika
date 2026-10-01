@@ -14,7 +14,67 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Core-Data
   m_GUID: 95c8481802684e843bdfe3ecb754f519
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 17d21638cf4d4f039430a52f31712b41
+    m_Address: Assets/Data/Tiers/Tier_02_Asteroid.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1db4a6919e5c44649d37cb93da80ba65
+    m_Address: Assets/Data/Tiers/Tier_06_OceanPlanet.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 22ca6b423dfa425fbc83a2bdf8f2fde0
+    m_Address: Assets/Data/Tiers/Tier_01_Pebble.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2e1d1ce154ff4a68b7cb8f99e9e425c4
+    m_Address: Assets/Data/Tiers/Tier_00_Dust.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c8f9e6e861cd0148baf63b9df7f9db2
+    m_Address: Assets/Data/Themes/Theme_Cosmic.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 78660cf322464e379e65e4c469ab9791
+    m_Address: Assets/Data/Tiers/Tier_07_GasGiant.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7fd2aa7f950a4861b4029c10d91ccdec
+    m_Address: Assets/Data/Tiers/Tier_05_RockyPlanet.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af58bf3afae14d119914b44c714ba1f8
+    m_Address: Assets/Data/Tiers/Tier_04_DwarfPlanet.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af592d5a5bd4496f8de24574f4ae68cb
+    m_Address: Assets/Data/Tiers/Tier_10_BlackHole.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cfae84b486414159b8c0d3e4a6486891
+    m_Address: Assets/Data/Tiers/Tier_09_NeutronStar.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d7e13872895d41d4a458e09256296072
+    m_Address: Assets/Data/Tiers/Tier_08_Star.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e8f3b5b9685c4939b6135e495a0938c2
+    m_Address: Assets/Data/Tiers/Tier_03_Moon.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 461287701ca2f3940b9955fcf5c57c47, type: 2}
   m_SchemaSet:

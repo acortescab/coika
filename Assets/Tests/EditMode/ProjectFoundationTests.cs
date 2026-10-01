@@ -21,6 +21,9 @@ namespace Coika.Tests.EditMode
             "Scenes", "Core-Data", "Theme-Cosmic", "Audio-Music", "Audio-SFX", "UI", "FX"
         };
 
+        /// <summary>
+        /// Build Settings list only the Boot scene, enabled.
+        /// </summary>
         [Test]
         public void BuildSettings_Always_ContainOnlyEnabledBootScene()
         {
@@ -31,6 +34,9 @@ namespace Coika.Tests.EditMode
             Assert.IsTrue(scenes[0].enabled, "The Boot scene must be enabled in Build Settings.");
         }
 
+        /// <summary>
+        /// Only the installer and the scene loader may call SceneManager.LoadScene.
+        /// </summary>
         [Test]
         public void Scripts_Always_DoNotLoadScenesOutsideBootAndSceneLoader()
         {
@@ -39,6 +45,9 @@ namespace Coika.Tests.EditMode
             Assert.IsEmpty(violations, string.Join("\n", violations));
         }
 
+        /// <summary>
+        /// The project has no Resources folder and no script calls Resources.Load.
+        /// </summary>
         [Test]
         public void Project_Always_HasNoResourcesFolderOrResourcesLoad()
         {
@@ -49,7 +58,10 @@ namespace Coika.Tests.EditMode
             Assert.IsEmpty(violations, string.Join("\n", violations));
         }
 
-        // GameInstaller is allowed because it calls Addressables.InitializeAsync (the boot step, not an asset load).
+        /// <summary>
+        /// Only the services call Addressables directly. GameInstaller is allowed because it calls
+        /// Addressables.InitializeAsync (the boot step, not an asset load).
+        /// </summary>
         [Test]
         public void Scripts_Always_DoNotCallAddressablesOutsideServices()
         {
@@ -58,6 +70,9 @@ namespace Coika.Tests.EditMode
             Assert.IsEmpty(violations, string.Join("\n", violations));
         }
 
+        /// <summary>
+        /// The Addressables settings exist and contain every required group.
+        /// </summary>
         [Test]
         public void AddressablesSettings_Always_HaveRequiredGroups()
         {
@@ -68,6 +83,9 @@ namespace Coika.Tests.EditMode
                 Assert.IsNotNull(settings.FindGroup(groupName), $"Missing Addressables group: {groupName}");
         }
 
+        /// <summary>
+        /// The Game scene is Addressable (in the Scenes group) and the Boot scene is not.
+        /// </summary>
         [Test]
         public void GameScene_Always_IsAddressableAndBootIsNot()
         {
@@ -81,8 +99,13 @@ namespace Coika.Tests.EditMode
             Assert.IsNull(bootEntry, "The Boot scene must stay in the initial build, not in an Addressables group.");
         }
 
-        // Returns "file:line" for every non-comment line under Assets/Scripts that matches the pattern,
-        // skipping files that are explicitly allowed to use the API.
+        /// <summary>
+        /// Searches every script under Assets/Scripts for a pattern, ignoring comment lines and the files that
+        /// are explicitly allowed to use the API.
+        /// </summary>
+        /// <param name="pattern">Regular expression to look for.</param>
+        /// <param name="allowedFiles">File names that may contain the pattern.</param>
+        /// <returns>One "file:line: text" entry per match; empty when there is none.</returns>
         private static List<string> FindViolations(string pattern, params string[] allowedFiles)
         {
             var regex = new Regex(pattern);

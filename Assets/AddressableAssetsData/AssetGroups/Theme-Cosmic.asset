@@ -14,7 +14,62 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Theme-Cosmic
   m_GUID: cf513dccc4062c74aaa432d5d5366cfd
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 0016a89d4b715794fbf93ebc3e5b1b5f
+    m_Address: Assets/Art/Sprites/Tiers/Tier_06_OceanPlanet.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 09f8410b377a1f84c9cd83b7e20e49c4
+    m_Address: Assets/Art/Sprites/Tiers/Tier_10_BlackHole.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0e5bad1e3b90de049bdee0b001538ab5
+    m_Address: Assets/Art/Sprites/Tiers/Tier_03_Moon.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 17cc5e655dc393c4da98c9d84b3863ae
+    m_Address: Assets/Art/Sprites/Tiers/Tier_08_Star.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1affb19f8e9f660439e99747726081d1
+    m_Address: Assets/Art/Sprites/Tiers/Tier_01_Pebble.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 22899b8cb74f86f4595f0825d0905a46
+    m_Address: Assets/Art/Sprites/Tiers/Tier_09_NeutronStar.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 70e39b47865f87248ad56d87ed1520b8
+    m_Address: Assets/Art/Sprites/Tiers/Tier_00_Dust.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a6af902d1fe32514fa092675bbade5ae
+    m_Address: Assets/Art/Sprites/Tiers/Tier_05_RockyPlanet.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b786f1c795865124a997c8ca90bd7f02
+    m_Address: Assets/Art/Sprites/Tiers/Tier_04_DwarfPlanet.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c762a144667c5014a8b46f84f69cb584
+    m_Address: Assets/Art/Sprites/Tiers/Tier_07_GasGiant.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ef285a917b497be4ab9d0210f9569bde
+    m_Address: Assets/Art/Sprites/Tiers/Tier_02_Asteroid.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 461287701ca2f3940b9955fcf5c57c47, type: 2}
   m_SchemaSet:

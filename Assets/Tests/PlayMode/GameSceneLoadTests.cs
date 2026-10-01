@@ -14,6 +14,10 @@ namespace Coika.Tests.PlayMode
     {
         private const string GameSceneKey = "Assets/Scenes/GameScene.unity";
 
+        /// <summary>
+        /// The Game scene loads additively through the scene loader, is reported as loaded, and after unloading
+        /// it is no longer reported as loaded.
+        /// </summary>
         [UnityTest]
         public IEnumerator LoadScene_GameScene_LoadsThenUnloads()
         {

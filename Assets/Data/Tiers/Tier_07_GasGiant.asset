@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
-  m_Name: Tier00_Dust
+  m_Name: Tier_07_GasGiant
   m_EditorClassIdentifier: 
-  _index: 0
-  _displayName: Dust
-  _sprite: {fileID: 0}
-  _diameterUnits: 0.75
-  _radius: 0.375
-  _mergeScore: 1
-  _tierColor: {r: 0.556863, g: 0.556863, b: 0.556863, a: 1}
-  _loreLine: tier.dust.lore
+  _index: 7
+  _displayName: Gas Giant
+  _sprite:
+    m_AssetGUID: c762a144667c5014a8b46f84f69cb584
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _diameterUnits: 3.8125
+  _radius: 1.90625
+  _mergeScore: 36
+  _tierColor: {r: 0.85098, g: 0.607843, b: 0.239216, a: 1}
+  _loreLine: tier.07.lore

@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
-  m_Name: Tier09_NeutronStar
+  m_Name: Tier_00_Dust
   m_EditorClassIdentifier: 
-  _index: 9
-  _displayName: Neutron Star
-  _sprite: {fileID: 0}
-  _diameterUnits: 5.25
-  _radius: 2.625
-  _mergeScore: 55
-  _tierColor: {r: 0.603922, g: 0.941176, b: 1, a: 1}
-  _loreLine: tier.neutron_star.lore
+  _index: 0
+  _displayName: Dust
+  _sprite:
+    m_AssetGUID: 70e39b47865f87248ad56d87ed1520b8
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _diameterUnits: 0.75
+  _radius: 0.375
+  _mergeScore: 1
+  _tierColor: {r: 0.556863, g: 0.556863, b: 0.556863, a: 1}
+  _loreLine: tier.00.lore

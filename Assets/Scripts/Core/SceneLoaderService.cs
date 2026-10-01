@@ -22,11 +22,15 @@ namespace Coika.Core
         private readonly HashSet<string> _loadingScenes = new();
 
         /// <summary>
-        /// Loads a scene identified by its AssetReference.
+        /// Loads a scene identified by an AssetReference. See <see cref="LoadScene(string, LoadSceneMode, Action{float})"/>.
         /// </summary>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        /// <exception cref="AssetLoadException"></exception>
+        /// <param name="sceneReference">Reference to the scene. Must have a valid key.</param>
+        /// <param name="mode">Single replaces the current scenes; Additive adds the scene on top.</param>
+        /// <param name="onProgress">Optional callback that receives values from 0 to 1 while loading.</param>
+        /// <returns>The loaded scene. If it was already loaded, the existing instance.</returns>
+        /// <exception cref="ArgumentException">The reference is null or has no valid key.</exception>
+        /// <exception cref="InvalidOperationException">The same scene is already being loaded.</exception>
+        /// <exception cref="AssetLoadException">The load failed after all attempts.</exception>
         public Task<SceneInstance> LoadScene(AssetReference sceneReference, LoadSceneMode mode = LoadSceneMode.Single, Action<float> onProgress = null)
         {
             if (sceneReference == null || !sceneReference.RuntimeKeyIsValid())
@@ -36,13 +40,15 @@ namespace Coika.Core
         }
 
         /// <summary>
-        /// Loads a scene identified by its Addressable key or address, with retry logic.
-        /// If the scene is already loaded, returns the existing instance.
+        /// Loads a scene identified by its Addressable key or address, retrying on failure.
+        /// If the scene is already loaded, returns the existing instance. A Single load also releases the handles
+        /// of the scenes it replaces.
         /// </summary>
-        /// <param name="sceneKey"></param>
+        /// <param name="sceneKey">Addressable key or address of the scene.</param>
         /// <param name="mode">Single replaces the current scenes; Additive adds the scene on top.</param>
-        /// <param name="onProgress">Receives values from 0 to 1 while the scene loads.</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="onProgress">Optional callback that receives values from 0 to 1 while loading.</param>
+        /// <returns>The loaded scene. If it was already loaded, the existing instance.</returns>
+        /// <exception cref="ArgumentException">The key is null or empty.</exception>
         /// <exception cref="InvalidOperationException">The same scene is already being loaded.</exception>
         /// <exception cref="AssetLoadException">The scene failed to load after all attempts.</exception>
         public async Task<SceneInstance> LoadScene(string sceneKey, LoadSceneMode mode = LoadSceneMode.Single, Action<float> onProgress = null)
@@ -109,8 +115,10 @@ namespace Coika.Core
         }
 
         /// <summary>
-        /// Unloads a scene identified by its AssetReference.
+        /// Unloads a scene identified by an AssetReference. See <see cref="UnloadScene(string)"/>.
         /// </summary>
+        /// <param name="sceneReference">Reference to the scene. Must have a valid key.</param>
+        /// <exception cref="ArgumentException">The reference is null or has no valid key.</exception>
         public Task UnloadScene(AssetReference sceneReference)
         {
             if (sceneReference == null || !sceneReference.RuntimeKeyIsValid())
@@ -121,9 +129,11 @@ namespace Coika.Core
 
         /// <summary>
         /// Unloads a scene previously loaded through this service and releases its handle.
-        /// Logs a warning and does nothing if the scene was not loaded by this service.
+        /// Logs a warning and does nothing if the scene was not loaded by this service. A failed unload is logged
+        /// and not rethrown, because there is nothing the caller can do about it.
         /// </summary>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="sceneKey">Addressable key or address of the scene.</param>
+        /// <exception cref="ArgumentException">The key is null or empty.</exception>
         public async Task UnloadScene(string sceneKey)
         {
             if (string.IsNullOrEmpty(sceneKey))
@@ -141,6 +151,7 @@ namespace Coika.Core
                 return;
 
             // Keep the unload handle alive so its status can be read, then release it manually.
+            // The scene load handle is released by the unload operation itself.
             AsyncOperationHandle<SceneInstance> unloadHandle = default;
             try
             {
@@ -164,12 +175,16 @@ namespace Coika.Core
         /// <summary>
         /// Whether the scene was loaded through this service and is still loaded.
         /// </summary>
+        /// <param name="sceneKey">Addressable key or address of the scene.</param>
         public bool IsSceneLoaded(string sceneKey)
         {
             return _loadedScenes.TryGetValue(sceneKey, out var handle) && handle.IsValid();
         }
 
-        // A Single load makes Unity unload every other scene; drop their handles so they don't leak.
+        /// <summary>
+        /// Releases and forgets every tracked scene handle. Called after a Single load, because Unity unloads
+        /// all the other scenes by itself and their handles would otherwise leak.
+        /// </summary>
         private void ReleaseReplacedScenes()
         {
             foreach (var handle in _loadedScenes.Values)
@@ -181,7 +196,10 @@ namespace Coika.Core
             _loadedScenes.Clear();
         }
 
-        // Linear backoff between attempts; skipped after the last one.
+        /// <summary>
+        /// Waits before the next attempt with a linear backoff. Does nothing after the last attempt.
+        /// </summary>
+        /// <param name="attempt">1-based number of the attempt that just failed.</param>
         private async Task WaitBeforeRetry(int attempt)
         {
             if (attempt >= RETRY_COUNT)

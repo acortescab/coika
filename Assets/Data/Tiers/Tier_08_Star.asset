@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
-  m_Name: Tier03_Moon
+  m_Name: Tier_08_Star
   m_EditorClassIdentifier: 
-  _index: 3
-  _displayName: Moon
-  _sprite: {fileID: 0}
-  _diameterUnits: 1.6875
-  _radius: 0.84375
-  _mergeScore: 10
-  _tierColor: {r: 0.784314, g: 0.815686, b: 0.862745, a: 1}
-  _loreLine: tier.moon.lore
+  _index: 8
+  _displayName: Star
+  _sprite:
+    m_AssetGUID: 17cc5e655dc393c4da98c9d84b3863ae
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _diameterUnits: 4.5
+  _radius: 2.25
+  _mergeScore: 45
+  _tierColor: {r: 1, g: 0.847059, b: 0.290196, a: 1}
+  _loreLine: tier.08.lore

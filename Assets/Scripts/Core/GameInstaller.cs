@@ -15,9 +15,15 @@ namespace Coika.Core
         [SerializeField]
         private AssetReference _gameScene; // Reference to the initial game scene to load
 
+        /// <summary>Service used to load and release assets. Available once Start has run.</summary>
         public IAssetService Assets { get; private set; }
+
+        /// <summary>Service used to load and unload scenes. Available once Start has run.</summary>
         public ISceneLoader Scenes { get; private set; }
 
+        /// <summary>
+        /// Keeps this object alive across scenes, creates the services and starts the boot flow.
+        /// </summary>
         async void Start()
         {
             // DontDestroyOnLoad only works on root objects; Boot is replaced when the Game scene loads in Single mode.
@@ -30,7 +36,8 @@ namespace Coika.Core
         }
 
         /// <summary>
-        /// Initializes Addressables and loads the game scene.
+        /// Initializes Addressables and loads the game scene. Failures are logged and not rethrown, so the app
+        /// never crashes on a failed boot.
         /// </summary>
         public async Task Boot()
         {

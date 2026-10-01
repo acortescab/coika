@@ -85,6 +85,32 @@ These issues must be updated or read with this constraint in mind:
 
 ---
 
+## C-02 — Classes and methods must be commented
+
+**Status:** Mandatory · **Added:** 2026-10-01 · **Applies to:** all milestones, all code under `Assets/Scripts/` and `Assets/Tests/`
+
+### Rule
+1. Every type (`class`, `struct`, `interface`, `enum`, `record`) has an XML documentation comment (`/// <summary>`) that says **what it is for** and, when it is not obvious, how it is meant to be used.
+2. Every method has an XML documentation comment (`/// <summary>`), including private ones.
+   - Public and internal methods also document non-obvious `<param>` values, the `<returns>` value and every exception they throw on purpose (`<exception>`).
+   - A one-line `<summary>` is enough for trivial private methods and Unity messages (`Awake`, `Start`, `OnValidate`, ...).
+3. Comments explain **intent, contract and constraints** (the why), not a restatement of the name. `/// Loads the asset` on `LoadAsset` does not comply.
+4. Comments are kept in sync with the code: a change to behavior, parameters or exceptions updates the comment in the same commit. A comment that contradicts the code is a bug.
+5. Language: English (as the rest of the code).
+
+### Goal
+Make the code understandable without opening every caller, keep the contracts of the services (`AssetService`, `SceneLoader`, ...) explicit, and make reviews faster.
+
+### Impact on existing issues
+Applies to every issue from now on. Existing code that lacks comments is brought into line when the file is next modified; code added by a PR must already comply.
+
+### Verification (acceptance checks)
+- [ ] Every type and method added or modified by the PR has an XML summary (checked in review).
+- [ ] Public and internal methods document their parameters, return value and thrown exceptions where not obvious.
+- [ ] No comment contradicts the code it documents.
+
+---
+
 ## Adding a new constraint
 
 Append a new section using the same structure: `C-NN — Title`, status, date, applies-to, rule, goal, impact on existing issues, verification checks. Never reuse or renumber an ID.

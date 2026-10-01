@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
-  m_Name: Tier08_Star
+  m_Name: Tier_01_Pebble
   m_EditorClassIdentifier: 
-  _index: 8
-  _displayName: Star
-  _sprite: {fileID: 0}
-  _diameterUnits: 4.5
-  _radius: 2.25
-  _mergeScore: 45
-  _tierColor: {r: 1, g: 0.847059, b: 0.290196, a: 1}
-  _loreLine: tier.star.lore
+  _index: 1
+  _displayName: Pebble
+  _sprite:
+    m_AssetGUID: 1affb19f8e9f660439e99747726081d1
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _diameterUnits: 1
+  _radius: 0.5
+  _mergeScore: 3
+  _tierColor: {r: 0.701961, g: 0.607843, b: 0.478431, a: 1}
+  _loreLine: tier.01.lore

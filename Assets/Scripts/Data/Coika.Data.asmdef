@@ -1,0 +1,8 @@
+{
+	"name": "Coika.Data",
+	"references": [
+		"Coika.Core",
+		"Unity.Addressables"
+	],
+	"autoReferenced": false
+}
