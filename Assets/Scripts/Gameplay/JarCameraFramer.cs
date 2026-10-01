@@ -23,6 +23,8 @@ namespace Coika.Gameplay
         private Jar _jar;
         [SerializeField, Min(0f)]
         private float _hudMarginPixels = 40f; // Top ~40 px of the reference frame (issue #3)
+        [SerializeField]
+        private GameBackground _background; // Optional: fitted to the frame after the camera moves
 
         /// <summary>
         /// Frames the jar when the scene starts.
@@ -35,7 +37,8 @@ namespace Coika.Gameplay
         /// <summary>
         /// Moves the camera so the jar is centred and framed as described in the class summary. Keeps the camera
         /// depth. Logs an error when there is no jar, and a warning when the jar does not fit in the reference
-        /// frame or the Pixel Perfect Camera would add black bars. Also available from the component menu.
+        /// frame or the Pixel Perfect Camera would add black bars. When a background is assigned, it is fitted to
+        /// the frame afterwards. Also available from the component menu.
         /// </summary>
         [ContextMenu("Frame Jar")]
         public void Frame()
@@ -62,6 +65,9 @@ namespace Coika.Gameplay
             var center = ComputeCenter(_jar.InteriorMin, _jar.InteriorMax, _jar.DropLineY, referenceSize.y, hudMargin, pixelsPerUnit);
             var position = transform.position;
             transform.position = new Vector3(center.x, center.y, position.z);
+
+            if (_background != null)
+                _background.Fit(center, referenceSize);
         }
 
         /// <summary>
