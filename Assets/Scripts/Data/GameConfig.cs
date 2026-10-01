@@ -58,5 +58,8 @@ namespace Coika.Data
 
         /// <summary>Physics material of the jar walls and floor.</summary>
         public PhysicsMaterial2D WallMaterial => _wallMaterial;
+
+        /// <summary>Physics material of the pieces.</summary>
+        public PhysicsMaterial2D PieceMaterial => _pieceMaterial;
     }
 }
