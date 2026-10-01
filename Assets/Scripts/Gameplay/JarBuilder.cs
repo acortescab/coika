@@ -21,13 +21,24 @@ namespace Coika.Gameplay
         /// <summary>How far the walls rise above the Drop Line, so pieces can never escape sideways.</summary>
         public const float WALL_CLEARANCE_ABOVE_DROP_LINE = 2f;
 
-        private const string FLOOR_NAME = "Floor";
-        private const string LEFT_WALL_NAME = "WallLeft";
-        private const string RIGHT_WALL_NAME = "WallRight";
+        /// <summary>Sorting order of the floor and walls. Below the Danger Line, which draws at 10.</summary>
+        public const int WALL_SORTING_ORDER = 1;
+
+        /// <summary>Name of the floor child. The Editor tool uses it to pick the sprite.</summary>
+        public const string FLOOR_NAME = "Floor";
+
+        /// <summary>Name of the left wall child. The Editor tool uses it to pick the sprite.</summary>
+        public const string LEFT_WALL_NAME = "WallLeft";
+
+        /// <summary>Name of the right wall child. The Editor tool uses it to pick the sprite.</summary>
+        public const string RIGHT_WALL_NAME = "WallRight";
+
+        private const string DANGER_LINE_NAME = "DangerLine";
 
         /// <summary>
-        /// Creates or updates the floor and wall colliders of the jar from the config and stores the geometry in
-        /// the jar. Safe to call again after the config changes: existing colliders are resized, never duplicated.
+        /// Creates or updates the floor and wall colliders and the Danger Line of the jar from the config, and
+        /// stores the geometry in the jar. Safe to call again after the config changes: existing objects are
+        /// resized, never duplicated.
         /// Logs an error and builds nothing when the jar size is not positive or the Wall layer does not exist.
         /// </summary>
         /// <param name="jar">The jar to build. Its transform is the centre of the interior floor surface.</param>
@@ -68,16 +79,47 @@ namespace Coika.Gameplay
             ConfigureBox(jar.transform, FLOOR_NAME, new Vector2(0f, -WALL_THICKNESS * 0.5f), new Vector2(size.x + 2f * WALL_THICKNESS, WALL_THICKNESS), wallLayer, material);
             ConfigureBox(jar.transform, LEFT_WALL_NAME, new Vector2(-wallCenterX, wallCenterY), new Vector2(WALL_THICKNESS, wallHeight), wallLayer, material);
             ConfigureBox(jar.transform, RIGHT_WALL_NAME, new Vector2(wallCenterX, wallCenterY), new Vector2(WALL_THICKNESS, wallHeight), wallLayer, material);
+
+            ConfigureDangerLine(jar, size);
         }
 
         /// <summary>
-        /// Finds the child with the given name, or creates it, and gives it a box collider with the given shape.
-        /// Colliders have no Rigidbody2D, so they are static.
+        /// Finds the Danger Line child of the jar, or creates it hidden, and places it at the Danger Line height
+        /// with the interior width. An existing line keeps its visibility and pulse state.
+        /// </summary>
+        /// <param name="jar">The jar that owns the line.</param>
+        /// <param name="size">Interior size of the jar in world units.</param>
+        private static void ConfigureDangerLine(Jar jar, Vector2 size)
+        {
+            var child = jar.transform.Find(DANGER_LINE_NAME);
+            var isNew = child == null;
+            if (isNew)
+            {
+                child = new GameObject(DANGER_LINE_NAME).transform;
+                child.SetParent(jar.transform, false);
+            }
+
+            child.SetLocalPositionAndRotation(new Vector3(0f, size.y, 0f), Quaternion.identity);
+            child.localScale = Vector3.one;
+
+            if (!child.TryGetComponent<DangerLine>(out var line))
+                line = child.gameObject.AddComponent<DangerLine>();
+
+            line.Configure(size.x);
+            if (isNew)
+                line.SetVisible(false);
+
+            jar.SetDangerLine(line);
+        }
+
+        /// <summary>
+        /// Finds the child with the given name, or creates it, and gives it a box collider with the given shape and
+        /// a sprite renderer that draws the same rectangle. Colliders have no Rigidbody2D, so they are static.
         /// </summary>
         /// <param name="parent">The jar transform that holds the child.</param>
         /// <param name="childName">Name of the child object that holds the collider.</param>
         /// <param name="localCenter">Centre of the collider in the parent's local space.</param>
-        /// <param name="size">Size of the collider in world units.</param>
+        /// <param name="size">Size of the collider and of the visual in world units.</param>
         /// <param name="layer">Physics layer of the child.</param>
         /// <param name="material">Physics material of the collider. May be null.</param>
         private static void ConfigureBox(Transform parent, string childName, Vector2 localCenter, Vector2 size, int layer, PhysicsMaterial2D material)
@@ -99,6 +141,27 @@ namespace Coika.Gameplay
             box.offset = Vector2.zero;
             box.size = size;
             box.sharedMaterial = material;
+
+            ConfigureVisual(child, size);
+        }
+
+        /// <summary>
+        /// Gives a floor or wall child a sprite renderer that tiles its sprite over the same rectangle as the
+        /// collider, so visuals and colliders resize together. The sprite itself is art and is assigned by the
+        /// Editor tool; this method never loads assets. Unity resets the size of a tiled sprite renderer whenever
+        /// its sprite changes, so build again after assigning sprites.
+        /// </summary>
+        /// <param name="child">The floor or wall object.</param>
+        /// <param name="size">Size of the rectangle in world units.</param>
+        private static void ConfigureVisual(Transform child, Vector2 size)
+        {
+            if (!child.TryGetComponent<SpriteRenderer>(out var spriteRenderer))
+                spriteRenderer = child.gameObject.AddComponent<SpriteRenderer>();
+
+            spriteRenderer.drawMode = SpriteDrawMode.Tiled;
+            spriteRenderer.tileMode = SpriteTileMode.Continuous;
+            spriteRenderer.size = size;
+            spriteRenderer.sortingOrder = WALL_SORTING_ORDER;
         }
     }
 }

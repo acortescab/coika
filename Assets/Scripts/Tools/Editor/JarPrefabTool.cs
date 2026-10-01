@@ -13,6 +13,7 @@ namespace Coika.Tools
     {
         public const string PrefabPath = "Assets/Prefabs/Jar.prefab";
         private const string GameConfigPath = "Assets/Data/GameConfig/GameConfig.asset";
+        private const string SpritesFolder = "Assets/Art/Sprites/Jar";
 
         /// <summary>
         /// Builds the jar with <see cref="JarBuilder"/> and saves it as the Jar prefab, creating the prefab when
@@ -37,6 +38,11 @@ namespace Coika.Tools
                     jar = root.AddComponent<Jar>();
 
                 JarBuilder.Build(jar, config);
+                AssignSprites(jar);
+
+                // Assigning a sprite resets the size of a tiled sprite renderer to the sprite's own size, so the
+                // builder runs again to put the jar sizes back. It is idempotent.
+                JarBuilder.Build(jar, config);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally
@@ -48,6 +54,40 @@ namespace Coika.Tools
             }
 
             Debug.Log($"Jar prefab is up to date at {PrefabPath}.");
+        }
+
+        /// <summary>
+        /// Gives the floor, the two walls and the Danger Line their placeholder sprites when they have none.
+        /// Sprites are art, so they are assigned here and not by the runtime <see cref="JarBuilder"/>, which
+        /// never loads assets.
+        /// </summary>
+        /// <param name="jar">The jar whose visuals receive the sprites.</param>
+        private static void AssignSprites(Jar jar)
+        {
+            AssignSprite(jar.transform.Find(JarBuilder.FLOOR_NAME), "Jar_Floor");
+            AssignSprite(jar.transform.Find(JarBuilder.LEFT_WALL_NAME), "Jar_WallLeft");
+            AssignSprite(jar.transform.Find(JarBuilder.RIGHT_WALL_NAME), "Jar_WallRight");
+            AssignSprite(jar.DangerLine != null ? jar.DangerLine.transform : null, "Jar_DangerLine");
+        }
+
+        /// <summary>
+        /// Assigns a sprite from the jar sprites folder to the sprite renderer of an object, unless it already has
+        /// one. Logs an error when the sprite is not imported yet.
+        /// </summary>
+        /// <param name="target">The object with the sprite renderer. A null target is ignored.</param>
+        /// <param name="spriteName">File name of the sprite, without extension.</param>
+        private static void AssignSprite(Transform target, string spriteName)
+        {
+            if (target == null || !target.TryGetComponent<SpriteRenderer>(out var spriteRenderer))
+                return;
+
+            if (spriteRenderer.sprite != null)
+                return;
+
+            var path = $"{SpritesFolder}/{spriteName}.png";
+            spriteRenderer.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (spriteRenderer.sprite == null)
+                Debug.LogError($"Sprite not found at {path}. Let Unity import it and run the tool again.");
         }
     }
 }

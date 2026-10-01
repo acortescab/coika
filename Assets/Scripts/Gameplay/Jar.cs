@@ -14,11 +14,17 @@ namespace Coika.Gameplay
     [DisallowMultipleComponent]
     public class Jar : MonoBehaviour
     {
-        // Geometry of the last build. Serialized so the prefab keeps its bounds without needing the config.
-        [SerializeField]
+        // Written only by JarBuilder from the GameConfig. Serialized so the prefab keeps its bounds without needing
+        // the config, but hidden from the Inspector so nobody edits them by hand and desyncs them from the colliders.
+        [SerializeField, HideInInspector]
         private Vector2 _interiorSize;
-        [SerializeField]
+        [SerializeField, HideInInspector]
         private float _dropLineOffset;
+        [SerializeField, HideInInspector]
+        private DangerLine _dangerLine;
+
+        /// <summary>The dashed Danger Line of this jar: show it and make it pulse to warn about overflow.</summary>
+        public DangerLine DangerLine => _dangerLine;
 
         /// <summary>Bottom-left corner of the interior, in world units.</summary>
         public Vector2 InteriorMin => new(transform.position.x - _interiorSize.x * 0.5f, transform.position.y);
@@ -44,6 +50,15 @@ namespace Coika.Gameplay
         {
             _interiorSize = interiorSize;
             _dropLineOffset = dropLineOffset;
+        }
+
+        /// <summary>
+        /// Stores the Danger Line the jar was built with. Called by <see cref="JarBuilder"/> after it builds.
+        /// </summary>
+        /// <param name="dangerLine">The Danger Line child of this jar.</param>
+        internal void SetDangerLine(DangerLine dangerLine)
+        {
+            _dangerLine = dangerLine;
         }
     }
 }

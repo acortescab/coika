@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using Coika.Data;
 using Coika.Gameplay;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -28,7 +27,7 @@ namespace Coika.Tests.EditMode
         public void SetUp()
         {
             _wallMaterial = new PhysicsMaterial2D("TestWall");
-            _config = CreateConfig(new Vector2(10f, 12.5f), 1.5f, _wallMaterial);
+            _config = TestGameConfig.Create(new Vector2(10f, 12.5f), 1.5f, _wallMaterial);
             _jarObject = new GameObject("Jar");
             _jar = _jarObject.AddComponent<Jar>();
         }
@@ -114,7 +113,7 @@ namespace Coika.Tests.EditMode
         public void Build_WithNewConfigValues_ResizesWithoutDuplicating()
         {
             JarBuilder.Build(_jar, _config);
-            var smallConfig = CreateConfig(new Vector2(8f, 10f), 2f, _wallMaterial);
+            var smallConfig = TestGameConfig.Create(new Vector2(8f, 10f), 2f, _wallMaterial);
 
             try
             {
@@ -157,7 +156,7 @@ namespace Coika.Tests.EditMode
         [Test]
         public void Build_WithNonPositiveSize_LogsErrorAndBuildsNothing()
         {
-            var badConfig = CreateConfig(new Vector2(0f, 12.5f), 1.5f, _wallMaterial);
+            var badConfig = TestGameConfig.Create(new Vector2(0f, 12.5f), 1.5f, _wallMaterial);
             LogAssert.Expect(LogType.Error, new Regex("Jar size must be positive"));
 
             try
@@ -173,30 +172,100 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// The floor and both walls draw their sprite tiled over exactly the rectangle of their collider, below the
+        /// Danger Line.
+        /// </summary>
+        [Test]
+        public void Build_Always_AddsTiledVisualsMatchingTheColliders()
+        {
+            JarBuilder.Build(_jar, _config);
+
+            foreach (var childName in new[] { "Floor", "WallLeft", "WallRight" })
+            {
+                var collider = GetCollider(childName);
+                var spriteRenderer = collider.GetComponent<SpriteRenderer>();
+
+                Assert.IsNotNull(spriteRenderer, childName);
+                Assert.AreEqual(SpriteDrawMode.Tiled, spriteRenderer.drawMode, childName);
+                Assert.AreEqual(collider.size.x, spriteRenderer.size.x, TOLERANCE, childName + " width");
+                Assert.AreEqual(collider.size.y, spriteRenderer.size.y, TOLERANCE, childName + " height");
+                Assert.Less(spriteRenderer.sortingOrder, _jar.DangerLine.GetComponent<SpriteRenderer>().sortingOrder, childName);
+            }
+        }
+
+        /// <summary>
+        /// Building again with other jar values resizes the visuals together with the colliders, and adds no
+        /// second sprite renderer.
+        /// </summary>
+        [Test]
+        public void Build_WithNewConfigValues_ResizesVisualsWithColliders()
+        {
+            JarBuilder.Build(_jar, _config);
+            var smallConfig = TestGameConfig.Create(new Vector2(8f, 10f), 2f, _wallMaterial);
+
+            try
+            {
+                JarBuilder.Build(_jar, smallConfig);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(smallConfig);
+            }
+
+            Assert.AreEqual(4, _jarObject.GetComponentsInChildren<SpriteRenderer>().Length, "Floor, two walls and the Danger Line");
+            foreach (var childName in new[] { "Floor", "WallLeft", "WallRight" })
+            {
+                var collider = GetCollider(childName);
+                var spriteRenderer = collider.GetComponent<SpriteRenderer>();
+
+                Assert.AreEqual(collider.size.x, spriteRenderer.size.x, TOLERANCE, childName + " width");
+                Assert.AreEqual(collider.size.y, spriteRenderer.size.y, TOLERANCE, childName + " height");
+            }
+        }
+
+        /// <summary>
+        /// Regression: Unity resets the size of a tiled sprite renderer when its sprite changes (to the sprite's
+        /// own 1 x 1 size here). Building again after the sprites are assigned puts the jar sizes back.
+        /// </summary>
+        [Test]
+        public void Build_AfterSpritesAreAssigned_RestoresVisualSizes()
+        {
+            JarBuilder.Build(_jar, _config);
+            var texture = new Texture2D(16, 16);
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, 16f, 16f), new Vector2(0.5f, 0.5f), 16f, 0, SpriteMeshType.FullRect);
+
+            try
+            {
+                foreach (var spriteRenderer in _jarObject.GetComponentsInChildren<SpriteRenderer>())
+                    spriteRenderer.sprite = sprite;
+
+                JarBuilder.Build(_jar, _config);
+
+                foreach (var childName in new[] { "Floor", "WallLeft", "WallRight" })
+                {
+                    var collider = GetCollider(childName);
+                    var spriteRenderer = collider.GetComponent<SpriteRenderer>();
+
+                    Assert.AreEqual(collider.size.x, spriteRenderer.size.x, TOLERANCE, childName + " width");
+                    Assert.AreEqual(collider.size.y, spriteRenderer.size.y, TOLERANCE, childName + " height");
+                }
+
+                Assert.AreEqual(10f, _jar.DangerLine.GetComponent<SpriteRenderer>().size.x, TOLERANCE, "Danger Line width");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(sprite);
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
+        }
+
+        /// <summary>
         /// Returns the box collider of a named child of the jar.
         /// </summary>
         /// <param name="childName">Name of the floor or wall child.</param>
         private BoxCollider2D GetCollider(string childName)
         {
             return _jarObject.transform.Find(childName).GetComponent<BoxCollider2D>();
-        }
-
-        /// <summary>
-        /// Creates an in-memory GameConfig with the given jar values by writing its serialized fields.
-        /// </summary>
-        /// <param name="jarSize">Interior size of the jar.</param>
-        /// <param name="dropLineOffset">Distance from the Danger Line to the Drop Line.</param>
-        /// <param name="wallMaterial">Physics material of the walls.</param>
-        /// <returns>The config. The caller must destroy it.</returns>
-        private static GameConfig CreateConfig(Vector2 jarSize, float dropLineOffset, PhysicsMaterial2D wallMaterial)
-        {
-            var config = ScriptableObject.CreateInstance<GameConfig>();
-            var serializedConfig = new SerializedObject(config);
-            serializedConfig.FindProperty("_jarSize").vector2Value = jarSize;
-            serializedConfig.FindProperty("_dropLineOffset").floatValue = dropLineOffset;
-            serializedConfig.FindProperty("_wallMaterial").objectReferenceValue = wallMaterial;
-            serializedConfig.ApplyModifiedPropertiesWithoutUndo();
-            return config;
         }
     }
 }
