@@ -240,6 +240,80 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Releasing everything returns every active piece to the pool without subscribers, and keeps the prefab and
+        /// the sprites loaded: no piece is destroyed and no asset is loaded or released.
+        /// </summary>
+        [Test]
+        public async Task ReleaseAll_AfterSpawningPieces_ReturnsThemClearsSubscribersAndKeepsTheAssetsLoaded()
+        {
+            await _factory.PrewarmAsync(_tiers);
+            var loads = _assets.LoadCount;
+            var handles = _assets.OutstandingHandles;
+            var pieces = new List<Piece>();
+            for (int i = 0; i < 3; i++)
+            {
+                var piece = _factory.Create(_tiers[i], Vector2.zero, Vector2.zero);
+                piece.Collided += (self, other) => { };
+                pieces.Add(piece);
+            }
+
+            _factory.ReleaseAll();
+
+            Assert.AreEqual(0, _factory.ActivePieces.Count);
+            Assert.AreEqual(PREWARM_COUNT, _factory.PooledCount);
+            foreach (var piece in pieces)
+            {
+                Assert.IsFalse(piece.gameObject.activeSelf, "Disabled");
+                Assert.IsNull(GetCollidedField(piece), "Subscribers removed");
+            }
+
+            Assert.AreEqual(PREWARM_COUNT, _container.childCount, "No piece was created or destroyed.");
+            Assert.AreEqual(loads, _assets.LoadCount, "Nothing was loaded.");
+            Assert.AreEqual(handles, _assets.OutstandingHandles, "Nothing was released, the assets stay loaded.");
+        }
+
+        /// <summary>
+        /// Ten restarts in a row, each spawning and releasing everything, create no new pieces and leave the loaded
+        /// handles flat.
+        /// </summary>
+        [Test]
+        public async Task ReleaseAll_TenRestartsInARow_KeepsThePoolAndTheHandlesFlat()
+        {
+            await _factory.PrewarmAsync(_tiers);
+            var handles = _assets.OutstandingHandles;
+
+            for (int run = 0; run < 10; run++)
+            {
+                for (int i = 0; i < 4; i++)
+                    _factory.Create(_tiers[i % _tiers.Count], Vector2.zero, Vector2.zero);
+
+                _factory.ReleaseAll();
+
+                Assert.AreEqual(PREWARM_COUNT, _container.childCount, $"Run {run}: no new pieces.");
+                Assert.AreEqual(handles, _assets.OutstandingHandles, $"Run {run}: handles stay flat.");
+            }
+        }
+
+        /// <summary>
+        /// A piece released by ReleaseAll starts a new run with a fresh state when it is created again.
+        /// </summary>
+        [Test]
+        public async Task Create_AfterReleaseAll_ReusesAPieceWithAFreshState()
+        {
+            await _factory.PrewarmAsync(_tiers);
+            var used = _factory.Create(_tiers[0], Vector2.zero, new Vector2(4f, 4f));
+            used.MarkMerged();
+            _factory.ReleaseAll();
+
+            var next = _factory.Create(_tiers[1], new Vector2(1f, 1f), Vector2.zero);
+
+            Assert.AreSame(used, next, "The pool reuses the piece.");
+            Assert.IsFalse(next.Merged);
+            Assert.AreEqual(Vector2.zero, next.Rigidbody.linearVelocity);
+            Assert.AreSame(_tiers[1], next.Tier);
+        }
+
+        /// <summary>
         /// If the factory is disposed while it is still loading, everything that loads afterwards is released and
         /// nothing is built: no handle and no piece leaks.
         /// </summary>

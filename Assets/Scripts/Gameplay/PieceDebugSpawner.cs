@@ -16,7 +16,8 @@ namespace Coika.Gameplay
     /// <summary>
     /// Debug helper to validate the piece physics before the drop controller exists: in Play mode, click in the
     /// Game view to spawn the selected tier at the cursor. Up and Down arrows (or the mouse wheel) change the
-    /// tier, and the Tier Index field can be edited in the Inspector while playing.
+    /// tier, R removes every spawned piece (a restart), and the Tier Index field can be edited in the Inspector
+    /// while playing.
     /// <para>
     /// Editor only: everything is inside <c>#if UNITY_EDITOR</c>, so in a player build this component does
     /// nothing. It has no asset references, so it does not pull anything into the scene bundle (C-01): it finds
@@ -96,6 +97,9 @@ namespace Coika.Gameplay
 
                 if (keyboard.downArrowKey.wasPressedThisFrame)
                     SelectTier(_tierIndex - 1);
+
+                if (keyboard.rKey.wasPressedThisFrame)
+                    ClearPieces();
             }
 
             var mouse = Mouse.current;
@@ -123,6 +127,15 @@ namespace Coika.Gameplay
 
             _tierIndex = Mathf.Clamp(index, 0, _tiers.Count - 1);
             Debug.Log($"Piece spawner: tier {_tierIndex} ({_tiers[_tierIndex].DisplayName}).", this);
+        }
+
+        /// <summary>
+        /// Takes every spawned piece back to the pool, like a restart. Does nothing until the spawner is ready.
+        /// </summary>
+        public void ClearPieces()
+        {
+            if (IsReady)
+                _factory.ReleaseAll();
         }
 
         /// <summary>

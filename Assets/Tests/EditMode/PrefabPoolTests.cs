@@ -232,6 +232,96 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Releasing everything returns every item in use to the pool, runs the cleanup on each, disables them and
+        /// creates and destroys nothing.
+        /// </summary>
+        [Test]
+        public async Task ReleaseAll_WithItemsInUse_ReturnsThemAllToThePoolRunningTheCleanup()
+        {
+            await _pool.PrewarmAsync();
+            var items = new[]
+            {
+                _pool.Get(Vector3.zero, Quaternion.identity),
+                _pool.Get(Vector3.zero, Quaternion.identity),
+                _pool.Get(Vector3.zero, Quaternion.identity)
+            };
+
+            _pool.ReleaseAll();
+
+            Assert.AreEqual(0, _pool.Active.Count);
+            Assert.AreEqual(PREWARM_COUNT, _pool.PooledCount);
+            CollectionAssert.AreEquivalent(items, _released, "The cleanup ran once for each item.");
+            foreach (var item in items)
+                Assert.IsFalse(item.gameObject.activeSelf);
+
+            Assert.AreEqual(PREWARM_COUNT, _container.childCount, "Nothing was created or destroyed.");
+            Assert.AreEqual(1, _assets.LoadCount, "The prefab stays loaded.");
+            Assert.AreEqual(1, _assets.OutstandingHandles, "The prefab handle is still held until Dispose.");
+        }
+
+        /// <summary>
+        /// A cleanup that throws is logged but does not stop the restart: every item is still disabled and pooled, so
+        /// none is lost and none is left in use.
+        /// </summary>
+        [Test]
+        public async Task ReleaseAll_WhenTheCleanupThrows_LogsItAndStillReturnsEveryItem()
+        {
+            _pool.Dispose();
+            var calls = 0;
+            _pool = new PrefabPool<BoxCollider2D>(_assets, new AssetReference("pool-prefab"), _container, PREWARM_COUNT, item =>
+            {
+                calls++;
+                if (calls == 2)
+                    throw new InvalidOperationException("cleanup failed");
+            });
+            await _pool.PrewarmAsync();
+            var items = new[]
+            {
+                _pool.Get(Vector3.zero, Quaternion.identity),
+                _pool.Get(Vector3.zero, Quaternion.identity),
+                _pool.Get(Vector3.zero, Quaternion.identity)
+            };
+            LogAssert.Expect(LogType.Exception, new Regex("cleanup failed"));
+
+            Assert.DoesNotThrow(() => _pool.ReleaseAll());
+
+            Assert.AreEqual(3, calls, "The cleanup ran for every item, also after the one that failed.");
+            Assert.AreEqual(0, _pool.Active.Count, "No item is left in use.");
+            Assert.AreEqual(PREWARM_COUNT, _pool.PooledCount, "No item is lost.");
+            foreach (var item in items)
+                Assert.IsFalse(item.gameObject.activeSelf);
+        }
+
+        /// <summary>
+        /// Items that Unity destroyed in the meantime are skipped: the others are still returned and nothing throws.
+        /// </summary>
+        [Test]
+        public async Task ReleaseAll_WithADestroyedItem_SkipsItAndReturnsTheRest()
+        {
+            await _pool.PrewarmAsync();
+            var destroyed = _pool.Get(Vector3.zero, Quaternion.identity);
+            var alive = _pool.Get(Vector3.zero, Quaternion.identity);
+            UnityEngine.Object.DestroyImmediate(destroyed.gameObject);
+
+            Assert.DoesNotThrow(() => _pool.ReleaseAll());
+
+            Assert.AreEqual(0, _pool.Active.Count);
+            Assert.AreEqual(PREWARM_COUNT - 1, _pool.PooledCount, "The destroyed item is not pooled.");
+            CollectionAssert.AreEqual(new[] { alive }, _released);
+        }
+
+        /// <summary>
+        /// Releasing everything with nothing in use, even before the pre-warm, does nothing.
+        /// </summary>
+        [Test]
+        public void ReleaseAll_WithNothingInUse_DoesNothing()
+        {
+            Assert.DoesNotThrow(() => _pool.ReleaseAll());
+
+            Assert.AreEqual(0, _released.Count);
+        }
+
+        /// <summary>
         /// Builds a pool over the fake service whose cleanup records the released items.
         /// </summary>
         /// <param name="prewarmCount">Number of instances to pre-warm.</param>

@@ -65,6 +65,11 @@ namespace Coika.Tests.PlayMode
             var atTheEdge = spawner.Spawn(new Vector2(Screen.width, Screen.height * 0.5f));
             var radius = atTheEdge.Collider.radius;
             Assert.LessOrEqual(atTheEdge.transform.position.x + radius, jar.InteriorMax.x + POSITION_TOLERANCE, "Pulled inside the right wall.");
+
+            spawner.ClearPieces();
+            Assert.IsFalse(smallest.gameObject.activeSelf, "ClearPieces takes the pieces back to the pool.");
+            Assert.IsFalse(largest.gameObject.activeSelf);
+            Assert.IsFalse(atTheEdge.gameObject.activeSelf);
         }
 
         /// <summary>

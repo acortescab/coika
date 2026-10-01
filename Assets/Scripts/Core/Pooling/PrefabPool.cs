@@ -170,12 +170,24 @@ namespace Coika.Core
                 return;
             }
 
-            if (item == null)
-                return;
+            ReturnToPool(item);
+        }
 
-            _onRelease?.Invoke(item);
-            item.gameObject.SetActive(false);
-            _free.Push(item);
+        /// <summary>
+        /// Takes every item in use back at once, for example to restart a run: each one goes through the optional
+        /// cleanup, is disabled and returns to the pool. Nothing is destroyed and the prefab stays loaded, so the next
+        /// run starts without loading anything. It does nothing when no item is in use, and items that Unity already
+        /// destroyed are forgotten.
+        /// </summary>
+        public void ReleaseAll()
+        {
+            // From the end, so removing an item does not shift the ones still to be processed.
+            for (int i = _active.Count - 1; i >= 0; i--)
+            {
+                var item = _active[i];
+                _active.RemoveAt(i);
+                ReturnToPool(item);
+            }
         }
 
         /// <summary>
@@ -203,6 +215,31 @@ namespace Coika.Core
                 _assets.ReleaseAsset(_prefab);
                 _prefab = null;
             }
+        }
+
+        /// <summary>
+        /// Runs the cleanup on an item that is no longer in use, disables it and pools it. An item that Unity
+        /// destroyed in the meantime is forgotten. If the cleanup throws, the error is logged with the item as
+        /// context and the item is pooled anyway: otherwise it would be in neither list, never reused and never
+        /// destroyed, and <see cref="ReleaseAll"/> would stop halfway and leave the other items in use.
+        /// </summary>
+        /// <param name="item">The item that was just removed from the items in use.</param>
+        private void ReturnToPool(T item)
+        {
+            if (item == null)
+                return;
+
+            try
+            {
+                _onRelease?.Invoke(item);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, item);
+            }
+
+            item.gameObject.SetActive(false);
+            _free.Push(item);
         }
 
         /// <summary>

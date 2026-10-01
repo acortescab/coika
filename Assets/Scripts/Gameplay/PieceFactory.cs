@@ -150,6 +150,17 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
+        /// Takes every active piece back at once, to restart a run: each one loses its <see cref="Piece.Collided"/>
+        /// subscribers, is disabled and returns to the pool. Nothing is destroyed and the prefab and the sprites stay
+        /// loaded, so the next run starts without loading anything and the loaded handles stay balanced. It does
+        /// nothing when no piece is active. Release the loaded assets with <see cref="Dispose"/>.
+        /// </summary>
+        public void ReleaseAll()
+        {
+            _pool.ReleaseAll();
+        }
+
+        /// <summary>
         /// Destroys every piece, active or pooled, and releases the prefab and the sprites. The factory cannot be
         /// used afterwards. Calling it again does nothing.
         /// </summary>
