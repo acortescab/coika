@@ -49,5 +49,14 @@ namespace Coika.Data
 
         /// <summary>Addressable reference to the active theme. Load it through IAssetService.</summary>
         public AssetReferenceT<ThemeDefinition> Theme => _theme;
+
+        /// <summary>Interior size of the jar in world units (width, height). The Danger Line sits at the height.</summary>
+        public Vector2 JarSize => _jarSize;
+
+        /// <summary>Distance in world units from the Danger Line up to the Drop Line, where pieces are held.</summary>
+        public float DropLineOffset => _dropLineOffset;
+
+        /// <summary>Physics material of the jar walls and floor.</summary>
+        public PhysicsMaterial2D WallMaterial => _wallMaterial;
     }
 }

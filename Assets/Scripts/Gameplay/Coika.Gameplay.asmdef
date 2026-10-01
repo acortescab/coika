@@ -1,6 +1,8 @@
 {
 	"name": "Coika.Gameplay",
 	"references": [
-		"Coika.Core"
+		"Coika.Core",
+		"Coika.Data",
+		"Unity.RenderPipelines.Universal.2D.Runtime"
 	]
 }

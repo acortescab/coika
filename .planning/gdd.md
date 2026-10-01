@@ -45,7 +45,7 @@ Session goal: maximize score; stretch goal: create the top-tier body.
 
 ### 3.1 The Jar
 - A static open-top container. Interior **10 × 12.5 world units** (160 × 200 px at PPU 16).
-- Two side walls and a floor, built from `BoxCollider2D` / `EdgeCollider2D`. Walls are **1 unit thick** and extend above the **Drop Line** so pieces never escape sideways.
+- Two side walls and a floor, built from `BoxCollider2D` / `EdgeCollider2D`. Walls are **1 unit thick** (16 px, for the collider and for the art) and extend above the **Drop Line** so pieces never escape sideways. With the walls, the jar is **12 units (192 px) wide**, exactly the width of the reference frame (§8), so both walls are fully visible.
 - **Drop Line** (spawn height): 1.5 units above the jar's top rim.
 - **Danger Line**: a horizontal line at the jar's top rim (y = jar floor + 12.5). Rendered as a dashed pixel line, hidden until a piece comes within 2 units of it, then pulses red.
 
@@ -179,7 +179,9 @@ Boot → MainMenu ⇄ Settings
 
 ## 8. UI / UX
 
-Reference portrait resolution: **180 × 320** (Pixel Perfect Camera, PPU 16). On wider/taller phones, `Windowbox` adds bars; to avoid black bars on tall phones, fill the border with the background art/gradient drawn outside the reference area (extra background sprite, 2× the needed height).
+Reference portrait resolution: **192 × 320** (Pixel Perfect Camera, PPU 16): 160 px of jar interior plus two 16 px walls make the 192 px width, and the 320 px height holds the bottom strip (40 px), the floor (16 px), the interior (200 px), the gap up to the Drop Line (24 px) and the HUD margin (40 px). Set the Pixel Perfect Camera **Crop Frame to `None`** (not `Windowbox`, which adds black bars) and fill the area outside the reference frame with the background art/gradient (extra background sprite, 2× the reference frame in each direction).
+
+Consequence of 192 not dividing evenly into common phone widths: the Pixel Perfect Camera uses an integer zoom, so a 1080×1920 screen runs at zoom 5 and a 720×1280 screen at zoom 3, showing a few extra units around the reference frame. The background covers that extra area; the HUD is a separate overlay and is not affected.
 
 **Canvas:** `Screen Space – Overlay` (avoids upscale blur from `upscaleRT`), Canvas Scaler *Scale With Screen Size*, reference 1080 × 1920, match 0.5. UI is **uGUI + TextMeshPro** with a **pixel font** (TMP SDF set from a free pixel font, point-sampled; atlas generated with Padding 5). **No `OnGUI`.**
 
@@ -234,7 +236,7 @@ Tier colours (for particles/UI), in order: `#8E8E8E, #B39B7A, #7A7A9E, #C8D0DC, 
 ## 10. Art Direction
 
 - **Style:** 16-bit-ish pixel art, limited palette (**32 colours max, one shared palette**), 1 px dark outline on pieces, cell-shaded highlight at top-left.
-- **Resolution:** reference 180 × 320, PPU 16. All art authored at 1× and displayed at integer scale. **No rotation of sprites** except the physics rotation of pieces (accept sub-pixel look; if it shimmers, add a per-piece "face" that stays upright — see below).
+- **Resolution:** reference 192 × 320, PPU 16. All art authored at 1× and displayed at integer scale. **No rotation of sprites** except the physics rotation of pieces (accept sub-pixel look; if it shimmers, add a per-piece "face" that stays upright — see below).
 - **Faces:** each piece has a tiny pixel face (2 eyes + mouth) that stays **upright** (child sprite with counter-rotation) for personality; face changes on events (blink idle every 2–4 s, "surprised" when hit hard, "happy" on merge).
 - **Background:** deep-space gradient with parallax star layers (2 layers, very slow scroll). Palette shifts slightly with the highest tier reached (subtle tint) as a progression cue.
 - **Jar:** drawn as a glass-like pixel container with a lighter inner rim; the Danger Line is part of the rim.
@@ -397,7 +399,7 @@ EN + ES at launch via the Unity **Localization** package (add later with `unity:
 
 **M1 — Playable core (target: ~1 week)**
 1. Layers, physics matrix, `GameConfig`, 11 `TierDefinition` assets with placeholder circles.
-2. Jar (walls, floor, danger line), camera framing at 180×320.
+2. Jar (walls, floor, danger line), camera framing at 192×320.
 3. `Piece` prefab + `PieceFactory` pool.
 4. `SpawnQueue` + `DropController` (mouse first), drop cooldown.
 5. `MergeSystem` (deterministic) + `ScoreSystem` + chain merges.
@@ -438,7 +440,7 @@ Skins, balance pass with telemetry from playtesters (manual logs), accessibility
 
 **Assumptions (change if you disagree):**
 1. **Theme = cosmic bodies**, name "Coika". The theme is entirely data-driven (`ThemeDefinition`) so it's cheap to change.
-2. **Portrait**, reference **180×320** (the current project is 320×180 landscape; change the Pixel Perfect Camera `refResolutionX/Y` to 180/320 before producing art).
+2. **Portrait**, reference **192×320** (the current project is 320×180 landscape; change the Pixel Perfect Camera `refResolutionX/Y` to 192/320 before producing art).
 3. Pieces use **11 tiers**, spawn tiers 0–4, like the original.
 4. Premium, fully offline, no leaderboard (could add Game Center / Play Games later without changing the design).
 5. Two Black Holes make a Supernova instead of a hard end, so there's no "win" state.

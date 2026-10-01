@@ -3,6 +3,7 @@
 	"references": [
 		"Coika.Core",
 		"Coika.Data",
+		"Coika.Gameplay",
 		"Unity.Addressables",
 		"Unity.Addressables.Editor"
 	],
