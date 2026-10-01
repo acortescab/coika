@@ -11,7 +11,7 @@ namespace Coika.Tools
     /// </summary>
     public static class JarPrefabTool
     {
-        public const string PrefabPath = "Assets/Prefabs/Jar.prefab";
+        public const string PrefabPath = "Assets/Prefabs/Jar/Jar.prefab";
         private const string GameConfigPath = "Assets/Data/GameConfig/GameConfig.asset";
         private const string SpritesFolder = "Assets/Art/Sprites/Jar";
 

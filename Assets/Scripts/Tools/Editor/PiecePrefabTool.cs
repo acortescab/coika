@@ -13,7 +13,7 @@ namespace Coika.Tools
     /// </summary>
     public static class PiecePrefabTool
     {
-        public const string PrefabPath = "Assets/Prefabs/Piece.prefab";
+        public const string PrefabPath = "Assets/Prefabs/Piece/Piece.prefab";
 
         /// <summary>Sorting order of a piece: above the jar walls (1) and below the Danger Line (10).</summary>
         public const int SORTING_ORDER = 2;

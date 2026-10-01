@@ -19,7 +19,7 @@ namespace Coika.Tests.PlayMode
     /// </summary>
     public class PieceFactoryIntegrationTests
     {
-        private const string PiecePrefabPath = "Assets/Prefabs/Piece.prefab";
+        private const string PiecePrefabPath = "Assets/Prefabs/Piece/Piece.prefab";
         private const string SmallestTierKey = "Assets/Data/Tiers/Tier_00_Dust.asset";
         private const string LargestTierKey = "Assets/Data/Tiers/Tier_10_BlackHole.asset";
         private const float SETTLE_SECONDS = 3f;
