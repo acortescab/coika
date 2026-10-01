@@ -34,3 +34,9 @@ MonoBehaviour:
   _superNovaBonus: 500
   _pieceMaterial: {fileID: 6200000, guid: 86199e8d1dd9da44c9869cd5ecf4a334, type: 2}
   _wallMaterial: {fileID: 6200000, guid: 0fe52f3928fa6c549b38ea9f2ed929ab, type: 2}
+  _theme:
+    m_AssetGUID: 6c8f9e6e861cd0148baf63b9df7f9db2
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0

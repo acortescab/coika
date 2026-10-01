@@ -1,6 +1,8 @@
 {
 	"name": "Coika.Tools.Editor",
 	"references": [
+		"Coika.Core",
+		"Coika.Data",
 		"Unity.Addressables",
 		"Unity.Addressables.Editor"
 	],

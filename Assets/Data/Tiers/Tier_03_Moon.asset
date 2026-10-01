@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
-  m_Name: Tier05_RockyPlanet
+  m_Name: Tier_03_Moon
   m_EditorClassIdentifier: 
-  _index: 5
-  _displayName: Rocky Planet
-  _sprite: {fileID: 0}
-  _diameterUnits: 2.625
-  _radius: 1.3125
-  _mergeScore: 21
-  _tierColor: {r: 0.768627, g: 0.384314, b: 0.239216, a: 1}
-  _loreLine: tier.rocky_planet.lore
+  _index: 3
+  _displayName: Moon
+  _sprite:
+    m_AssetGUID: 0e5bad1e3b90de049bdee0b001538ab5
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _diameterUnits: 1.6875
+  _radius: 0.84375
+  _mergeScore: 10
+  _tierColor: {r: 0.784314, g: 0.815686, b: 0.862745, a: 1}
+  _loreLine: tier.03.lore

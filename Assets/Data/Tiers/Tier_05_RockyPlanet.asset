@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
-  m_Name: Tier06_OceanPlanet
+  m_Name: Tier_05_RockyPlanet
   m_EditorClassIdentifier: 
-  _index: 6
-  _displayName: Ocean Planet
-  _sprite: {fileID: 0}
-  _diameterUnits: 3.1875
-  _radius: 1.59375
-  _mergeScore: 28
-  _tierColor: {r: 0.239216, g: 0.52549, b: 0.768627, a: 1}
-  _loreLine: tier.ocean_planet.lore
+  _index: 5
+  _displayName: Rocky Planet
+  _sprite:
+    m_AssetGUID: a6af902d1fe32514fa092675bbade5ae
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _diameterUnits: 2.625
+  _radius: 1.3125
+  _mergeScore: 21
+  _tierColor: {r: 0.768627, g: 0.384314, b: 0.239216, a: 1}
+  _loreLine: tier.05.lore

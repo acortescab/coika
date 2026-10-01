@@ -8,6 +8,10 @@ namespace Coika.Tools
     /// </summary>
     public static class AddressablesBuildMenu
     {
+        /// <summary>
+        /// Runs the Addressables content build with the active build script and logs the result.
+        /// Needed before testing with the Use Existing Build play mode script.
+        /// </summary>
         [MenuItem("Tools/Addressables/Build Content")]
         private static void BuildContent()
         {

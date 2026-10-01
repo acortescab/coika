@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 025d4aa50c23bd7428232175a3751119, type: 3}
-  m_Name: Tier10_BlackHole
+  m_Name: Tier_06_OceanPlanet
   m_EditorClassIdentifier: 
-  _index: 10
-  _displayName: Black Hole
-  _sprite: {fileID: 0}
-  _diameterUnits: 6
-  _radius: 3
-  _mergeScore: 66
-  _tierColor: {r: 0.168627, g: 0.101961, b: 0.301961, a: 1}
-  _loreLine: tier.black_hole.lore
+  _index: 6
+  _displayName: Ocean Planet
+  _sprite:
+    m_AssetGUID: 0016a89d4b715794fbf93ebc3e5b1b5f
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _diameterUnits: 3.1875
+  _radius: 1.59375
+  _mergeScore: 28
+  _tierColor: {r: 0.239216, g: 0.52549, b: 0.768627, a: 1}
+  _loreLine: tier.06.lore

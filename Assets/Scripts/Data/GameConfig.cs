@@ -1,7 +1,12 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
-namespace Coika.Core.Data
+namespace Coika.Data
 {
+    /// <summary>
+    /// Global tuning values of the game (every [TUNE] value of the GDD) plus the active theme.
+    /// Immutable data at runtime: never write to its fields during play (S-31).
+    /// </summary>
     [CreateAssetMenu(fileName = "GameConfig", menuName = "Scriptable Objects/GameConfig")]
     public class GameConfig : ScriptableObject
     {
@@ -39,5 +44,10 @@ namespace Coika.Core.Data
         private PhysicsMaterial2D _pieceMaterial;
         [SerializeField]
         private PhysicsMaterial2D _wallMaterial;
+        [SerializeField]
+        private AssetReferenceT<ThemeDefinition> _theme;
+
+        /// <summary>Addressable reference to the active theme. Load it through IAssetService.</summary>
+        public AssetReferenceT<ThemeDefinition> Theme => _theme;
     }
 }
