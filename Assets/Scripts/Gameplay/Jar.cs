@@ -60,5 +60,50 @@ namespace Coika.Gameplay
         {
             _dangerLine = dangerLine;
         }
+
+#if UNITY_EDITOR
+        // Gizmos are drawn in front of the sprites (which sit at z = 0), so the depth test does not hide the
+        // parts that coincide with the walls, the floor or the Danger Line sprite.
+        private const float GIZMO_Z = -1f;
+        private const float GIZMO_FILL_DEPTH = 0.01f;
+
+        private static readonly Color InteriorGizmoColor = new(0.3f, 0.9f, 0.4f, 1f); // Green
+        private static readonly Color InteriorFillGizmoColor = new(0.3f, 0.9f, 0.4f, 0.12f); // Translucent green
+        private static readonly Color DangerLineGizmoColor = new(0.95f, 0.25f, 0.25f, 1f); // Red
+        private static readonly Color DropLineGizmoColor = new(1f, 0.85f, 0.2f, 1f); // Yellow
+
+        /// <summary>
+        /// Draws the interior bounds (outline and a translucent fill), the Danger Line and the Drop Line in the
+        /// Scene view, to debug the jar geometry. They can be switched off with the Gizmos menu. Draws nothing
+        /// until the jar has been built. Editor only: it is not part of player builds.
+        /// </summary>
+        private void OnDrawGizmos()
+        {
+            if (_interiorSize.x <= 0f || _interiorSize.y <= 0f)
+                return;
+
+            var min = InteriorMin;
+            var max = InteriorMax;
+            var bottomLeft = new Vector3(min.x, min.y, GIZMO_Z);
+            var bottomRight = new Vector3(max.x, min.y, GIZMO_Z);
+            var topRight = new Vector3(max.x, max.y, GIZMO_Z);
+            var topLeft = new Vector3(min.x, max.y, GIZMO_Z);
+
+            Gizmos.color = InteriorFillGizmoColor;
+            Gizmos.DrawCube((bottomLeft + topRight) * 0.5f, new Vector3(max.x - min.x, max.y - min.y, GIZMO_FILL_DEPTH));
+
+            Gizmos.color = InteriorGizmoColor;
+            Gizmos.DrawLine(bottomLeft, bottomRight);
+            Gizmos.DrawLine(bottomRight, topRight);
+            Gizmos.DrawLine(topRight, topLeft);
+            Gizmos.DrawLine(topLeft, bottomLeft);
+
+            Gizmos.color = DangerLineGizmoColor;
+            Gizmos.DrawLine(new Vector3(min.x, DangerLineY, GIZMO_Z), new Vector3(max.x, DangerLineY, GIZMO_Z));
+
+            Gizmos.color = DropLineGizmoColor;
+            Gizmos.DrawLine(new Vector3(min.x, DropLineY, GIZMO_Z), new Vector3(max.x, DropLineY, GIZMO_Z));
+        }
+#endif
     }
 }
