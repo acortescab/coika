@@ -15,10 +15,22 @@ namespace Coika.Gameplay
     [DisallowMultipleComponent]
     public class DangerLine : MonoBehaviour
     {
-        /// <summary>Pulse cycles per second of <see cref="DangerLinePulseRate.Fast"/>.</summary>
+        /// <summary>
+        /// Speed of the red pulse. Soft is the accessibility alternative.
+        /// </summary>
+        public enum PulseRate
+        {
+            /// <summary>Default pulse, 4 cycles per second.</summary>
+            Fast,
+
+            /// <summary>Gentler pulse, 2 cycles per second, for players who prefer less flashing.</summary>
+            Soft
+        }
+
+        /// <summary>Pulse cycles per second of <see cref="PulseRate.Fast"/>.</summary>
         public const float FAST_PULSE_HZ = 4f;
 
-        /// <summary>Pulse cycles per second of <see cref="DangerLinePulseRate.Soft"/>.</summary>
+        /// <summary>Pulse cycles per second of <see cref="PulseRate.Soft"/>.</summary>
         public const float SOFT_PULSE_HZ = 2f;
 
         private const int SORTING_ORDER = 10; // Above the jar walls and the pieces
@@ -30,7 +42,7 @@ namespace Coika.Gameplay
 
         private SpriteRenderer _renderer;
         private bool _isPulsing;
-        private DangerLinePulseRate _pulseRate = DangerLinePulseRate.Fast;
+        private PulseRate _pulseRate = PulseRate.Fast;
 
         /// <summary>Colour of the line while it is not pulsing, and the low point of the pulse.</summary>
         public Color IdleColor => _idleColor;
@@ -44,8 +56,8 @@ namespace Coika.Gameplay
         /// <summary>Whether the pulse was requested. The line only animates while it is also visible.</summary>
         public bool IsPulsing => _isPulsing;
 
-        /// <summary>Pulse cycles per second of the current <see cref="DangerLinePulseRate"/>.</summary>
-        public float PulseHz => _pulseRate == DangerLinePulseRate.Soft ? SOFT_PULSE_HZ : FAST_PULSE_HZ;
+        /// <summary>Pulse cycles per second of the current <see cref="PulseRate"/>.</summary>
+        public float PulseHz => _pulseRate == PulseRate.Soft ? SOFT_PULSE_HZ : FAST_PULSE_HZ;
 
         /// <summary>The sprite renderer of this object, found once and cached.</summary>
         private SpriteRenderer Renderer
@@ -87,7 +99,7 @@ namespace Coika.Gameplay
         /// Chooses the speed of the pulse. Wired to the accessibility setting in M2.
         /// </summary>
         /// <param name="rate">Fast (4 Hz, default) or Soft (2 Hz).</param>
-        public void SetPulseRate(DangerLinePulseRate rate)
+        public void SetPulseRate(PulseRate rate)
         {
             _pulseRate = rate;
         }
@@ -126,7 +138,7 @@ namespace Coika.Gameplay
         /// </summary>
         private void Update()
         {
-            Renderer.color = EvaluateColor(Time.unscaledTime);
+            Renderer.color = EvaluateColor(Time.time);
         }
 
         /// <summary>

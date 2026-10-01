@@ -156,7 +156,7 @@ namespace Coika.Tests.EditMode
         public void EvaluateColor_WithSoftRate_PeaksAndTroughsAt2Hz()
         {
             var line = _jar.DangerLine;
-            line.SetPulseRate(DangerLinePulseRate.Soft);
+            line.SetPulseRate(DangerLine.PulseRate.Soft);
 
             Assert.AreEqual(2f, line.PulseHz, TOLERANCE);
             AssertColorEqual(line.PulseColor, line.EvaluateColor(1f / 8f), "Peak at 1/8 s");
