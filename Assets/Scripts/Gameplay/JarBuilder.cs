@@ -47,8 +47,9 @@ namespace Coika.Gameplay
         /// </summary>
         /// <param name="jar">The jar to build. Its transform is the centre of the interior floor surface.</param>
         /// <param name="config">Source of the jar size, the Drop Line offset and the wall material.</param>
+        /// <returns>True when the jar was built; false when the config or the project settings are invalid.</returns>
         /// <exception cref="ArgumentNullException">The jar or the config is null.</exception>
-        public static void Build(Jar jar, GameConfig config)
+        public static bool Build(Jar jar, GameConfig config)
         {
             if (jar == null)
                 throw new ArgumentNullException(nameof(jar));
@@ -60,14 +61,14 @@ namespace Coika.Gameplay
             if (size.x <= 0f || size.y <= 0f)
             {
                 Debug.LogError($"Jar size must be positive, got {size}.", jar);
-                return;
+                return false;
             }
 
             var wallLayer = LayerMask.NameToLayer(WALL_LAYER_NAME);
             if (wallLayer < 0)
             {
                 Debug.LogError($"Physics layer '{WALL_LAYER_NAME}' is not defined.", jar);
-                return;
+                return false;
             }
 
             jar.SetGeometry(size, config.DropLineOffset);
@@ -85,6 +86,7 @@ namespace Coika.Gameplay
             ConfigureBox(jar.transform, RIGHT_WALL_NAME, new Vector2(wallCenterX, wallCenterY), new Vector2(WALL_THICKNESS, wallHeight), wallLayer, material);
 
             ConfigureDangerLine(jar, size);
+            return true;
         }
 
         /// <summary>

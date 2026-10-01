@@ -49,7 +49,7 @@ namespace Coika.Tests.EditMode
         [Test]
         public void Build_Always_CreatesFloorAndTwoWallsOnWallLayerWithWallMaterial()
         {
-            JarBuilder.Build(_jar, _config);
+            Assert.IsTrue(JarBuilder.Build(_jar, _config), "A valid config builds the jar.");
 
             var colliders = _jarObject.GetComponentsInChildren<BoxCollider2D>();
             var wallLayer = LayerMask.NameToLayer(JarBuilder.WALL_LAYER_NAME);
@@ -161,7 +161,7 @@ namespace Coika.Tests.EditMode
 
             try
             {
-                JarBuilder.Build(_jar, badConfig);
+                Assert.IsFalse(JarBuilder.Build(_jar, badConfig), "An invalid config reports failure.");
             }
             finally
             {

@@ -37,7 +37,12 @@ namespace Coika.Tools
                 if (!root.TryGetComponent<Jar>(out var jar))
                     jar = root.AddComponent<Jar>();
 
-                JarBuilder.Build(jar, config);
+                if (!JarBuilder.Build(jar, config))
+                {
+                    Debug.LogError("The jar could not be built, so the prefab was not saved. See the error above.");
+                    return;
+                }
+
                 AssignSprites(jar);
 
                 // Assigning a sprite resets the size of a tiled sprite renderer to the sprite's own size, so the

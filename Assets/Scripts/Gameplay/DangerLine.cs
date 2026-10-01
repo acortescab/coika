@@ -138,7 +138,7 @@ namespace Coika.Gameplay
         /// </summary>
         private void Update()
         {
-            Renderer.color = EvaluateColor(Time.time);
+            Renderer.color = EvaluateColor(Time.unscaledTime);
         }
 
         /// <summary>

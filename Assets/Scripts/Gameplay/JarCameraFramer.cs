@@ -78,8 +78,11 @@ namespace Coika.Gameplay
                 Debug.LogWarning("The jar does not fit in the Pixel Perfect Camera reference frame.", this);
 
             var center = ComputeCenter(_jar.InteriorMin, _jar.InteriorMax, _jar.DropLineY, referenceSize.y, hudMargin, pixelsPerUnit);
+            // Only write when the position changes, so re-framing from OnValidate does not dirty the scene needlessly.
             var position = transform.position;
-            transform.position = new Vector3(center.x, center.y, position.z);
+            var framedPosition = new Vector3(center.x, center.y, position.z);
+            if (position != framedPosition)
+                transform.position = framedPosition;
 
             if (_background != null)
                 _background.Fit(center, referenceSize);

@@ -47,10 +47,20 @@ namespace Coika.Gameplay
             var spriteSize = spriteRenderer.sprite.bounds.size;
             var size = ComputeSize(referenceSize);
 
-            spriteRenderer.drawMode = SpriteDrawMode.Simple;
-            spriteRenderer.sortingOrder = SORTING_ORDER;
-            transform.position = new Vector3(center.x, center.y, transform.position.z);
-            transform.localScale = new Vector3(size.x / spriteSize.x, size.y / spriteSize.y, 1f);
+            // Only write what changes, so fitting from OnValidate does not dirty the scene needlessly.
+            if (spriteRenderer.drawMode != SpriteDrawMode.Simple)
+                spriteRenderer.drawMode = SpriteDrawMode.Simple;
+
+            if (spriteRenderer.sortingOrder != SORTING_ORDER)
+                spriteRenderer.sortingOrder = SORTING_ORDER;
+
+            var position = new Vector3(center.x, center.y, transform.position.z);
+            if (transform.position != position)
+                transform.position = position;
+
+            var scale = new Vector3(size.x / spriteSize.x, size.y / spriteSize.y, 1f);
+            if (transform.localScale != scale)
+                transform.localScale = scale;
         }
     }
 }
