@@ -4,6 +4,7 @@
     "references": [
         "UnityEngine.TestRunner",
         "Coika.Core",
+        "Coika.Data",
         "Unity.Addressables",
         "Unity.ResourceManager"
     ],
