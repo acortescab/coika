@@ -30,6 +30,7 @@ namespace Coika.Gameplay
         private readonly Dictionary<TierDefinition, Sprite> _sprites = new();
 
         private bool _prewarmed;
+        private bool _prewarming;
         private bool _disposed;
 
         /// <summary>
@@ -62,7 +63,8 @@ namespace Coika.Gameplay
         /// </summary>
         /// <param name="tiers">Every tier the factory will be asked to create.</param>
         /// <exception cref="ArgumentNullException">The tiers are null.</exception>
-        /// <exception cref="InvalidOperationException">The factory was already pre-warmed, or the prefab has no Piece component.</exception>
+        /// <exception cref="InvalidOperationException">The factory was already pre-warmed or is being pre-warmed, or the prefab has no Piece component.</exception>
+        /// <exception cref="ObjectDisposedException">The factory was disposed, possibly during the pre-warm.</exception>
         /// <exception cref="AssetLoadException">The prefab or a sprite failed to load.</exception>
         public async Task PrewarmAsync(IReadOnlyList<TierDefinition> tiers)
         {
@@ -71,9 +73,10 @@ namespace Coika.Gameplay
             if (tiers == null)
                 throw new ArgumentNullException(nameof(tiers));
 
-            if (_prewarmed)
-                throw new InvalidOperationException("The factory is already pre-warmed.");
+            if (_prewarmed || _prewarming)
+                throw new InvalidOperationException("The factory is already pre-warmed or being pre-warmed.");
 
+            _prewarming = true;
             try
             {
                 foreach (var tier in tiers)
@@ -88,6 +91,17 @@ namespace Coika.Gameplay
             {
                 ReleaseSprites();
                 throw;
+            }
+            finally
+            {
+                _prewarming = false;
+            }
+
+            // Disposed during the pre-warm: the sprites loaded after Dispose have no owner, so release them.
+            if (_disposed)
+            {
+                ReleaseSprites();
+                throw new ObjectDisposedException(nameof(PieceFactory));
             }
 
             _prewarmed = true;

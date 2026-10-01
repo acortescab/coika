@@ -240,6 +240,42 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// If the factory is disposed while it is still loading, everything that loads afterwards is released and
+        /// nothing is built: no handle and no piece leaks.
+        /// </summary>
+        [Test]
+        public void PrewarmAsync_WhenDisposedDuringTheLoad_ReleasesEverythingAndBuildsNothing()
+        {
+            var gate = new TaskCompletionSource<bool>();
+            _assets.Gate = gate.Task;
+            var prewarm = _factory.PrewarmAsync(_tiers);
+
+            _factory.Dispose();
+            gate.SetResult(true);
+
+            Assert.ThrowsAsync<ObjectDisposedException>(async () => await prewarm);
+            Assert.AreEqual(0, _assets.OutstandingHandles, "The sprites and the prefab must be released.");
+            Assert.AreEqual(0, _container.childCount, "No piece may be built after the dispose.");
+        }
+
+        /// <summary>
+        /// A second pre-warm while the first is still loading is refused.
+        /// </summary>
+        [Test]
+        public async Task PrewarmAsync_WhileAnotherPrewarmIsLoading_Throws()
+        {
+            var gate = new TaskCompletionSource<bool>();
+            _assets.Gate = gate.Task;
+            var first = _factory.PrewarmAsync(_tiers);
+
+            Assert.ThrowsAsync<InvalidOperationException>(() => _factory.PrewarmAsync(_tiers));
+
+            gate.SetResult(true);
+            await first;
+            Assert.AreEqual(PREWARM_COUNT, _container.childCount);
+        }
+
+        /// <summary>
         /// Disposing destroys every piece and releases the prefab and the sprites.
         /// </summary>
         [Test]

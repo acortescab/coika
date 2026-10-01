@@ -25,6 +25,12 @@ namespace Coika.Tests.EditMode
         /// </summary>
         public Func<Type, UnityEngine.Object> Provider { get; set; }
 
+        /// <summary>
+        /// When set, every load waits for this task before it completes, so a test can leave a load pending, act
+        /// meanwhile (dispose the owner, call again) and then let it finish. When null, loads complete at once.
+        /// </summary>
+        public Task Gate { get; set; }
+
         /// <summary>Number of loads that succeeded.</summary>
         public int LoadCount { get; private set; }
 
@@ -102,10 +108,29 @@ namespace Coika.Tests.EditMode
             if (_attempts == FailOnAttempt)
                 return Task.FromException<T>(new AssetLoadException(key, null));
 
+            return Gate == null ? Task.FromResult(CreateAsset<T>()) : LoadAfterGateAsync<T>();
+        }
+
+        /// <summary>
+        /// Waits for the gate and then creates the asset, so the load stays pending until the test opens the gate.
+        /// </summary>
+        /// <typeparam name="T">Type of the asset to create.</typeparam>
+        private async Task<T> LoadAfterGateAsync<T>()
+        {
+            await Gate;
+            return CreateAsset<T>();
+        }
+
+        /// <summary>
+        /// Creates and tracks a new instance of T, and counts the load.
+        /// </summary>
+        /// <typeparam name="T">Type of the asset to create.</typeparam>
+        private T CreateAsset<T>()
+        {
             var asset = Provider != null ? Provider(typeof(T)) : ScriptableObject.CreateInstance(typeof(T));
             _created.Add(asset);
             LoadCount++;
-            return Task.FromResult((T)(object)asset);
+            return (T)(object)asset;
         }
     }
 }

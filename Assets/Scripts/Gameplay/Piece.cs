@@ -85,6 +85,7 @@ namespace Coika.Gameplay
         /// <param name="sprite">Sprite of the tier, already loaded by the caller.</param>
         /// <param name="config">Source of the settled velocity.</param>
         /// <exception cref="ArgumentNullException">The tier, the sprite or the config is null.</exception>
+        /// <exception cref="InvalidOperationException">The Piece or HeldPiece physics layer is not defined.</exception>
         public void Initialize(TierDefinition tier, Sprite sprite, GameConfig config)
         {
             if (tier == null)
@@ -96,8 +97,7 @@ namespace Coika.Gameplay
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
 
-            if (!ResolveLayers())
-                return;
+            ResolveLayers();
 
             Tier = tier;
             Merged = false;
@@ -129,10 +129,10 @@ namespace Coika.Gameplay
         /// and with its collider on. Either way its velocity is cleared.
         /// </summary>
         /// <param name="held">True to hold the piece, false to release it.</param>
+        /// <exception cref="InvalidOperationException">The Piece or HeldPiece physics layer is not defined.</exception>
         public void SetHeld(bool held)
         {
-            if (!ResolveLayers())
-                return;
+            ResolveLayers();
 
             IsHeld = held;
 
@@ -196,21 +196,20 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Looks up the indices of the piece and held layers once. Logs an error when one of them is not defined.
+        /// Looks up the indices of the piece and held layers once. A missing layer is a project configuration
+        /// error that leaves the piece unusable, so it throws instead of letting the caller carry on with a
+        /// half-configured piece.
         /// </summary>
-        /// <returns>True when both layers exist.</returns>
-        private bool ResolveLayers()
+        /// <exception cref="InvalidOperationException">The Piece or HeldPiece physics layer is not defined.</exception>
+        private void ResolveLayers()
         {
             if (_pieceLayer >= 0 && _heldLayer >= 0)
-                return true;
+                return;
 
             _pieceLayer = LayerMask.NameToLayer(LAYER_NAME);
             _heldLayer = LayerMask.NameToLayer(HELD_LAYER_NAME);
-            if (_pieceLayer >= 0 && _heldLayer >= 0)
-                return true;
-
-            Debug.LogError($"Physics layers '{LAYER_NAME}' and '{HELD_LAYER_NAME}' must be defined.", this);
-            return false;
+            if (_pieceLayer < 0 || _heldLayer < 0)
+                throw new InvalidOperationException($"The physics layers '{LAYER_NAME}' and '{HELD_LAYER_NAME}' must be defined.");
         }
     }
 }

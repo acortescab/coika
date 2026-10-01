@@ -177,6 +177,61 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// If the pool is disposed while the prefab is still loading, the prefab is released when the load ends and
+        /// nothing is built: no handle and no instance leaks.
+        /// </summary>
+        [Test]
+        public void PrewarmAsync_WhenDisposedDuringTheLoad_ReleasesThePrefabAndBuildsNothing()
+        {
+            var gate = new TaskCompletionSource<bool>();
+            _assets.Gate = gate.Task;
+            var prewarm = _pool.PrewarmAsync();
+
+            _pool.Dispose();
+            gate.SetResult(true);
+
+            Assert.ThrowsAsync<ObjectDisposedException>(async () => await prewarm);
+            Assert.AreEqual(0, _assets.OutstandingHandles, "The prefab must be released.");
+            Assert.AreEqual(0, _container.childCount, "No instance may be built after the dispose.");
+        }
+
+        /// <summary>
+        /// A second pre-warm while the first is still loading is refused, so the prefab is not loaded twice.
+        /// </summary>
+        [Test]
+        public async Task PrewarmAsync_WhileAnotherPrewarmIsLoading_Throws()
+        {
+            var gate = new TaskCompletionSource<bool>();
+            _assets.Gate = gate.Task;
+            var first = _pool.PrewarmAsync();
+
+            Assert.ThrowsAsync<InvalidOperationException>(() => _pool.PrewarmAsync());
+
+            gate.SetResult(true);
+            await first;
+            Assert.AreEqual(PREWARM_COUNT, _container.childCount, "Only the first pre-warm builds the pool.");
+            Assert.AreEqual(1, _assets.LoadCount, "The prefab loads once.");
+        }
+
+        /// <summary>
+        /// Releasing an item that Unity destroyed in the meantime forgets it quietly: it does not throw, does not
+        /// run the cleanup and is not put back in the pool.
+        /// </summary>
+        [Test]
+        public async Task Release_OfAnItemDestroyedMeanwhile_ForgetsItWithoutThrowing()
+        {
+            await _pool.PrewarmAsync();
+            var item = _pool.Get(Vector3.zero, Quaternion.identity);
+            UnityEngine.Object.DestroyImmediate(item.gameObject);
+
+            Assert.DoesNotThrow(() => _pool.Release(item));
+
+            Assert.AreEqual(0, _pool.Active.Count, "The destroyed item is no longer in use.");
+            Assert.AreEqual(PREWARM_COUNT - 1, _pool.PooledCount, "It must not go back to the pool.");
+            Assert.AreEqual(0, _released.Count, "The cleanup must not run on a destroyed item.");
+        }
+
+        /// <summary>
         /// Builds a pool over the fake service whose cleanup records the released items.
         /// </summary>
         /// <param name="prewarmCount">Number of instances to pre-warm.</param>

@@ -58,6 +58,10 @@ namespace Coika.Gameplay
             {
                 await SetUpAsync();
             }
+            catch (ObjectDisposedException)
+            {
+                // Leaving Play mode or unloading the scene during the pre-warm disposes the factory: expected, not an error.
+            }
             catch (Exception e)
             {
                 Debug.LogError($"PieceDebugSpawner could not start: {e.Message}", this);

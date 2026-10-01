@@ -39,6 +39,7 @@ namespace Coika.Core
         private readonly ReadOnlyCollection<T> _readOnlyActive;
 
         private GameObject _prefab;
+        private bool _prewarming;
         private bool _warnedAboutGrowth;
         private bool _disposed;
 
@@ -76,16 +77,34 @@ namespace Coika.Core
         /// Loads the prefab and builds the pool of disabled instances. Call it once, during the load phase and
         /// before the run starts.
         /// </summary>
-        /// <exception cref="InvalidOperationException">The pool was already pre-warmed, or the prefab has no component of type T.</exception>
+        /// <exception cref="InvalidOperationException">The pool was already pre-warmed or is being pre-warmed, or the prefab has no component of type T.</exception>
+        /// <exception cref="ObjectDisposedException">The pool was disposed, possibly while the prefab was loading.</exception>
         /// <exception cref="AssetLoadException">The prefab failed to load.</exception>
         public async Task PrewarmAsync()
         {
             ThrowIfDisposed();
 
-            if (_prefab != null)
-                throw new InvalidOperationException("The pool is already pre-warmed.");
+            if (_prefab != null || _prewarming)
+                throw new InvalidOperationException("The pool is already pre-warmed or being pre-warmed.");
 
-            var prefab = await _assets.LoadAsset<GameObject>(_prefabReference);
+            _prewarming = true;
+            GameObject prefab;
+            try
+            {
+                prefab = await _assets.LoadAsset<GameObject>(_prefabReference);
+            }
+            finally
+            {
+                _prewarming = false;
+            }
+
+            // The pool may have been disposed while the load was pending. Nothing owns the prefab then, so it is
+            // released here instead of leaking.
+            if (_disposed)
+            {
+                _assets.ReleaseAsset(prefab);
+                throw new ObjectDisposedException(nameof(PrefabPool<T>));
+            }
 
             if (!prefab.TryGetComponent<T>(out _))
             {
@@ -134,13 +153,15 @@ namespace Coika.Core
 
         /// <summary>
         /// Takes an item back: it stops being in use, goes through the optional cleanup, is disabled and returns to
-        /// the pool. An item that is not in use in this pool is ignored with a warning.
+        /// the pool. An item that is not in use in this pool is ignored with a warning, and an item that Unity
+        /// already destroyed (for example by a scene unload) is forgotten instead of being pooled.
         /// </summary>
         /// <param name="item">The item to take back.</param>
         /// <exception cref="ArgumentNullException">The item is null.</exception>
         public void Release(T item)
         {
-            if (item == null)
+            // Not "item == null": that is also true for an object Unity destroyed, which is handled below.
+            if (ReferenceEquals(item, null))
                 throw new ArgumentNullException(nameof(item));
 
             if (!_active.Remove(item))
@@ -148,6 +169,9 @@ namespace Coika.Core
                 Debug.LogWarning("Release ignored: the item is not active in this pool.", item);
                 return;
             }
+
+            if (item == null)
+                return;
 
             _onRelease?.Invoke(item);
             item.gameObject.SetActive(false);
