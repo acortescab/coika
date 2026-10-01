@@ -17,9 +17,9 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 
 ## 2. Naming and style
 
-- **S-10 (MUST)** Types, methods, properties, events, enums, constants: `PascalCase`. Parameters and locals: `camelCase`. Interfaces: `IPascalCase`.
+- **S-10 (MUST)** Types, methods, properties, events, enums: `PascalCase`. Constants: `UPPER_CASE` (S-12). Parameters and locals: `camelCase`. Interfaces: `IPascalCase`.
 - **S-11 (MUST)** Private fields: `_camelCase`. Serialized private fields use `[SerializeField] private`, never `public` fields just for the Inspector.
-- **S-12 (MUST)** Constants use `PascalCase` (`const int TierCount = 11;`), not `ALL_CAPS`.
+- **S-12 (MUST)** `const` fields use `UPPER_CASE` with underscores (`const int TIER_COUNT = 11;`), as the whole codebase already does. `static readonly` fields keep `PascalCase`.
 - **S-13 (SHOULD)** Booleans read as a question: `IsMerged`, `HasSettled`, `CanDrop`.
 - **S-14 (MUST)** Always declare accessibility explicitly. Use braces for every `if/for/while`. Use `var` only when the type is obvious from the right side.
 - **S-15 (SHOULD)** Methods stay short (about 30 lines or fewer) and do one thing. Prefer early returns over deep nesting.
@@ -57,6 +57,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 ## 6. Performance and memory (GDD §14.5)
 
 - **S-50 (MUST)** **Zero GC allocations per frame** during gameplay: no `new` of reference types, LINQ, `foreach` over non-struct enumerators of `IEnumerable`, boxing, closures/lambdas capturing locals, or string concatenation/interpolation in `Update`, `FixedUpdate`, collision callbacks or event handlers on the hot path.
+  Tests that check this criterion measure with `AllocationMeter` (Profiler counter "GC Allocation In Frame Count"). `GC.GetAllocatedBytesForCurrentThread` always returns 0 in the Unity Editor and must not be used.
 - **S-51 (MUST)** Pool anything created repeatedly (pieces, particles, UI items, audio sources). Instantiate and destroy only during load phases, never in gameplay frames or inside a physics callback.
 - **S-52 (MUST)** Reuse collections: allocate `List<T>`/arrays once and `Clear()`. Use the non-allocating physics APIs (`Physics2D.CircleCast` with a `ContactFilter2D` and a preallocated `RaycastHit2D[]`, `GetContacts` into a buffer).
 - **S-53 (MUST)** Text updates use `TMP_Text.SetText` with format arguments or cached strings; do not build strings every frame. Update UI only when the value changes.
