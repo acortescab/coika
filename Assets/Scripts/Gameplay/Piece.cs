@@ -45,6 +45,19 @@ namespace Coika.Gameplay
         /// <summary>Value of <see cref="Time.time"/> when the piece was initialized.</summary>
         public float SpawnTime { get; private set; }
 
+        /// <summary>
+        /// Creation order within the run, assigned by the factory. The merge system uses it as the stable key that
+        /// decides which piece of a pair owns the merge (lower wins), because Unity instance IDs of pooled pieces
+        /// are not the same from one run to the next.
+        /// </summary>
+        public int SequenceId { get; private set; }
+
+        /// <summary>Value of <see cref="Time.time"/> until which the piece does not count for the overflow timer.</summary>
+        public float SpawnGraceUntil { get; private set; }
+
+        /// <summary>Whether the piece was created by a merge a moment ago and is still in its overflow grace.</summary>
+        public bool IsInSpawnGrace => Time.time < SpawnGraceUntil;
+
         /// <summary>Whether the player is holding the piece: kinematic, on the held layer and without collisions.</summary>
         public bool IsHeld { get; private set; }
 
@@ -102,6 +115,7 @@ namespace Coika.Gameplay
             Tier = tier;
             Merged = false;
             SpawnTime = Time.time;
+            SpawnGraceUntil = 0f;
             _settledVelocitySquared = config.SettledVelocity * config.SettledVelocity;
 
             var radius = tier.DiameterUnits * 0.5f;
@@ -152,6 +166,26 @@ namespace Coika.Gameplay
         public void MarkMerged()
         {
             Merged = true;
+        }
+
+        /// <summary>
+        /// Gives the piece its creation order within the run. The factory calls it right after
+        /// <see cref="Initialize"/>.
+        /// </summary>
+        /// <param name="sequenceId">Order of creation, from 0 at the start of a run.</param>
+        public void AssignSequenceId(int sequenceId)
+        {
+            SequenceId = sequenceId;
+        }
+
+        /// <summary>
+        /// Stamps the time until which the piece is exempt from the overflow timer. The merge system calls it on the
+        /// piece it creates; this class only stores it, the overflow check (issue #9) reads it.
+        /// </summary>
+        /// <param name="graceUntil">Value of <see cref="Time.time"/> at which the grace ends.</param>
+        public void StampSpawnGrace(float graceUntil)
+        {
+            SpawnGraceUntil = graceUntil;
         }
 
         /// <summary>

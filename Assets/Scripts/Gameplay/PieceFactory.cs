@@ -32,6 +32,13 @@ namespace Coika.Gameplay
         private bool _prewarmed;
         private bool _prewarming;
         private bool _disposed;
+        private int _nextSequenceId;
+
+        /// <summary>
+        /// Raised at the end of <see cref="Create"/> with the new, initialized piece, so the merge system can listen
+        /// to its contacts without searching the scene. The subscribers of the piece itself are cleared on release.
+        /// </summary>
+        public event Action<Piece> PieceCreated;
 
         /// <summary>
         /// Creates a factory. It holds nothing until <see cref="PrewarmAsync"/> runs.
@@ -134,6 +141,8 @@ namespace Coika.Gameplay
             var piece = _pool.Get(new Vector3(position.x, position.y, 0f), Quaternion.identity);
             piece.Initialize(tier, sprite, _config);
             piece.Rigidbody.linearVelocity = velocity;
+            piece.AssignSequenceId(_nextSequenceId++);
+            PieceCreated?.Invoke(piece);
             return piece;
         }
 
@@ -152,11 +161,13 @@ namespace Coika.Gameplay
         /// <summary>
         /// Takes every active piece back at once, to restart a run: each one loses its <see cref="Piece.Collided"/>
         /// subscribers, is disabled and returns to the pool. Nothing is destroyed and the prefab and the sprites stay
-        /// loaded, so the next run starts without loading anything and the loaded handles stay balanced. It does
-        /// nothing when no piece is active. Release the loaded assets with <see cref="Dispose"/>.
+        /// loaded, so the next run starts without loading anything and the loaded handles stay balanced. The
+        /// creation order of the pieces (<see cref="Piece.SequenceId"/>) starts again from 0. Release the loaded
+        /// assets with <see cref="Dispose"/>.
         /// </summary>
         public void ReleaseAll()
         {
+            _nextSequenceId = 0;
             _pool.ReleaseAll();
         }
 

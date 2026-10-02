@@ -29,6 +29,8 @@ namespace Coika.Gameplay
         private DropController _controller;
         [SerializeField]
         private PointerInputReader _input;
+        [SerializeField]
+        private MergeSystem _mergeSystem;
         // Addressable assets, loaded through the asset service (C-01).
         [SerializeField]
         private AssetReferenceT<GameConfig> _config;
@@ -63,7 +65,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Releases everything this component loaded and built.
+        /// Releases everything this component loaded and built.    
         /// </summary>
         private void OnDestroy()
         {
@@ -77,9 +79,9 @@ namespace Coika.Gameplay
         /// </summary>
         private async System.Threading.Tasks.Task SetUpAsync()
         {
-            if (_jar == null || _controller == null || _input == null || _config == null || !_config.RuntimeKeyIsValid() || !_piecePrefab.RuntimeKeyIsValid())
+            if (_jar == null || _controller == null || _input == null || _mergeSystem == null || _config == null || !_config.RuntimeKeyIsValid() || !_piecePrefab.RuntimeKeyIsValid())
             {
-                Debug.LogError("DropControllerBootstrap needs the Jar, the DropController, the PointerInputReader, the GameConfig and the Piece prefab.", this);
+                Debug.LogError("DropControllerBootstrap needs the Jar, the DropController, the PointerInputReader, the MergeSystem, the GameConfig and the Piece prefab.", this);
                 return;
             }
 
@@ -123,6 +125,7 @@ namespace Coika.Gameplay
 
             // A time-based seed: the game manager will choose the seed of a run (Classic: time, Daily: the date).
             var queue = new SpawnQueue(_loadedConfig, Environment.TickCount);
+            _mergeSystem.Initialize(_factory, _tiers, _loadedConfig);
             _controller.Initialize(_input, _jar, _factory, queue, _tiers, _loadedConfig);
             _controller.Enable();
         }
@@ -136,6 +139,11 @@ namespace Coika.Gameplay
             if (_controller != null)
             {
                 _controller.Disable();
+            }
+
+            if (_mergeSystem != null)
+            {
+                _mergeSystem.enabled = false;
             }
 
             _factory?.Dispose();

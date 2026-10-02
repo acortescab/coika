@@ -401,6 +401,48 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Every created piece is announced through <see cref="PieceFactory.PieceCreated"/>, already initialized,
+        /// and gets the next sequence id; releasing everything starts the order again from 0.
+        /// </summary>
+        [Test]
+        public async Task Create_AfterPrewarm_RaisesPieceCreatedAndAssignsSequentialIds()
+        {
+            await _factory.PrewarmAsync(_tiers);
+            var announced = new List<Piece>();
+            _factory.PieceCreated += announced.Add;
+
+            var first = _factory.Create(_tiers[0], Vector2.zero, Vector2.zero);
+            var second = _factory.Create(_tiers[1], Vector2.zero, Vector2.zero);
+
+            CollectionAssert.AreEqual(new[] { first, second }, announced);
+            Assert.AreEqual(0, first.SequenceId);
+            Assert.AreEqual(1, second.SequenceId);
+            Assert.AreSame(_tiers[1], announced[1].Tier, "The piece is initialized when it is announced.");
+
+            _factory.ReleaseAll();
+            var third = _factory.Create(_tiers[0], Vector2.zero, Vector2.zero);
+            Assert.AreEqual(0, third.SequenceId);
+        }
+
+        /// <summary>
+        /// A reused piece loses the spawn grace of its previous life.
+        /// </summary>
+        [Test]
+        public async Task Create_AfterReleaseOfAPieceWithGrace_ReusesItWithoutGrace()
+        {
+            await _factory.PrewarmAsync(_tiers);
+            var piece = _factory.Create(_tiers[0], Vector2.zero, Vector2.zero);
+            piece.StampSpawnGrace(Time.time + 10f);
+            Assert.IsTrue(piece.IsInSpawnGrace);
+
+            _factory.Release(piece);
+            var reused = _factory.Create(_tiers[0], Vector2.zero, Vector2.zero);
+
+            Assert.AreSame(piece, reused);
+            Assert.IsFalse(reused.IsInSpawnGrace);
+        }
+
+        /// <summary>
         /// Builds a factory over the fake service.
         /// </summary>
         /// <param name="prewarmCount">Number of pieces to pre-warm.</param>
