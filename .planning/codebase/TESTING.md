@@ -1,3 +1,7 @@
+---
+last_mapped_commit: cc4a6315450b59b114e2bdbb7e25e918e35eed78
+last_mapped_at: 2026-10-03
+---
 # Testing Patterns
 
 **Analysis Date:** 2026-10-03
@@ -13,11 +17,15 @@
 **Assertion Library:** NUnit classic model (`Assert.AreEqual`, `Assert.Throws`, `Assert.IsTrue`), `LogAssert` for console logs.
 
 **Run Commands:**
+
 ```bash
+
 # Unity Editor: Window > General > Test Runner (EditMode / PlayMode tabs)
+
 Unity.exe -batchmode -projectPath D:\Work\coika -runTests -testPlatform EditMode -testResults results.xml
 Unity.exe -batchmode -projectPath D:\Work\coika -runTests -testPlatform PlayMode -testResults results.xml
 ```
+
 No CI config or coverage tooling detected. About 236 `[Test]`/`[UnityTest]` markers exist.
 
 ## Test File Organization
@@ -27,6 +35,7 @@ No CI config or coverage tooling detected. About 236 `[Test]`/`[UnityTest]` mark
 **Naming:** `<Type>Tests.cs` (EditMode, e.g. `SpawnQueueTests.cs`, `DropFlowTests.cs`); PlayMode `<Type>PlayModeTests.cs` or `<Feature>Tests.cs` (`MergeSystemPlayModeTests.cs`, `JarPhysicsTests.cs`, `GameSceneLoadTests.cs`). Namespaces `Coika.Tests.EditMode` / `Coika.Tests.PlayMode`.
 
 **Structure:**
+
 ```
 Assets/Tests/EditMode/{*Tests.cs, Fakes/{AllocationMeter,FakeAssetService,FakeDropInput,PieceFixtures,TestGameConfig,TestSpawnSettings}.cs}
 Assets/Tests/PlayMode/{*Tests.cs, Fakes/MergeTestWorld.cs}
@@ -35,6 +44,7 @@ Assets/Tests/PlayMode/{*Tests.cs, Fakes/MergeTestWorld.cs}
 ## Test Structure
 
 **Suite Organization:** Test class has an XML doc naming the issue and criteria it checks; private `const` for seeds/tolerances; helpers are private static with docs; each test has a `<summary>`.
+
 ```csharp
 public class SpawnQueueTests
 {
@@ -63,6 +73,7 @@ public class SpawnQueueTests
 **Framework:** None (no Moq/NSubstitute). Hand-written fakes in `Fakes/`.
 
 **Patterns:**
+
 ```csharp
 public class FakeAssetService : IAssetService
 {
@@ -73,6 +84,7 @@ public class FakeAssetService : IAssetService
     public int ReleaseCount { get; private set; }     // loads minus releases must be 0
 }
 ```
+
 - `Assets/Tests/EditMode/Fakes/FakeDropInput.cs` implements `IDropInput`.
 - `Assets/Tests/EditMode/Fakes/TestGameConfig.cs` and `TestSpawnSettings.cs` build in-memory ScriptableObjects by writing serialized fields via `SerializedObject` (this runs `OnValidate`); caller destroys them.
 - `Assets/Tests/EditMode/Fakes/PieceFixtures.cs` builds pieces/factories.
@@ -101,6 +113,7 @@ public class FakeAssetService : IAssetService
 ## Common Patterns
 
 **Async/frame Testing (PlayMode):**
+
 ```csharp
 [UnityTest]
 public IEnumerator Merge_With1000RandomizedPairs_AlwaysProducesExactlyOneResult()
@@ -109,9 +122,11 @@ public IEnumerator Merge_With1000RandomizedPairs_AlwaysProducesExactlyOneResult(
     for (var trial = 0; trial < RANDOM_TRIALS; trial++) { /* arrange, StepFor(MAX_STEPS), assert */ yield return null; }
 }
 ```
+
 Use plain `[Test]` when physics is stepped manually; `[UnityTest]` when frames must pass.
 
 **Error Testing:**
+
 ```csharp
 LogAssert.Expect(LogType.Error, new Regex("needs a sprite"));
 Assert.Throws<ArgumentNullException>(() => system.Initialize(null, tiers, config));

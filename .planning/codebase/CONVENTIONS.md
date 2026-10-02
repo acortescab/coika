@@ -1,3 +1,7 @@
+---
+last_mapped_commit: cc4a6315450b59b114e2bdbb7e25e918e35eed78
+last_mapped_at: 2026-10-03
+---
 # Coding Conventions
 
 **Analysis Date:** 2026-10-03
