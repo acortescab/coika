@@ -132,8 +132,11 @@ foreach ($suite in $modes) {
     if ($EditorPath) { $arguments += @('--editor-path', $EditorPath) }
 
     Write-Host "=== $suite tests (run $run of $Repeat) ===" -ForegroundColor Cyan
+    # Windows PowerShell 5.1 turns any stderr line of a native command into a terminating error under 'Stop'.
+    $ErrorActionPreference = 'Continue'
     & unity @arguments
     $code = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
 
     if ($code -ne 0) {
         Write-Host "$suite tests failed (exit code $code)." -ForegroundColor Red

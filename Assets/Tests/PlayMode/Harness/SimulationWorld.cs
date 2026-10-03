@@ -4,6 +4,7 @@ using Coika.Data;
 using Coika.Gameplay;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.SceneManagement;
 
 namespace Coika.Tests.PlayMode
 {
@@ -25,12 +26,17 @@ namespace Coika.Tests.PlayMode
         // More pieces than the jar can hold, so the pool never grows (and warns) during a long random run.
         private const int PREWARM_COUNT = 300;
 
+        // Scene names must be unique while an earlier world's scene is still unloading.
+        private static int sceneCounter;
+
         // Values of the GDD table (§3.2). Keep them in sync with the tier assets in Assets/Data/Tiers: the score test depends on them.
         private static readonly float[] TierDiameters = { 0.75f, 1.00f, 1.31f, 1.69f, 2.13f, 2.63f, 3.19f, 3.81f, 4.50f, 5.25f, 6.00f };
         private static readonly float[] TierMergeScores = { 1f, 3f, 6f, 10f, 15f, 21f, 28f, 36f, 45f, 55f, 66f };
 
         private readonly List<UnityEngine.Object> _created = new();
         private readonly SimulationMode2D _originalSimulationMode;
+        private readonly Scene _scene;
+        private readonly PhysicsScene2D _physics;
         private readonly float _fixedDeltaTime;
         private readonly int _firstSeed;
 
@@ -47,6 +53,12 @@ namespace Coika.Tests.PlayMode
         public SimulationWorld(SimulationOptions options)
         {
             _originalSimulationMode = Physics2D.simulationMode;
+
+            // A physics scene of its own gives every world a fresh Box2D world. The shared one keeps allocator and
+            // broadphase state from the bodies of earlier worlds, which changes the order of contacts and makes two
+            // runs with the same seed diverge.
+            _scene = SceneManager.CreateScene("SimulationWorld-" + sceneCounter++, new CreateSceneParameters(LocalPhysicsMode.Physics2D));
+            _physics = _scene.GetPhysicsScene2D();
             _fixedDeltaTime = Time.fixedDeltaTime;
             _firstSeed = options.Seed;
             _nextSeed = options.Seed;
@@ -60,11 +72,13 @@ namespace Coika.Tests.PlayMode
             Tiers = BuildTiers();
 
             var jarObject = new GameObject("Jar");
+            SceneManager.MoveGameObjectToScene(jarObject, _scene);
             _created.Add(jarObject);
             Jar = jarObject.AddComponent<Jar>();
             JarBuilder.Build(Jar, Config);
 
             var container = new GameObject("PieceContainer");
+            SceneManager.MoveGameObjectToScene(container, _scene);
             _created.Add(container);
             Assets = new TestAssetService(_created, pieceMaterial);
             Factory = new PieceFactory(Assets, new AssetReference(), Config, container.transform, PREWARM_COUNT, () => Now);
@@ -184,7 +198,7 @@ namespace Coika.Tests.PlayMode
 
         /// <summary>
         /// One physics step of the simulation, in the order the game does it: the held piece follows the input, the
-        /// merge pass resolves the contacts of the previous step, the physics advances, then the overflow detector
+        /// merge pass resolves the contacts of the previous step, the physics scene of the world advances, then the overflow detector
         /// (every 0.1 s), the combo and the drop controller run on the new time. Nothing here reads the real clock.
         /// </summary>
         public void Step()
@@ -193,7 +207,7 @@ namespace Coika.Tests.PlayMode
 
             Controller.FixedTick(dt);
             Merge.ProcessQueue();
-            Physics2D.Simulate(dt);
+            _physics.Simulate(dt);
             _steps++;
 
             _overflowAccumulator += dt;
@@ -292,6 +306,11 @@ namespace Coika.Tests.PlayMode
 
             _created.Clear();
             Physics2D.simulationMode = _originalSimulationMode;
+
+            if (_scene.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(_scene);
+            }
         }
 
         /// <summary>

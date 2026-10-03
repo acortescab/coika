@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -30,9 +31,21 @@ namespace Coika.Tests.PlayMode
         {
             var drops = DropScripts.Random(DROP_SEED, DROP_COUNT);
 
-            var first = SimulationRunner.Run(NewOptions(SEED), drops);
-            var second = SimulationRunner.Run(NewOptions(SEED), drops);
+            var firstTrace = new List<string>();
+            var secondTrace = new List<string>();
+            var first = SimulationRunner.Run(NewOptions(SEED), drops, world => firstTrace.Add(Fingerprint(world)));
+            var second = SimulationRunner.Run(NewOptions(SEED), drops, world => secondTrace.Add(Fingerprint(world)));
 
+            // The step where two runs first differ tells where the divergence starts: at a landing (physics) or later.
+            for (var i = 0; i < Math.Min(firstTrace.Count, secondTrace.Count); i++)
+            {
+                if (firstTrace[i] != secondTrace[i])
+                {
+                    Assert.Fail($"The runs diverge at step {i}:\n  first:  {firstTrace[i]}\n  second: {secondTrace[i]}");
+                }
+            }
+
+            Assert.AreEqual(firstTrace.Count, secondTrace.Count, "The runs took a different number of steps.");
             Assert.Greater(first.PiecesDropped, 0, "The run did nothing, so equality would prove nothing.");
             Assert.Greater(first.Pieces.Count, 0, "The board is empty, so the piece list proves nothing.");
             Assert.AreEqual(first.ToString(), second.ToString());
@@ -73,6 +86,26 @@ namespace Coika.Tests.PlayMode
 
             var expected = File.ReadAllText(path).TrimEnd('\r', '\n').Replace("\r\n", "\n");
             Assert.AreEqual(expected, result.ToString(), "The simulation no longer matches the golden file. If the change is intended, regenerate it with COIKA_UPDATE_GOLDEN=1.");
+        }
+
+        /// <summary>
+        /// Describes the world after a step: the score, the pieces on the board and the sum of their exact positions.
+        /// </summary>
+        /// <param name="world">The world after a step.</param>
+        /// <returns>A text that is equal in two runs exactly when they are in the same state.</returns>
+        private static string Fingerprint(SimulationWorld world)
+        {
+            var x = 0f;
+            var y = 0f;
+            var pieces = world.Factory.ActivePieces;
+            for (var i = 0; i < pieces.Count; i++)
+            {
+                var position = pieces[i].Rigidbody.position;
+                x += position.x;
+                y += position.y;
+            }
+
+            return $"step={world.Steps} score={world.Score.Score} board={world.CountBoardPieces()} sumX={x:R} sumY={y:R}";
         }
 
         /// <summary>
