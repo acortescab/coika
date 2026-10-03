@@ -6,10 +6,12 @@
         "Coika.Core",
         "Coika.Data",
         "Coika.Gameplay",
+        "Coika.UI",
         "Unity.Addressables",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework",
         "Unity.ugui",
+        "Unity.TextMeshPro",
         "Unity.ResourceManager"
     ],
     "includePlatforms": [],

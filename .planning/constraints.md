@@ -22,7 +22,7 @@ Reduce the size of the initial app download. Content is split into small, purpos
 Only the minimum required to start the app and reach the first Addressable load:
 - A single tiny **bootstrap scene** (`Boot`) containing the bootstrapper that initializes Addressables and loads the first Addressable scene.
 - The Addressables runtime, Unity splash/logo settings, and the app icon.
-- Anything under `Resources/` is **forbidden** (it always ships in the initial build and defeats this constraint).
+- Anything under `Resources/` is **forbidden** (it always ships in the initial build and defeats this constraint). **One exception:** `Assets/TextMesh Pro/Resources`, created by the TMP Essentials import; TMP loads its settings with a hard-coded `Resources.Load`. Nothing of ours goes there: the UI font is our own asset in `Assets/Art/Fonts`, Addressable in the `UI` group.
 
 Everything else, including the `Menu` and `Game` scenes, tiers, sprites, audio, fonts, VFX, UI prefabs and themes, is Addressable.
 

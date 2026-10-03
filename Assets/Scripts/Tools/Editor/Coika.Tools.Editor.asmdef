@@ -4,8 +4,14 @@
 		"Coika.Core",
 		"Coika.Data",
 		"Coika.Gameplay",
+		"Coika.UI",
 		"Unity.Addressables",
-		"Unity.Addressables.Editor"
+		"Unity.Addressables.Editor",
+		"Unity.ugui",
+		"Unity.TextMeshPro",
+		"Unity.InputSystem",
+		"Unity.Localization",
+		"Unity.Localization.Editor"
 	],
 	"includePlatforms": [
 		"Editor"

@@ -14,7 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: UI
   m_GUID: c0e0f8ca43295ab45a969027d58eaf09
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 124c6ba7cd5a7274abcfdbaacf4bd7dd
+    m_Address: Assets/Prefabs/UI/GameCanvas.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 38a80eab4f1685d409ec330a8e95ef87
+    m_Address: Assets/Art/Fonts/UiFont SDF.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 461287701ca2f3940b9955fcf5c57c47, type: 2}
   m_SchemaSet:

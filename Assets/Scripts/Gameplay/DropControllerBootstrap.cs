@@ -17,6 +17,12 @@ namespace Coika.Gameplay
     /// Errors are logged and never thrown, because the loading is asynchronous. It releases everything it loaded
     /// when it is destroyed, even if that happens while the assets are still loading.
     /// </para>
+    /// <para>
+    /// It also builds the <see cref="ScoreSystem"/> and the <see cref="RunTimer"/> of the run, ticks the score in
+    /// FixedUpdate, and announces the run to the UI: <see cref="RunStarted"/> once everything is ready and
+    /// <see cref="RunEnded"/> when the overflow detector ends the run. On game over it stops the drop and the
+    /// detector; restarting and the game states are the game manager's (issue #11).
+    /// </para>
     /// </summary>
     [AddComponentMenu("Coika/Drop Controller Bootstrap")]
     [DisallowMultipleComponent]
@@ -45,7 +51,27 @@ namespace Coika.Gameplay
         private IReadOnlyList<TierDefinition> _tiers;
         private PieceFactory _factory;
         private Transform _container;
+        private ScoreSystem _score;
+        private RunTimer _timer;
+        private Action _onGameOver;
         private bool _destroyed;
+
+        /// <summary>Raised once, when the run is built and the drop is enabled. Late subscribers read <see cref="CurrentRun"/>.</summary>
+        public event Action<RunContext> RunStarted;
+
+        /// <summary>Raised when the overflow detector ends the run, with the snapshot for the Game Over view.</summary>
+        public event Action<RunSummary> RunEnded;
+
+        /// <summary>The run in progress, or null until <see cref="RunStarted"/> was raised.</summary>
+        public RunContext CurrentRun { get; private set; }
+
+        /// <summary>
+        /// Ticks the combo on the same clock the merges use (see <see cref="ScoreSystem"/>).
+        /// </summary>
+        private void FixedUpdate()
+        {
+            _score?.Tick();
+        }
 
         /// <summary>
         /// Builds everything and enables the controller. A failure is logged, not thrown.
@@ -129,11 +155,33 @@ namespace Coika.Gameplay
             var queue = new SpawnQueue(_loadedConfig, Environment.TickCount);
             _mergeSystem.Initialize(_factory, _tiers, _loadedConfig);
             _controller.Initialize(_input, _jar, _factory, queue, _tiers, _loadedConfig);
+
+            _score = new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
+            _score.Bind(_mergeSystem, _controller);
+            _timer = new RunTimer(() => Time.timeAsDouble);
+            _timer.Start();
+
             _controller.Enable();
 
-            // TODO #10/#11: the game manager listens to GameOverTriggered; until then the detector only drives the line.
+            // TODO(#11): the game manager owns the game states and takes over this subscription.
             _overflowDetector.Initialize(_factory, _jar, _loadedConfig);
+            _onGameOver = HandleGameOver;
+            _overflowDetector.GameOverTriggered += _onGameOver;
             _overflowDetector.Enable();
+
+            CurrentRun = new RunContext(_score, queue, _tiers, _assets);
+            RunStarted?.Invoke(CurrentRun);
+        }
+
+        /// <summary>
+        /// Ends the run: stops the timer, the drop and the detector, and hands the summary to the UI.
+        /// </summary>
+        private void HandleGameOver()
+        {
+            _timer.Stop();
+            _controller.Disable();
+            _overflowDetector.Disable();
+            RunEnded?.Invoke(RunSummary.From(_score, _timer.ElapsedSeconds));
         }
 
         /// <summary>
@@ -142,6 +190,18 @@ namespace Coika.Gameplay
         /// </summary>
         private void CleanUp()
         {
+            CurrentRun = null;
+            _score?.Unbind();
+            _score = null;
+            _timer = null;
+
+            if (_overflowDetector != null && _onGameOver != null)
+            {
+                _overflowDetector.GameOverTriggered -= _onGameOver;
+            }
+
+            _onGameOver = null;
+
             if (_controller != null)
             {
                 _controller.Disable();
