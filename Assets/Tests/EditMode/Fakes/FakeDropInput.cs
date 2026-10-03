@@ -16,6 +16,15 @@ namespace Coika.Tests.EditMode
         public event Action DropReleased;
 
         /// <inheritdoc />
+        public event Action DropCancelled;
+
+        /// <inheritdoc />
+        public event Action BackPressed;
+
+        /// <summary>Value returned by <see cref="GetPointerOffset"/>.</summary>
+        public float PointerOffset { get; set; }
+
+        /// <inheritdoc />
         public bool HasPointer { get; set; }
 
         /// <inheritdoc />
@@ -24,8 +33,27 @@ namespace Coika.Tests.EditMode
         /// <inheritdoc />
         public float MoveAxis { get; set; }
 
-        /// <summary>Number of listeners of <see cref="DropPressed"/> and <see cref="DropReleased"/>, to check that they are removed.</summary>
-        public int ListenerCount => (DropPressed?.GetInvocationList().Length ?? 0) + (DropReleased?.GetInvocationList().Length ?? 0);
+        /// <summary>Number of listeners of the drop events, to check that they are removed.</summary>
+        public int ListenerCount => (DropPressed?.GetInvocationList().Length ?? 0) + (DropReleased?.GetInvocationList().Length ?? 0)
+            + (DropCancelled?.GetInvocationList().Length ?? 0);
+
+        /// <inheritdoc />
+        public float GetPointerOffset(float heldX)
+        {
+            return PointerOffset;
+        }
+
+        /// <summary>Raises <see cref="DropCancelled"/>.</summary>
+        public void RaiseCancelled()
+        {
+            DropCancelled?.Invoke();
+        }
+
+        /// <summary>Raises <see cref="BackPressed"/>.</summary>
+        public void RaiseBack()
+        {
+            BackPressed?.Invoke();
+        }
 
         /// <summary>Raises <see cref="DropPressed"/>.</summary>
         public void RaisePressed()

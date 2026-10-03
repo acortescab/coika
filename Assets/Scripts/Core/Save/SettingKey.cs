@@ -28,5 +28,8 @@ namespace Coika.Core
 
         /// <summary>Language code.</summary>
         Language,
+
+        /// <summary>Finger offset of the held piece.</summary>
+        FingerOffset,
     }
 }

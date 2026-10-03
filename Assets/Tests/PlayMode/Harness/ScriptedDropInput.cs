@@ -17,6 +17,12 @@ namespace Coika.Tests.PlayMode
         public event Action DropReleased;
 
         /// <inheritdoc />
+        public event Action DropCancelled;
+
+        /// <inheritdoc />
+        public event Action BackPressed;
+
+        /// <inheritdoc />
         public bool HasPointer { get; set; }
 
         /// <inheritdoc />
@@ -24,6 +30,24 @@ namespace Coika.Tests.PlayMode
 
         /// <inheritdoc />
         public float MoveAxis { get; set; }
+
+        /// <inheritdoc />
+        public float GetPointerOffset(float heldX)
+        {
+            return 0f;
+        }
+
+        /// <summary>Raises <see cref="DropCancelled"/>.</summary>
+        public void Cancel()
+        {
+            DropCancelled?.Invoke();
+        }
+
+        /// <summary>Raises <see cref="BackPressed"/>.</summary>
+        public void Back()
+        {
+            BackPressed?.Invoke();
+        }
 
         /// <summary>Raises a press and then its release, as a quick click does.</summary>
         public void Click()

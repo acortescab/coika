@@ -8,8 +8,11 @@ namespace Coika.Gameplay
     /// <summary>
     /// Reads the mouse, the touch screen and the keyboard with the Input System and offers them as an
     /// <see cref="IDropInput"/> (S-71: the only place that reads devices). The pointer follows
-    /// <c>&lt;Pointer&gt;/position</c> and presses with <c>&lt;Pointer&gt;/press</c>, which unifies mouse and touch;
-    /// A/D and the arrow keys move and Space drops. A press that begins over the UI never drops.
+    /// the mouse or the primary touch only (a second finger is ignored) and presses with the mouse button or that
+    /// touch; A/D and the arrow keys move, Space drops and Escape (the Android Back button) raises
+    /// <see cref="BackPressed"/>. A press that begins over the UI never drops, and a touch the system cancels
+    /// never drops. A finger keeps the offset the piece had when it went down, or the Finger Offset side set with
+    /// <see cref="ConfigureFingerOffset"/>.
     /// <para>
     /// It works on its own copy of the action asset, which it destroys with itself (S-72). The decisions (last
     /// device used, UI presses, focus loss) are made by <see cref="DropInputState"/>.
@@ -27,6 +30,7 @@ namespace Coika.Gameplay
         private const string PRESS_ACTION = "Press";
         private const string MOVE_ACTION = "Move";
         private const string DROP_ACTION = "Drop";
+        private const string BACK_ACTION = "Back";
 
         [SerializeField]
         private Camera _camera;
@@ -41,8 +45,10 @@ namespace Coika.Gameplay
         private InputAction _press;
         private InputAction _move;
         private InputAction _drop;
+        private InputAction _back;
         private bool _pressPending;
         private bool _releasePending;
+        private bool _cancelPending;
         private bool _pressIsTouch;
         private int _pressTouchId;
 
@@ -61,6 +67,20 @@ namespace Coika.Gameplay
         }
 
         /// <inheritdoc />
+        public event Action DropCancelled
+        {
+            add => _state.DropCancelled += value;
+            remove => _state.DropCancelled -= value;
+        }
+
+        /// <inheritdoc />
+        public event Action BackPressed
+        {
+            add => _state.BackPressed += value;
+            remove => _state.BackPressed -= value;
+        }
+
+        /// <inheritdoc />
         public bool HasPointer => _state.HasPointer;
 
         /// <inheritdoc />
@@ -68,6 +88,23 @@ namespace Coika.Gameplay
 
         /// <inheritdoc />
         public float MoveAxis => _state.MoveAxis;
+
+        /// <inheritdoc />
+        public float GetPointerOffset(float heldX)
+        {
+            return _state.GetPointerOffset(heldX);
+        }
+
+        /// <summary>
+        /// Sets where the held piece sits relative to the finger (the Finger Offset and Left-handed settings).
+        /// </summary>
+        /// <param name="enabled">Whether the Finger Offset setting is on.</param>
+        /// <param name="leftHanded">Whether the Left-handed setting is on.</param>
+        /// <param name="distance">Sideways distance in world units from <c>GameConfig.FingerOffset</c>.</param>
+        public void ConfigureFingerOffset(bool enabled, bool leftHanded, float distance)
+        {
+            _state.ConfigureFingerOffset(enabled, leftHanded, distance);
+        }
 
         /// <summary>
         /// Whether the game window has focus. A release that happens without focus never drops. It is virtual only
@@ -93,6 +130,7 @@ namespace Coika.Gameplay
             _press = _map.FindAction(PRESS_ACTION, true);
             _move = _map.FindAction(MOVE_ACTION, true);
             _drop = _map.FindAction(DROP_ACTION, true);
+            _back = _map.FindAction(BACK_ACTION, true);
         }
 
         /// <summary>
@@ -109,6 +147,7 @@ namespace Coika.Gameplay
             _press.canceled += OnPressCanceled;
             _drop.started += OnDropStarted;
             _drop.canceled += OnDropCanceled;
+            _back.started += OnBackStarted;
             _map.Enable();
         }
 
@@ -127,6 +166,7 @@ namespace Coika.Gameplay
             _press.canceled -= OnPressCanceled;
             _drop.started -= OnDropStarted;
             _drop.canceled -= OnDropCanceled;
+            _back.started -= OnBackStarted;
             ClearPendingPress();
             _state.Cancel();
         }
@@ -152,7 +192,9 @@ namespace Coika.Gameplay
             var world = _camera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, depth));
             var isInside = screen.x >= 0f && screen.y >= 0f && screen.x < Screen.width && screen.y < Screen.height;
 
-            _state.PointerMoved(world.x, isInside);
+            var touchscreen = Touchscreen.current;
+            var fromTouch = touchscreen != null && touchscreen.primaryTouch.isInProgress;
+            _state.PointerMoved(world.x, isInside, fromTouch);
             _state.KeyboardAxisChanged(_move.ReadValue<float>());
             ProcessPointerPress();
         }
@@ -185,12 +227,29 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// A pointer press ended. It is passed on in <see cref="Update"/>, after the press that began it.
+        /// A pointer press ended. It is passed on in <see cref="Update"/>, after the press that began it. A finger
+        /// that the system took away (phase Canceled) is told apart from one that was lifted: it never drops.
         /// </summary>
         /// <param name="context">Details of the action. Not used.</param>
         private void OnPressCanceled(InputAction.CallbackContext context)
         {
+            var touchscreen = Touchscreen.current;
+            if (_pressIsTouch && touchscreen != null && touchscreen.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled)
+            {
+                _cancelPending = true;
+                return;
+            }
+
             _releasePending = true;
+        }
+
+        /// <summary>
+        /// The Back key (Escape, or the Android Back button) was pressed.
+        /// </summary>
+        /// <param name="context">Details of the action. Not used.</param>
+        private void OnBackStarted(InputAction.CallbackContext context)
+        {
+            _state.BackKeyPressed();
         }
 
         /// <summary>
@@ -202,7 +261,14 @@ namespace Coika.Gameplay
             if (_pressPending)
             {
                 _pressPending = false;
-                _state.PointerPressed(IsPointerOverUi());
+                _state.PointerPressed(IsPointerOverUi(), _pressIsTouch);
+            }
+
+            if (_cancelPending)
+            {
+                _cancelPending = false;
+                _releasePending = false;
+                _state.PointerCancelled();
             }
 
             if (_releasePending)
@@ -219,6 +285,7 @@ namespace Coika.Gameplay
         {
             _pressPending = false;
             _releasePending = false;
+            _cancelPending = false;
         }
 
         /// <summary>

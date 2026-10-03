@@ -72,6 +72,13 @@ namespace Coika.Core
             set => SetFlag(SettingKey.LeftHanded, ref Data.leftHanded, value);
         }
 
+        /// <summary>Whether the held piece sits beside the finger so the finger does not cover it.</summary>
+        public bool FingerOffset
+        {
+            get => Data.fingerOffset;
+            set => SetFlag(SettingKey.FingerOffset, ref Data.fingerOffset, value);
+        }
+
         /// <summary>Language code. A null or empty value is ignored.</summary>
         public string Language
         {

@@ -17,6 +17,8 @@ namespace Coika.Data
         [SerializeField, Min(0.01f)]
         private float _maxFollowSpeed = 40f;
         [SerializeField, Min(0f)]
+        private float _fingerOffset = 2f;
+        [SerializeField, Min(0f)]
         private float _scaleInDuration = 0.15f;
         [SerializeField]
         private float _overflowTime = 2f;
@@ -79,6 +81,11 @@ namespace Coika.Data
 
         /// <summary>Fastest the held piece moves sideways, in units per second, so it never teleports.</summary>
         public float MaxFollowSpeed => _maxFollowSpeed;
+
+        /// <summary>
+        /// Sideways distance in world units between the finger and the held piece when the Finger Offset setting is on.
+        /// </summary>
+        public float FingerOffset => _fingerOffset;
 
         /// <summary>Seconds the next piece takes to grow from nothing to full size while the drop cools down.</summary>
         public float ScaleInDuration => _scaleInDuration;

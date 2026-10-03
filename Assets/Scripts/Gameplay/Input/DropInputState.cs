@@ -5,8 +5,9 @@ namespace Coika.Gameplay
     /// <summary>
     /// The decisions of the drop input as plain C# (S-20), so they are tested without devices:
     /// which device was used last (the pointer or the keyboard), which presses count (those that begin over the UI
-    /// do not) and what happens when the window loses focus. <see cref="PointerInputReader"/> reads the devices and
-    /// feeds this class.
+    /// do not), what happens when a press is cancelled or the window loses focus, and where a finger holds the
+    /// piece (the offset kept from the press start, or the Finger Offset side). <see cref="PointerInputReader"/>
+    /// reads the devices and feeds this class.
     /// </summary>
     public sealed class DropInputState : IDropInput
     {
@@ -17,6 +18,9 @@ namespace Coika.Gameplay
         private float _keyboardAxis;
         private bool _pointerPressActive;
         private bool _keyboardPressActive;
+        private bool _pointerIsTouch;
+        private bool _fingerOffsetEnabled;
+        private float _fingerShift;
 
         /// <inheritdoc />
         public event Action DropPressed;
@@ -25,7 +29,16 @@ namespace Coika.Gameplay
         public event Action DropReleased;
 
         /// <inheritdoc />
-        public bool HasPointer => _pointerLast && _pointerInside;
+        public event Action DropCancelled;
+
+        /// <inheritdoc />
+        public event Action BackPressed;
+
+        /// <summary>
+        /// Whether the pointer is the device last used and is on screen. A finger only counts while its press is in
+        /// progress, because a touch screen has no hover: the piece stays where it is between touches.
+        /// </summary>
+        public bool HasPointer => _pointerLast && _pointerInside && (!_pointerIsTouch || _pointerPressActive);
 
         /// <inheritdoc />
         public float PointerWorldX => _pointerWorldX;
@@ -38,11 +51,13 @@ namespace Coika.Gameplay
         /// </summary>
         /// <param name="worldX">World X under the pointer.</param>
         /// <param name="isInsideScreen">Whether the pointer is inside the game screen.</param>
-        public void PointerMoved(float worldX, bool isInsideScreen)
+        /// <param name="fromTouch">Whether a finger is down, so the position comes from the touch screen and not the mouse.</param>
+        public void PointerMoved(float worldX, bool isInsideScreen, bool fromTouch = false)
         {
             if (_hasPointerPosition && worldX != _pointerWorldX)
             {
                 _pointerLast = true;
+                _pointerIsTouch = fromTouch;
             }
 
             _hasPointerPosition = true;
@@ -64,13 +79,47 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
+        /// Sets where the held piece sits relative to the finger. With the setting off, a touch keeps the offset the
+        /// piece had when the finger went down, so the piece never jumps.
+        /// </summary>
+        /// <param name="enabled">Whether the Finger Offset setting is on.</param>
+        /// <param name="leftHanded">Whether the Left-handed setting is on. It only chooses the side.</param>
+        /// <param name="distance">Sideways distance in world units between the finger and the piece.</param>
+        public void ConfigureFingerOffset(bool enabled, bool leftHanded, float distance)
+        {
+            _fingerOffsetEnabled = enabled;
+            _fingerShift = leftHanded ? distance : -distance;
+        }
+
+        /// <inheritdoc />
+        public float GetPointerOffset(float heldX)
+        {
+            if (!_pointerIsTouch || !_pointerPressActive)
+            {
+                return 0f;
+            }
+
+            return _fingerOffsetEnabled ? _fingerShift : heldX - _pointerWorldX;
+        }
+
+        /// <summary>
+        /// Reports that the Back key was pressed. Each call raises <see cref="BackPressed"/> once.
+        /// </summary>
+        public void BackKeyPressed()
+        {
+            BackPressed?.Invoke();
+        }
+
+        /// <summary>
         /// Reports that a pointer press began. It makes the pointer the device last used. A press that begins over
         /// the UI is ignored: it raises nothing now and nothing when it ends.
         /// </summary>
         /// <param name="isOverUi">Whether the press began over a UI element.</param>
-        public void PointerPressed(bool isOverUi)
+        /// <param name="isTouch">Whether the press is a finger on the touch screen and not the mouse.</param>
+        public void PointerPressed(bool isOverUi, bool isTouch = false)
         {
             _pointerLast = true;
+            _pointerIsTouch = isTouch;
             if (isOverUi)
             {
                 return;
@@ -97,6 +146,21 @@ namespace Coika.Gameplay
             {
                 DropReleased?.Invoke();
             }
+        }
+
+        /// <summary>
+        /// Reports that the pointer press was cancelled by the system, for instance an OS gesture took the touch. It
+        /// raises <see cref="DropCancelled"/> for a press that was not ignored and never <see cref="DropReleased"/>.
+        /// </summary>
+        public void PointerCancelled()
+        {
+            if (!_pointerPressActive)
+            {
+                return;
+            }
+
+            _pointerPressActive = false;
+            DropCancelled?.Invoke();
         }
 
         /// <summary>
@@ -129,14 +193,19 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Forgets every press in progress without raising anything, because the window lost focus or the reader
-        /// was disabled mid-press.
+        /// Forgets every press in progress because the window lost focus or the reader was disabled mid-press. It
+        /// never raises <see cref="DropReleased"/>; it raises <see cref="DropCancelled"/> once if a press was in progress.
         /// </summary>
         public void Cancel()
         {
+            var wasPressed = _pointerPressActive || _keyboardPressActive;
             _pointerPressActive = false;
             _keyboardPressActive = false;
             _keyboardAxis = 0f;
+            if (wasPressed)
+            {
+                DropCancelled?.Invoke();
+            }
         }
     }
 }

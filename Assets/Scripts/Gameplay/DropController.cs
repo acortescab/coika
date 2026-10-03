@@ -8,9 +8,10 @@ namespace Coika.Gameplay
     /// <summary>
     /// The only thing the player does: slide the held piece sideways and release it (GDD §3.5, §6, §7). It takes
     /// the current tier from the <see cref="SpawnQueue"/>, asks the <see cref="PieceFactory"/> for a piece, holds it
-    /// at the Drop Line, follows the input without going faster than the max follow speed or leaving the jar, and on
-    /// release makes it fall, advances the queue and waits for the cooldown before holding the next piece, which
-    /// grows in meanwhile.
+    /// at the Drop Line, follows the input (keeping the offset the input reports when a press begins) without going
+    /// faster than the max follow speed or leaving the jar, and on release makes it fall, advances the queue and
+    /// waits for the cooldown before holding the next piece, which grows in meanwhile. A cancelled press goes back
+    /// to hovering and drops nothing.
     /// <para>
     /// The rules live in <see cref="DropFlow"/> (plain C#); this component reads the input, applies the result to
     /// the piece and raises the events. It scores nothing: <see cref="PieceDropped"/> is for the score system.
@@ -46,6 +47,8 @@ namespace Coika.Gameplay
         private float _heldX;
         private bool _pressQueued;
         private bool _releaseQueued;
+        private bool _cancelQueued;
+        private float _followOffset;
 
         /// <summary>Raised when the substate changes: after a release (Dropping) and when the cooldown ends (Aiming).</summary>
         public event Action<DropState> StateChanged;
@@ -125,7 +128,7 @@ namespace Coika.Gameplay
         /// <summary>
         /// Gives the controller what it works with. Call it once, before <see cref="Enable"/>.
         /// </summary>
-        /// <param name="input">Source of the pointer position, the keyboard axis and the press events.</param>
+        /// <param name="input">Source of the pointer position and its offset, the keyboard axis and the press events.</param>
         /// <param name="jar">The jar: its interior bounds and the Drop Line.</param>
         /// <param name="factory">Creates the pieces. It must be pre-warmed with every tier.</param>
         /// <param name="queue">Decides the tier of each piece.</param>
@@ -242,11 +245,19 @@ namespace Coika.Gameplay
             // The flags are cleared before anything can throw, so a failure never leaves a press behind.
             var pressed = _pressQueued;
             var released = _releaseQueued;
+            var cancelled = _cancelQueued;
             ClearQueuedInput();
 
             if (pressed)
             {
                 _flow.Press();
+            }
+
+            // A cancelled press goes back to hovering: it is forgotten and never drops.
+            if (cancelled)
+            {
+                _flow.CancelPress();
+                released = false;
             }
 
             if (released && _flow.TryRelease())
@@ -256,7 +267,8 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// The physics work: follows the input at the capped speed, kept inside the jar, and moves the held piece
+        /// The physics work: follows the input (plus the offset taken at the press) at the capped speed, kept inside
+        /// the jar after the offset is added, and moves the held piece
         /// through its body. Public so tests can drive it with an exact time step.
         /// </summary>
         /// <param name="fixedDeltaTime">Seconds of the physics step.</param>
@@ -268,18 +280,30 @@ namespace Coika.Gameplay
             }
 
             var maxSpeed = _config.MaxFollowSpeed;
-            var target = _input.HasPointer ? _input.PointerWorldX : _heldX + _input.MoveAxis * maxSpeed * fixedDeltaTime;
+            var target = _input.HasPointer ? _input.PointerWorldX + _followOffset : _heldX + _input.MoveAxis * maxSpeed * fixedDeltaTime;
             _heldX = DropFlow.Follow(_heldX, ClampToJar(target), maxSpeed, fixedDeltaTime);
 
             _held.Rigidbody.MovePosition(new Vector2(_heldX, _jar.DropLineY));
         }
 
         /// <summary>
-        /// Remembers that a press began, to act on it in the next <see cref="Tick"/>.
+        /// Remembers that a press began, to act on it in the next <see cref="Tick"/>, and takes the offset the input
+        /// wants kept between the pointer and the piece while the press lasts.
         /// </summary>
         private void OnDropPressed()
         {
             _pressQueued = true;
+            _followOffset = _input.GetPointerOffset(_heldX);
+        }
+
+        /// <summary>
+        /// Remembers that a press was cancelled, to go back to hovering in the next <see cref="Tick"/>. The offset of
+        /// the press ends with it.
+        /// </summary>
+        private void OnDropCancelled()
+        {
+            _cancelQueued = true;
+            _followOffset = 0f;
         }
 
         /// <summary>
@@ -288,6 +312,7 @@ namespace Coika.Gameplay
         private void OnDropReleased()
         {
             _releaseQueued = true;
+            _followOffset = 0f;
         }
 
         /// <summary>
@@ -387,6 +412,7 @@ namespace Coika.Gameplay
         {
             _pressQueued = false;
             _releaseQueued = false;
+            _cancelQueued = false;
         }
 
         /// <summary>
@@ -397,6 +423,7 @@ namespace Coika.Gameplay
             Unsubscribe();
             _input.DropPressed += OnDropPressed;
             _input.DropReleased += OnDropReleased;
+            _input.DropCancelled += OnDropCancelled;
         }
 
         /// <summary>
@@ -408,6 +435,7 @@ namespace Coika.Gameplay
             {
                 _input.DropPressed -= OnDropPressed;
                 _input.DropReleased -= OnDropReleased;
+                _input.DropCancelled -= OnDropCancelled;
             }
         }
 

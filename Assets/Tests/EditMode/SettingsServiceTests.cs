@@ -41,7 +41,25 @@ namespace Coika.Tests.EditMode
             Assert.That(_settings.GuideLine, Is.True);
             Assert.That(_settings.ReduceShake, Is.False);
             Assert.That(_settings.LeftHanded, Is.False);
+            Assert.That(_settings.FingerOffset, Is.False);
             Assert.That(_settings.Language, Is.EqualTo("en"));
+        }
+
+        /// <summary>
+        /// Changing the finger offset raises one event with its key and flag, and saves it.
+        /// </summary>
+        [Test]
+        public void FingerOffset_Change_RaisesOneEventAndPersists()
+        {
+            _settings.FingerOffset = true;
+            _settings.FingerOffset = true;
+            _save.FlushIfDirty();
+
+            Assert.That(_events.Count, Is.EqualTo(1));
+            Assert.That(_events[0].Key, Is.EqualTo(SettingKey.FingerOffset));
+            Assert.That(_events[0].Flag, Is.True);
+            Assert.That(_save.Data.settings.fingerOffset, Is.True);
+            Assert.That(_storage.WriteCount, Is.EqualTo(1));
         }
 
         /// <summary>

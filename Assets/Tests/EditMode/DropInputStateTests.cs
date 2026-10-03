@@ -235,5 +235,185 @@ namespace Coika.Tests.EditMode
 
             Assert.AreEqual(0, _released);
         }
+
+        /// <summary>
+        /// A touch keeps the offset the piece had under the finger when the press began, so it never jumps.
+        /// </summary>
+        [Test]
+        public void GetPointerOffset_TouchWithoutFingerOffset_KeepsTheOffsetOfThePressStart()
+        {
+            _state.PointerMoved(2f, true);
+            _state.PointerMoved(3f, true);
+            _state.PointerPressed(false, true);
+
+            Assert.AreEqual(-1f, _state.GetPointerOffset(2f));
+        }
+
+        /// <summary>
+        /// The mouse never has an offset.
+        /// </summary>
+        [Test]
+        public void GetPointerOffset_Mouse_IsZero()
+        {
+            _state.PointerMoved(2f, true);
+            _state.PointerMoved(3f, true);
+            _state.PointerPressed(false);
+
+            Assert.AreEqual(0f, _state.GetPointerOffset(-5f));
+        }
+
+        /// <summary>
+        /// With the finger offset on, a right-handed player gets the piece to the left of the finger.
+        /// </summary>
+        [Test]
+        public void GetPointerOffset_FingerOffsetRightHanded_PutsThePieceLeftOfTheFinger()
+        {
+            _state.ConfigureFingerOffset(true, false, 2f);
+            _state.PointerMoved(2f, true);
+            _state.PointerMoved(3f, true);
+            _state.PointerPressed(false, true);
+
+            Assert.AreEqual(-2f, _state.GetPointerOffset(9f));
+        }
+
+        /// <summary>
+        /// Left-handed only mirrors the side of the finger offset.
+        /// </summary>
+        [Test]
+        public void GetPointerOffset_FingerOffsetLeftHanded_PutsThePieceRightOfTheFinger()
+        {
+            _state.ConfigureFingerOffset(true, true, 2f);
+            _state.PointerMoved(2f, true);
+            _state.PointerMoved(3f, true);
+            _state.PointerPressed(false, true);
+
+            Assert.AreEqual(2f, _state.GetPointerOffset(9f));
+        }
+
+        /// <summary>
+        /// A finger is only followed while it is down: a touch screen has no hover.
+        /// </summary>
+        [Test]
+        public void HasPointer_TouchAfterRelease_IsFalse()
+        {
+            _state.PointerMoved(2f, true);
+            _state.PointerMoved(3f, true);
+            _state.PointerPressed(false, true);
+            Assert.IsTrue(_state.HasPointer);
+
+            _state.PointerReleased(true);
+
+            Assert.IsFalse(_state.HasPointer);
+        }
+
+        /// <summary>
+        /// A touch that starts over the UI never moves the piece.
+        /// </summary>
+        [Test]
+        public void HasPointer_TouchPressedOverTheUi_IsFalse()
+        {
+            _state.PointerMoved(2f, true);
+            _state.PointerMoved(3f, true);
+            _state.PointerPressed(true, true);
+
+            Assert.IsFalse(_state.HasPointer);
+            Assert.AreEqual(0, _pressed);
+        }
+
+        /// <summary>
+        /// A press that began on the play area still drops on release even when the finger ends over the UI: only
+        /// where the press began decides (documented rule of issue #27).
+        /// </summary>
+        [Test]
+        public void PointerReleased_PressBeganOnThePlayAreaAndEndsOverTheUi_Drops()
+        {
+            _state.PointerPressed(false, true);
+
+            _state.PointerReleased(true);
+
+            Assert.AreEqual(1, _released);
+        }
+
+        /// <summary>
+        /// A touch the system cancels raises the cancel event and never a release.
+        /// </summary>
+        [Test]
+        public void PointerCancelled_PressInProgress_RaisesCancelAndNoRelease()
+        {
+            var cancelled = 0;
+            _state.DropCancelled += () => cancelled++;
+            _state.PointerPressed(false, true);
+
+            _state.PointerCancelled();
+            _state.PointerReleased(true);
+
+            Assert.AreEqual(1, cancelled);
+            Assert.AreEqual(0, _released);
+        }
+
+        /// <summary>
+        /// Cancelling a press that was ignored, or that does not exist, raises nothing.
+        /// </summary>
+        [Test]
+        public void PointerCancelled_WithoutAnActivePress_RaisesNothing()
+        {
+            var cancelled = 0;
+            _state.DropCancelled += () => cancelled++;
+            _state.PointerPressed(true, true);
+
+            _state.PointerCancelled();
+
+            Assert.AreEqual(0, cancelled);
+        }
+
+        /// <summary>
+        /// Losing focus mid-press raises the cancel event once, so the piece goes back to hover.
+        /// </summary>
+        [Test]
+        public void Cancel_PressInProgress_RaisesCancelOnce()
+        {
+            var cancelled = 0;
+            _state.DropCancelled += () => cancelled++;
+            _state.PointerPressed(false, true);
+
+            _state.Cancel();
+            _state.Cancel();
+
+            Assert.AreEqual(1, cancelled);
+            Assert.AreEqual(0, _released);
+        }
+
+        /// <summary>
+        /// Each press of the Back key raises the event exactly once.
+        /// </summary>
+        [Test]
+        public void BackKeyPressed_EachPress_RaisesBackOnce()
+        {
+            var back = 0;
+            _state.BackPressed += () => back++;
+
+            _state.BackKeyPressed();
+
+            Assert.AreEqual(1, back);
+        }
+
+        /// <summary>
+        /// After a finger has been used, moving the mouse hands the control back to the mouse without a click.
+        /// </summary>
+        [Test]
+        public void HasPointer_MouseMovesAfterATouchPress_IsTrue()
+        {
+            _state.PointerMoved(2f, true);
+            _state.PointerMoved(3f, true, true);
+            _state.PointerPressed(false, true);
+            _state.PointerReleased(true);
+            Assert.IsFalse(_state.HasPointer, "A finger that is up is not followed.");
+
+            _state.PointerMoved(7f, true);
+
+            Assert.IsTrue(_state.HasPointer);
+            Assert.AreEqual(7f, _state.PointerWorldX);
+            Assert.AreEqual(0f, _state.GetPointerOffset(1f), "The mouse has no offset.");
+        }
     }
 }
