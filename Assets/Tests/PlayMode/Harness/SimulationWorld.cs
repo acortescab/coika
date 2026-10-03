@@ -22,7 +22,8 @@ namespace Coika.Tests.PlayMode
     public sealed class SimulationWorld : IDisposable
     {
         private const float EVALUATION_TOLERANCE = 0.0005f;
-        private const int PREWARM_COUNT = 40;
+        // More pieces than the jar can hold, so the pool never grows (and warns) during a long random run.
+        private const int PREWARM_COUNT = 300;
 
         // Values of the GDD table (§3.2). Keep them in sync with the tier assets in Assets/Data/Tiers: the score test depends on them.
         private static readonly float[] TierDiameters = { 0.75f, 1.00f, 1.31f, 1.69f, 2.13f, 2.63f, 3.19f, 3.81f, 4.50f, 5.25f, 6.00f };
