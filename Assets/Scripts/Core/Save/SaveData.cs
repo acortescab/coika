@@ -39,15 +39,6 @@ namespace Coika.Core
         public SettingsData settings = new SettingsData();
 
         /// <summary>
-        /// Creates a save with the default values.
-        /// </summary>
-        /// <returns>A new default save.</returns>
-        public static SaveData CreateDefaults()
-        {
-            return new SaveData();
-        }
-
-        /// <summary>
         /// Repairs fields a hand-edited or older file may have left null, short or out of range.
         /// </summary>
         public void Normalize()
@@ -104,16 +95,6 @@ namespace Coika.Core
             highestTier = 0;
             totals = new SaveTotals();
             discoveredTiers = NewDiscoveredTiers();
-        }
-
-        /// <summary>
-        /// Compares the serialized content of two saves.
-        /// </summary>
-        /// <param name="other">Save to compare with.</param>
-        /// <returns>True when both serialize to the same JSON.</returns>
-        public bool ContentEquals(SaveData other)
-        {
-            return other != null && JsonUtility.ToJson(this) == JsonUtility.ToJson(other);
         }
 
         /// <summary>

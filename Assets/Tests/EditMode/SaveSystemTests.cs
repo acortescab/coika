@@ -38,6 +38,16 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Serializes a save so two saves can be compared by content.
+        /// </summary>
+        /// <param name="data">Save to serialize.</param>
+        /// <returns>The JSON of the save.</returns>
+        private static string Json(SaveData data)
+        {
+            return JsonUtility.ToJson(data);
+        }
+
+        /// <summary>
         /// A saved file loads back as an equal save.
         /// </summary>
         [Test]
@@ -52,7 +62,7 @@ namespace Coika.Tests.EditMode
             var loaded = new SaveSystem(new FileSaveStorage(_directory));
             loaded.Load();
 
-            Assert.That(loaded.Data.ContentEquals(system.Data), Is.True);
+            Assert.That(Json(loaded.Data), Is.EqualTo(Json(system.Data)));
             Assert.That(loaded.Data.bestScore.classic, Is.EqualTo(1234));
         }
 
@@ -66,7 +76,7 @@ namespace Coika.Tests.EditMode
 
             system.Load();
 
-            Assert.That(system.Data.ContentEquals(SaveData.CreateDefaults()), Is.True);
+            Assert.That(Json(system.Data), Is.EqualTo(Json(new SaveData())));
             Assert.That(_fake.BackupContent, Is.Null);
         }
 
@@ -86,7 +96,7 @@ namespace Coika.Tests.EditMode
 
             Assert.DoesNotThrow(system.Load);
 
-            Assert.That(system.Data.ContentEquals(SaveData.CreateDefaults()), Is.True);
+            Assert.That(Json(system.Data), Is.EqualTo(Json(new SaveData())));
             Assert.That(_fake.BackupContent, Is.EqualTo(content));
         }
 
@@ -149,7 +159,7 @@ namespace Coika.Tests.EditMode
         [Test]
         public void RecordRun_TwoRuns_KeepsBestAndAddsTotals()
         {
-            var data = SaveData.CreateDefaults();
+            var data = new SaveData();
 
             data.RecordRun(500, 3, 10, 30f);
             data.RecordRun(200, 2, 5, 15f);

@@ -41,32 +41,11 @@ namespace Coika.Core
 
             Save = new SaveSystem(new FileSaveStorage(Application.persistentDataPath));
             Save.Load();
-            Settings = new SettingsService();
-            Settings.Initialize(Save);
+            Settings = new SettingsService(Save);
             gameObject.AddComponent<SaveTriggers>().Initialize(Save);
+            SceneManager.sceneLoaded += HandleSceneLoaded;
 
             await Boot();
-        }
-
-        /// <summary>
-        /// Gives the save system to the roots of the loaded scene that ask for it. The scene builds its objects
-        /// after an asynchronous asset load, so this runs before they need the save.
-        /// </summary>
-        /// <param name="scene">The scene that was just loaded.</param>
-        private void HandSaveToScene(Scene scene)
-        {
-            if (!scene.IsValid())
-            {
-                return;
-            }
-
-            foreach (var root in scene.GetRootGameObjects())
-            {
-                foreach (var consumer in root.GetComponentsInChildren<ISaveConsumer>(true))
-                {
-                    consumer.UseSave(Save);
-                }
-            }
         }
 
         /// <summary>
@@ -78,13 +57,37 @@ namespace Coika.Core
             try
             {
                 await Addressables.InitializeAsync().Task;
-                var scene = await Scenes.LoadScene(_gameScene);
-                HandSaveToScene(scene.Scene);
+                await Scenes.LoadScene(_gameScene);
             }
             catch (Exception e)
             {
                 // TODO: show a recoverable error state with a retry button that calls Boot() again (constraints C-01).
                 Debug.LogError($"Boot failed: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Stops listening for loaded scenes.
+        /// </summary>
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+        }
+
+        /// <summary>
+        /// Gives the save system to the roots of a scene that ask for it. Unity raises sceneLoaded after the Awake
+        /// of the scene and before any Start, so the save always arrives before the scene builds its objects.
+        /// </summary>
+        /// <param name="scene">The scene that was just loaded.</param>
+        /// <param name="mode">How the scene was loaded.</param>
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                foreach (var consumer in root.GetComponentsInChildren<ISaveConsumer>(true))
+                {
+                    consumer.UseSave(Save);
+                }
             }
         }
     }

@@ -23,8 +23,7 @@ namespace Coika.Tests.EditMode
         {
             _storage = new FakeSaveStorage();
             _save = new SaveSystem(_storage);
-            _settings = new SettingsService();
-            _settings.Initialize(_save);
+            _settings = new SettingsService(_save);
             _events = new List<SettingsChanged>();
             _settings.Changed += _events.Add;
         }

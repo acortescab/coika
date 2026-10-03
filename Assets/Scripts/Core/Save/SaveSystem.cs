@@ -19,14 +19,11 @@ namespace Coika.Core
         public SaveSystem(ISaveStorage storage)
         {
             _storage = storage;
-            Data = SaveData.CreateDefaults();
+            Data = new SaveData();
         }
 
         /// <summary>The current save. Never null.</summary>
         public SaveData Data { get; private set; }
-
-        /// <summary>Whether a change is waiting for <see cref="FlushIfDirty"/>.</summary>
-        public bool IsDirty => _dirty;
 
         /// <summary>
         /// Reads the file into <see cref="Data"/>. A missing file gives defaults silently. A file that is empty,
@@ -35,18 +32,17 @@ namespace Coika.Core
         public void Load()
         {
             _dirty = false;
+            Data = new SaveData();
             string json;
             try
             {
                 if (!_storage.TryRead(out json))
                 {
-                    Data = SaveData.CreateDefaults();
                     return;
                 }
             }
             catch (Exception e)
             {
-                Data = SaveData.CreateDefaults();
                 Debug.LogWarning($"Save could not be read, using defaults: {e.Message}");
                 return;
             }
@@ -59,7 +55,6 @@ namespace Coika.Core
                 return;
             }
 
-            Data = SaveData.CreateDefaults();
             try
             {
                 _storage.Backup();

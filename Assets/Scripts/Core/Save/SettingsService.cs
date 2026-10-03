@@ -9,7 +9,16 @@ namespace Coika.Core
     /// </summary>
     public class SettingsService
     {
-        private SaveSystem _save;
+        private readonly SaveSystem _save;
+
+        /// <summary>
+        /// Creates the service over a save system.
+        /// </summary>
+        /// <param name="save">Save system that owns the data.</param>
+        public SettingsService(SaveSystem save)
+        {
+            _save = save;
+        }
 
         /// <summary>Raised once per setting that changes value.</summary>
         public event Action<SettingsChanged> Changed;
@@ -80,15 +89,6 @@ namespace Coika.Core
         }
 
         private SettingsData Data => _save.Data.settings;
-
-        /// <summary>
-        /// Connects the service to the save system.
-        /// </summary>
-        /// <param name="save">Save system that owns the data.</param>
-        public void Initialize(SaveSystem save)
-        {
-            _save = save;
-        }
 
         /// <summary>
         /// Resets scores, totals and discovered tiers and keeps the settings.
