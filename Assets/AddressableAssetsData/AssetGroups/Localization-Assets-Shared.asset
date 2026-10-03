@@ -10,24 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: UI
+  m_Name: Localization-Assets-Shared
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
-  m_GroupName: UI
-  m_GUID: c0e0f8ca43295ab45a969027d58eaf09
+  m_GroupName: Localization-Assets-Shared
+  m_GUID: 65e98b87936d8024a82c6a806b430d35
   m_SerializeEntries:
-  - m_GUID: 124c6ba7cd5a7274abcfdbaacf4bd7dd
-    m_Address: Assets/Prefabs/UI/GameCanvas.prefab
-    m_ReadOnly: 0
+  - m_GUID: 6c87501b88b3e594ebcb26fad4395c1f
+    m_Address: Assets/Localization/Tables/UI Shared Data.asset
+    m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 38a80eab4f1685d409ec330a8e95ef87
-    m_Address: Assets/Art/Fonts/UiFont SDF.asset
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  m_ReadOnly: 0
+  m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 461287701ca2f3940b9955fcf5c57c47, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 9134008d611685f488cd83d29f08c927, type: 2}
-    - {fileID: 11400000, guid: bfa9176173aba5c40b486a9521334584, type: 2}
+    - {fileID: 11400000, guid: 01b55375c0559eb4084f25e88e51d7af, type: 2}
+    - {fileID: 11400000, guid: 220fc1eacf036c746918b7139bf0262c, type: 2}
+    - {fileID: 11400000, guid: 297e2ffb3bf109947aff8c81a055a5f8, type: 2}
