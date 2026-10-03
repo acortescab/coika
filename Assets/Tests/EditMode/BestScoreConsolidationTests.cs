@@ -63,7 +63,7 @@ namespace Coika.Tests.EditMode
         [Test]
         public void Save_MidRunBeatingRecord_PersistsPreviousBest()
         {
-            _score.OnMerged(5);
+            _score.OnPieceDropped(5);
             Assert.That(_score.Score, Is.GreaterThan(PREVIOUS_BEST), "the run must beat the record for this test to mean anything");
 
             _save.Save();
@@ -79,7 +79,8 @@ namespace Coika.Tests.EditMode
         [Test]
         public void RecordRun_AfterBeatingRecord_PersistsNewBest()
         {
-            _score.OnMerged(5);
+            _score.OnPieceDropped(5);
+            Assert.That(_score.Score, Is.GreaterThan(PREVIOUS_BEST));
             var summary = RunSummary.From(_score, 10f);
 
             _save.Data.RecordRun(summary.Score, summary.HighestTier, summary.Merges, summary.DurationSeconds);
