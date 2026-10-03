@@ -15,8 +15,10 @@ namespace Coika.Gameplay
         /// <param name="highestTier">Index of the highest tier reached.</param>
         /// <param name="piecesDropped">Pieces dropped in the run.</param>
         /// <param name="durationSeconds">Play time in seconds.</param>
-        public RunSummary(int score, int bestScore, bool isNewBest, int highestTier, int piecesDropped, float durationSeconds)
+        /// <param name="merges">Merges performed in the run.</param>
+        public RunSummary(int score, int bestScore, bool isNewBest, int highestTier, int piecesDropped, float durationSeconds, int merges = 0)
         {
+            Merges = merges;
             Score = score;
             BestScore = bestScore;
             IsNewBest = isNewBest;
@@ -43,6 +45,9 @@ namespace Coika.Gameplay
         /// <summary>Play time of the run in seconds.</summary>
         public float DurationSeconds { get; }
 
+        /// <summary>Merges performed in the run.</summary>
+        public int Merges { get; }
+
         /// <summary>
         /// Takes the snapshot of a run.
         /// </summary>
@@ -51,7 +56,7 @@ namespace Coika.Gameplay
         public static RunSummary From(ScoreSystem score, float durationSeconds)
         {
             var best = score.IsNewBest ? score.Score : score.BestScore;
-            return new RunSummary(score.Score, best, score.IsNewBest, score.HighestTierReached, score.PiecesDropped, durationSeconds);
+            return new RunSummary(score.Score, best, score.IsNewBest, score.HighestTierReached, score.PiecesDropped, durationSeconds, score.Merges);
         }
     }
 }
