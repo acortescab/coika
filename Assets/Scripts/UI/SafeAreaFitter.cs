@@ -17,6 +17,33 @@ namespace Coika.UI
         private Vector2Int _appliedSize;
 
         /// <summary>
+        /// Caches the RectTransform that the safe area is applied to.
+        /// </summary>
+        private void Awake()
+        {
+            _rect = (RectTransform)transform;
+        }
+
+        /// <summary>
+        /// Applies the safe area when the object is enabled, so the first frame is already correct.
+        /// </summary>
+        private void OnEnable()
+        {
+            Apply();
+        }
+
+        /// <summary>
+        /// Applies the safe area again when it or the screen size changed, for example after a rotation.
+        /// </summary>
+        private void Update()
+        {
+            if (Screen.safeArea != _appliedArea || Screen.width != _appliedSize.x || Screen.height != _appliedSize.y)
+            {
+                Apply();
+            }
+        }
+
+        /// <summary>
         /// Converts a safe area in pixels into normalized anchors. A screen with no pixels, or an empty area, gives
         /// the full screen, so a bad value from the platform never collapses the HUD.
         /// </summary>
@@ -36,24 +63,6 @@ namespace Coika.UI
 
             anchorMin = new Vector2(Mathf.Clamp01(safeArea.xMin / screenWidth), Mathf.Clamp01(safeArea.yMin / screenHeight));
             anchorMax = new Vector2(Mathf.Clamp01(safeArea.xMax / screenWidth), Mathf.Clamp01(safeArea.yMax / screenHeight));
-        }
-
-        private void Awake()
-        {
-            _rect = (RectTransform)transform;
-        }
-
-        private void OnEnable()
-        {
-            Apply();
-        }
-
-        private void Update()
-        {
-            if (Screen.safeArea != _appliedArea || Screen.width != _appliedSize.x || Screen.height != _appliedSize.y)
-            {
-                Apply();
-            }
         }
 
         /// <summary>

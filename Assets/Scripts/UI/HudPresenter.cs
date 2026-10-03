@@ -93,16 +93,25 @@ namespace Coika.UI
             }
         }
 
+        /// <summary>
+        /// Shows the new score.
+        /// </summary>
         private void HandleScoreChanged(int score, int delta)
         {
             _view.SetScore(score);
         }
 
+        /// <summary>
+        /// Shows the new combo multiplier, or hides it at x1.
+        /// </summary>
         private void HandleComboChanged(int combo, float multiplier)
         {
             _view.SetCombo(multiplier);
         }
 
+        /// <summary>
+        /// Shows the sprite of the tier the queue will drop next, or nothing when no queue is bound.
+        /// </summary>
         private void ShowNext()
         {
             _view.SetNextPreview(_queue != null ? _spriteOf(_queue.Next) : null);

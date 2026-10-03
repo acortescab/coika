@@ -14,18 +14,14 @@ namespace Coika.Gameplay
         /// <param name="isNewBest">Whether the run beat the previous best score.</param>
         /// <param name="highestTier">Index of the highest tier reached.</param>
         /// <param name="piecesDropped">Pieces dropped in the run.</param>
-        /// <param name="merges">Merges in the run.</param>
-        /// <param name="maxCombo">Longest combo of the run.</param>
         /// <param name="durationSeconds">Play time in seconds.</param>
-        public RunSummary(int score, int bestScore, bool isNewBest, int highestTier, int piecesDropped, int merges, int maxCombo, float durationSeconds)
+        public RunSummary(int score, int bestScore, bool isNewBest, int highestTier, int piecesDropped, float durationSeconds)
         {
             Score = score;
             BestScore = bestScore;
             IsNewBest = isNewBest;
             HighestTier = highestTier;
             PiecesDropped = piecesDropped;
-            Merges = merges;
-            MaxCombo = maxCombo;
             DurationSeconds = durationSeconds;
         }
 
@@ -44,12 +40,6 @@ namespace Coika.Gameplay
         /// <summary>Pieces dropped in the run.</summary>
         public int PiecesDropped { get; }
 
-        /// <summary>Merges in the run.</summary>
-        public int Merges { get; }
-
-        /// <summary>Longest combo of the run.</summary>
-        public int MaxCombo { get; }
-
         /// <summary>Play time of the run in seconds.</summary>
         public float DurationSeconds { get; }
 
@@ -61,7 +51,7 @@ namespace Coika.Gameplay
         public static RunSummary From(ScoreSystem score, float durationSeconds)
         {
             var best = score.IsNewBest ? score.Score : score.BestScore;
-            return new RunSummary(score.Score, best, score.IsNewBest, score.HighestTierReached, score.PiecesDropped, score.Merges, score.MaxCombo, durationSeconds);
+            return new RunSummary(score.Score, best, score.IsNewBest, score.HighestTierReached, score.PiecesDropped, durationSeconds);
         }
     }
 }

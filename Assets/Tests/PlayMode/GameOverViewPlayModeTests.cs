@@ -10,7 +10,7 @@ namespace Coika.Tests.PlayMode
     /// <summary>
     /// Checks the Game Over screen (issue #10): the <see cref="GameOverView"/> shows the values of a fake
     /// <see cref="RunSummary"/>, the "NEW BEST!" banner only when it applies, Retry raises one event, and the
-    /// fade-in runs on unscaled time. The <see cref="GameOverPresenter"/> forwards the click.
+    /// fade-in runs on unscaled time. The <see cref="GameOverPresenter"/> forwards the click and the tier icon.
     /// </summary>
     public class GameOverViewPlayModeTests
     {
@@ -36,54 +36,53 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// Builds a summary with defaults for the values a test does not care about.
+        /// </summary>
+        private static RunSummary Summary(int score = 1, int best = 1, bool isNewBest = false, int highestTier = 0, int piecesDropped = 1, float duration = 1f)
+        {
+            return new RunSummary(score, best, isNewBest, highestTier, piecesDropped, duration);
+        }
+
+        /// <summary>
         /// Show activates the view and writes the score, the best score, the pieces and the time.
         /// </summary>
         [Test]
         public void Show_WithASummary_ShowsItsValues()
         {
-            _views.GameOver.Show(new RunSummary(4321, 5000, false, 6, 87, 40, 5, 125.5f));
+            _views.GameOver.Show(Summary(score: 4321, best: 5000, piecesDropped: 87, duration: 125.5f));
 
-            Assert.That(_views.GameOver.IsShown, Is.True);
+            Assert.That(_views.GameOverObject.activeSelf, Is.True);
             Assert.That(UiTestViews.Shown(_views.OverScore), Is.EqualTo("4321"));
             Assert.That(UiTestViews.Shown(_views.OverBest), Is.EqualTo("5000"));
             Assert.That(UiTestViews.Shown(_views.OverPieces), Is.EqualTo("87"));
-            Assert.That(UiTestViews.Shown(_views.OverTime), Is.EqualTo("2:05"));
+            Assert.That(UiTestViews.Shown(_views.OverTime), Is.EqualTo("02:05"));
         }
 
         /// <summary>
-        /// The banner is visible for a new best score.
+        /// The banner is visible for a new best score and hidden again for a later run that is not one.
         /// </summary>
         [Test]
-        public void Show_WithANewBest_ShowsTheBanner()
+        public void Show_BannerFollowsIsNewBest()
         {
-            _views.GameOver.Show(new RunSummary(900, 900, true, 3, 10, 5, 2, 30f));
-
+            _views.GameOver.Show(Summary(score: 900, best: 900, isNewBest: true));
             Assert.That(_views.OverNewBest.activeSelf, Is.True);
-        }
 
-        /// <summary>
-        /// The banner is hidden when the run did not beat the best, even after a previous new best.
-        /// </summary>
-        [Test]
-        public void Show_WithoutANewBest_HidesTheBanner()
-        {
-            _views.GameOver.Show(new RunSummary(900, 900, true, 3, 10, 5, 2, 30f));
-
-            _views.GameOver.Show(new RunSummary(100, 900, false, 1, 4, 1, 1, 10f));
+            _views.GameOver.Show(Summary(score: 100, best: 900));
 
             Assert.That(_views.OverNewBest.activeSelf, Is.False);
         }
 
         /// <summary>
-        /// Minutes and seconds roll over correctly, with the seconds padded to two digits.
+        /// Minutes and seconds roll over correctly, both padded to two digits (mm:ss).
         /// </summary>
-        [TestCase(0f, "0:00")]
-        [TestCase(59.9f, "0:59")]
-        [TestCase(60f, "1:00")]
+        [TestCase(0f, "00:00")]
+        [TestCase(59.9f, "00:59")]
+        [TestCase(60f, "01:00")]
         [TestCase(3725f, "62:05")]
+        [TestCase(7230f, "120:30")]
         public void Show_WithADuration_FormatsMinutesAndSeconds(float seconds, string expected)
         {
-            _views.GameOver.Show(new RunSummary(1, 1, false, 0, 1, 0, 0, seconds));
+            _views.GameOver.Show(Summary(duration: seconds));
 
             Assert.That(UiTestViews.Shown(_views.OverTime), Is.EqualTo(expected));
         }
@@ -96,11 +95,27 @@ namespace Coika.Tests.PlayMode
         {
             var count = 0;
             _views.GameOver.RetryClicked += () => count++;
-            _views.GameOver.Show(new RunSummary(1, 1, false, 0, 1, 0, 0, 1f));
+            _views.GameOver.Show(Summary());
 
             _views.OverRetry.onClick.Invoke();
 
             Assert.That(count, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// After Hide the view no longer listens to the Retry button.
+        /// </summary>
+        [Test]
+        public void Retry_AfterHide_RaisesNothing()
+        {
+            var count = 0;
+            _views.GameOver.RetryClicked += () => count++;
+            _views.GameOver.Show(Summary());
+            _views.GameOver.Hide();
+
+            _views.OverRetry.onClick.Invoke();
+
+            Assert.That(count, Is.EqualTo(0));
         }
 
         /// <summary>
@@ -112,7 +127,7 @@ namespace Coika.Tests.PlayMode
             var presenter = new GameOverPresenter(_views.GameOver, tier => null);
             var count = 0;
             presenter.RetryRequested += () => count++;
-            presenter.Present(new RunSummary(1, 1, false, 0, 1, 0, 0, 1f));
+            presenter.Present(Summary());
 
             _views.OverRetry.onClick.Invoke();
             presenter.Dispose();
@@ -135,7 +150,7 @@ namespace Coika.Tests.PlayMode
                 return sprite;
             });
 
-            presenter.Present(new RunSummary(1, 1, false, 7, 1, 0, 0, 1f));
+            presenter.Present(Summary(highestTier: 7));
 
             Assert.That(asked, Is.EqualTo(7));
             Assert.That(_views.OverIcon.sprite, Is.SameAs(sprite));
@@ -150,7 +165,7 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Menu_InM1_IsNotInteractable()
         {
-            _views.GameOver.Show(new RunSummary(1, 1, false, 0, 1, 0, 0, 1f));
+            _views.GameOver.Show(Summary());
 
             Assert.That(_views.OverMenu.interactable, Is.False);
         }
@@ -161,11 +176,11 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Hide_AfterShow_HidesTheView()
         {
-            _views.GameOver.Show(new RunSummary(1, 1, false, 0, 1, 0, 0, 1f));
+            _views.GameOver.Show(Summary());
 
             _views.GameOver.Hide();
 
-            Assert.That(_views.GameOver.IsShown, Is.False);
+            Assert.That(_views.GameOverObject.activeSelf, Is.False);
         }
 
         /// <summary>
@@ -177,7 +192,7 @@ namespace Coika.Tests.PlayMode
         {
             Time.timeScale = 0f;
 
-            _views.GameOver.Show(new RunSummary(1, 1, false, 0, 1, 0, 0, 1f));
+            _views.GameOver.Show(Summary());
             Assert.That(_views.OverGroup.alpha, Is.EqualTo(0f));
 
             yield return new WaitForSecondsRealtime(GameOverView.FADE_SECONDS + 0.2f);

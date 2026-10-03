@@ -63,9 +63,7 @@ namespace Coika.Tests.EditMode
 
             Assert.That(summary.Score, Is.EqualTo(_score.Score));
             Assert.That(summary.PiecesDropped, Is.EqualTo(2));
-            Assert.That(summary.Merges, Is.EqualTo(1));
             Assert.That(summary.HighestTier, Is.EqualTo(5));
-            Assert.That(summary.MaxCombo, Is.EqualTo(1));
             Assert.That(summary.DurationSeconds, Is.EqualTo(DURATION));
         }
 

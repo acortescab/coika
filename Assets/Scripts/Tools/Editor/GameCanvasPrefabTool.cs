@@ -51,6 +51,8 @@ namespace Coika.Tools
         private const int SAMPLING_POINT_SIZE = 90;
         private const int ATLAS_PADDING = 5;
         private const int ATLAS_SIZE = 1024;
+        private const float STAT_CAPTION_HEIGHT = 60f;
+        private const float STAT_CAPTION_SIZE = 44f;
         private const float MARGIN = 40f;
         private const float MATCH_WIDTH_OR_HEIGHT = 0.5f;
 
@@ -122,7 +124,15 @@ namespace Coika.Tools
 
             CopyIfMissing(TmpSourceFontPath, SourceFontPath);
             CopyIfMissing(TmpLicensePath, LicensePath);
+            return CreateFontAsset();
+        }
 
+        /// <summary>
+        /// Creates the dynamic SDF font asset from the copied source font and saves it with its atlas texture and
+        /// material as sub-assets.
+        /// </summary>
+        private static TMP_FontAsset CreateFontAsset()
+        {
             var source = AssetDatabase.LoadAssetAtPath<Font>(SourceFontPath);
             var asset = TMP_FontAsset.CreateFontAsset(source, SAMPLING_POINT_SIZE, ATLAS_PADDING, GlyphRenderMode.SDFAA, ATLAS_SIZE, ATLAS_SIZE, AtlasPopulationMode.Dynamic);
             asset.name = "UiFont SDF";
@@ -195,7 +205,9 @@ namespace Coika.Tools
             var best = AddText(hudRect, "BestText", font, null, TopLeft(MARGIN + 170f, -170f, 270f, 60f), 40f, TextAlignmentOptions.TopLeft, Color.gray);
             var combo = AddText(hudRect, "ComboText", font, null, TopLeft(MARGIN, -240f, 440f, 80f), 64f, TextAlignmentOptions.TopLeft, AccentColor);
 
-            var pause = AddButton(hudRect, "PauseButton", font, null, "II", TopRight(-(MARGIN + MIN_TOUCH_SIZE + 32f), -MARGIN, MIN_TOUCH_SIZE, MIN_TOUCH_SIZE), ButtonColor, 96f);
+            var pause = AddButton(hudRect, "PauseButton", font, null, TopRight(-(MARGIN + MIN_TOUCH_SIZE + 32f), -MARGIN, MIN_TOUCH_SIZE, MIN_TOUCH_SIZE), ButtonColor, 96f);
+            // "II" is a symbol, not a word, so it is plain text and has no localization key (S-94).
+            pause.GetComponentInChildren<TMP_Text>().text = "II";
 
             var frame = NewRect("NextFrame", hudRect);
             Place(frame, TopRight(-MARGIN, -MARGIN, MIN_TOUCH_SIZE, MIN_TOUCH_SIZE));
@@ -236,33 +248,28 @@ namespace Coika.Tools
             Place(panel, Centered(0f, 0f, 960f, 1500f));
             panel.gameObject.AddComponent<Image>().color = PanelColor;
 
-            const float centerX = 0f;
-            AddText(panel, "Title", font, UiStrings.GameOverTitle, Centered(centerX, 660f, 880f, 120f), 96f, TextAlignmentOptions.Center, Color.white);
+            const float fullWidth = 880f;
+            AddText(panel, "Title", font, UiStrings.GameOverTitle, Centered(0f, 660f, fullWidth, 120f), 96f, TextAlignmentOptions.Center, Color.white);
 
             var banner = NewRect("NewBestBanner", panel);
-            Place(banner, Centered(centerX, 530f, 880f, 90f));
-            AddText(banner, "NewBestText", font, UiStrings.GameOverNewBest, Centered(0f, 0f, 880f, 90f), 72f, TextAlignmentOptions.Center, AccentColor);
+            Place(banner, Centered(0f, 530f, fullWidth, 90f));
+            AddText(banner, "NewBestText", font, UiStrings.GameOverNewBest, Centered(0f, 0f, fullWidth, 90f), 72f, TextAlignmentOptions.Center, AccentColor);
 
-            AddText(panel, "ScoreCaption", font, UiStrings.GameOverScore, Centered(centerX, 410f, 880f, 60f), 44f, TextAlignmentOptions.Center, Color.gray);
-            var score = AddText(panel, "ScoreText", font, null, Centered(centerX, 320f, 880f, 130f), 120f, TextAlignmentOptions.Center, Color.white);
+            var score = AddStat(panel, font, "Score", UiStrings.GameOverScore, 0f, 410f, 320f, fullWidth, 130f, 120f);
+            var best = AddStat(panel, font, "Best", UiStrings.GameOverBest, 0f, 210f, 130f, fullWidth, 100f, 80f);
 
-            AddText(panel, "BestCaption", font, UiStrings.GameOverBest, Centered(centerX, 210f, 880f, 60f), 44f, TextAlignmentOptions.Center, Color.gray);
-            var best = AddText(panel, "BestText", font, null, Centered(centerX, 130f, 880f, 100f), 80f, TextAlignmentOptions.Center, Color.white);
-
-            AddText(panel, "HighestTierCaption", font, UiStrings.GameOverHighestTier, Centered(centerX, 30f, 880f, 60f), 44f, TextAlignmentOptions.Center, Color.gray);
+            AddText(panel, "HighestTierCaption", font, UiStrings.GameOverHighestTier, Centered(0f, 30f, fullWidth, STAT_CAPTION_HEIGHT), STAT_CAPTION_SIZE, TextAlignmentOptions.Center, Color.gray);
             var iconRect = NewRect("HighestTierIcon", panel);
-            Place(iconRect, Centered(centerX, -90f, 160f, 160f));
+            Place(iconRect, Centered(0f, -90f, 160f, 160f));
             var icon = iconRect.gameObject.AddComponent<Image>();
             icon.preserveAspect = true;
             icon.raycastTarget = false;
 
-            AddText(panel, "PiecesCaption", font, UiStrings.GameOverPieces, Centered(-220f, -250f, 400f, 60f), 44f, TextAlignmentOptions.Center, Color.gray);
-            var pieces = AddText(panel, "PiecesText", font, null, Centered(-220f, -320f, 400f, 90f), 72f, TextAlignmentOptions.Center, Color.white);
-            AddText(panel, "TimeCaption", font, UiStrings.GameOverTime, Centered(220f, -250f, 400f, 60f), 44f, TextAlignmentOptions.Center, Color.gray);
-            var time = AddText(panel, "TimeText", font, null, Centered(220f, -320f, 400f, 90f), 72f, TextAlignmentOptions.Center, Color.white);
+            var pieces = AddStat(panel, font, "Pieces", UiStrings.GameOverPieces, -220f, -250f, -320f, 400f, 90f, 72f);
+            var time = AddStat(panel, font, "Time", UiStrings.GameOverTime, 220f, -250f, -320f, 400f, 90f, 72f);
 
-            var retry = AddButton(panel, "RetryButton", font, UiStrings.GameOverRetry, null, Centered(-230f, -520f, 440f, MIN_TOUCH_SIZE), PrimaryButtonColor, 64f);
-            var menu = AddButton(panel, "MenuButton", font, UiStrings.GameOverMenu, null, Centered(230f, -520f, 440f, MIN_TOUCH_SIZE), ButtonColor, 64f);
+            var retry = AddButton(panel, "RetryButton", font, UiStrings.GameOverRetry, Centered(-230f, -520f, 440f, MIN_TOUCH_SIZE), PrimaryButtonColor, 64f);
+            var menu = AddButton(panel, "MenuButton", font, UiStrings.GameOverMenu, Centered(230f, -520f, 440f, MIN_TOUCH_SIZE), ButtonColor, 64f);
 
             Assign(view, "_scoreText", score);
             Assign(view, "_bestText", best);
@@ -368,10 +375,10 @@ namespace Coika.Tools
         }
 
         /// <summary>
-        /// Adds a button with a background image and a label. The label is localized when it has a key, otherwise it
-        /// shows the given glyph text, which is a symbol and not a word.
+        /// Adds a button with a background image and a label, which is localized when it has a key. The label is
+        /// found again with <c>GetComponentInChildren</c> by a caller that wants to set a symbol instead.
         /// </summary>
-        private static Button AddButton(RectTransform parent, string name, TMP_FontAsset font, string key, string symbol, Placement placement, Color color, float fontSize)
+        private static Button AddButton(RectTransform parent, string name, TMP_FontAsset font, string key, Placement placement, Color color, float fontSize)
         {
             var rect = NewRect(name, parent);
             Place(rect, placement);
@@ -381,13 +388,18 @@ namespace Coika.Tools
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
 
-            var label = AddText(rect, "Label", font, key, Centered(0f, 0f, placement.Size.x, placement.Size.y), fontSize, TextAlignmentOptions.Center, Color.white);
-            if (symbol != null)
-            {
-                label.text = symbol;
-            }
-
+            AddText(rect, "Label", font, key, Centered(0f, 0f, placement.Size.x, placement.Size.y), fontSize, TextAlignmentOptions.Center, Color.white);
             return button;
+        }
+
+        /// <summary>
+        /// Adds a gray localized caption with a value label under it, for the Game Over stats, and returns the
+        /// value label. The value is empty here: the view writes it.
+        /// </summary>
+        private static TMP_Text AddStat(RectTransform parent, TMP_FontAsset font, string name, string key, float x, float captionY, float valueY, float width, float valueHeight, float valueSize)
+        {
+            AddText(parent, name + "Caption", font, key, Centered(x, captionY, width, STAT_CAPTION_HEIGHT), STAT_CAPTION_SIZE, TextAlignmentOptions.Center, Color.gray);
+            return AddText(parent, name + "Text", font, null, Centered(x, valueY, width, valueHeight), valueSize, TextAlignmentOptions.Center, Color.white);
         }
 
         /// <summary>

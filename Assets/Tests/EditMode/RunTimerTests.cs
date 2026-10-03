@@ -34,7 +34,6 @@ namespace Coika.Tests.EditMode
             _now = 150d;
 
             Assert.That(_timer.ElapsedSeconds, Is.EqualTo(0f).Within(TOLERANCE));
-            Assert.That(_timer.IsRunning, Is.False);
         }
 
         /// <summary>
@@ -47,7 +46,6 @@ namespace Coika.Tests.EditMode
             _now += 12.5d;
 
             Assert.That(_timer.ElapsedSeconds, Is.EqualTo(12.5f).Within(TOLERANCE));
-            Assert.That(_timer.IsRunning, Is.True);
         }
 
         /// <summary>
@@ -62,7 +60,6 @@ namespace Coika.Tests.EditMode
             _now += 500d;
 
             Assert.That(_timer.ElapsedSeconds, Is.EqualTo(30f).Within(TOLERANCE));
-            Assert.That(_timer.IsRunning, Is.False);
         }
 
         /// <summary>

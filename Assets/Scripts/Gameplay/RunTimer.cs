@@ -12,6 +12,7 @@ namespace Coika.Gameplay
 
         private double _startTime;
         private double _stopTime;
+        private bool _running;
 
         /// <summary>
         /// Creates a stopped timer at 0 seconds.
@@ -23,9 +24,6 @@ namespace Coika.Gameplay
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
         }
 
-        /// <summary>Whether the timer is counting.</summary>
-        public bool IsRunning { get; private set; }
-
         /// <summary>
         /// Seconds since <see cref="Start"/>, frozen at <see cref="Stop"/>. It is 0 before the first start.
         /// </summary>
@@ -33,7 +31,7 @@ namespace Coika.Gameplay
         {
             get
             {
-                var end = IsRunning ? _clock() : _stopTime;
+                var end = _running ? _clock() : _stopTime;
                 return (float)Math.Max(0d, end - _startTime);
             }
         }
@@ -45,7 +43,7 @@ namespace Coika.Gameplay
         {
             _startTime = _clock();
             _stopTime = _startTime;
-            IsRunning = true;
+            _running = true;
         }
 
         /// <summary>
@@ -53,13 +51,13 @@ namespace Coika.Gameplay
         /// </summary>
         public void Stop()
         {
-            if (!IsRunning)
+            if (!_running)
             {
                 return;
             }
 
             _stopTime = _clock();
-            IsRunning = false;
+            _running = false;
         }
     }
 }

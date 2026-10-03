@@ -26,9 +26,9 @@ namespace Coika.UI
         public const float FADE_SECONDS = 0.2f;
 
         private const string NUMBER_FORMAT = "{0}";
-        private const string TIME_FORMAT = "{0}:{1}{2}";
+        private const string TIME_FORMAT = "{0}{1}:{2}{3}";
         private const int SECONDS_PER_MINUTE = 60;
-        private const int SECONDS_PER_TEN = 10;
+        private const int DIGIT_BASE = 10;
 
         [SerializeField]
         private TMP_Text _scoreText;
@@ -50,40 +50,51 @@ namespace Coika.UI
         private CanvasGroup _group;
         private UnityAction _onRetryClicked;
         private float _fadeElapsed;
-        private bool _initialized;
+        private bool _fading;
 
         /// <summary>Raised once per click on the Retry button.</summary>
         public event Action RetryClicked;
 
-        /// <summary>Whether the view is on screen.</summary>
-        public bool IsShown => gameObject.activeSelf;
-
+        /// <summary>
+        /// Caches the canvas group and the click handler, and disables the Menu placeholder. It runs on the first
+        /// <see cref="Show"/>, because the panel starts inactive.
+        /// </summary>
         private void Awake()
         {
             _group = GetComponent<CanvasGroup>();
             _onRetryClicked = HandleRetryClicked;
-            _retryButton.onClick.AddListener(_onRetryClicked);
             _menuButton.interactable = false;
-            _initialized = true;
-            enabled = false;
         }
 
-        private void OnDestroy()
+        /// <summary>
+        /// Starts listening to the Retry button while the view is on screen (S-23).
+        /// </summary>
+        private void OnEnable()
         {
-            if (_initialized && _retryButton != null)
-            {
-                _retryButton.onClick.RemoveListener(_onRetryClicked);
-            }
+            _retryButton.onClick.AddListener(_onRetryClicked);
         }
 
+        /// <summary>
+        /// Stops listening to the Retry button when the view is hidden or destroyed (S-23).
+        /// </summary>
+        private void OnDisable()
+        {
+            _retryButton.onClick.RemoveListener(_onRetryClicked);
+        }
+
+        /// <summary>
+        /// Runs the fade-in on unscaled time, so it plays even when the game is frozen (S-64).
+        /// </summary>
         private void Update()
         {
+            if (!_fading)
+            {
+                return;
+            }
+
             _fadeElapsed += Time.unscaledDeltaTime;
             _group.alpha = Mathf.Clamp01(_fadeElapsed / FADE_SECONDS);
-            if (_fadeElapsed >= FADE_SECONDS)
-            {
-                enabled = false;
-            }
+            _fading = _fadeElapsed < FADE_SECONDS;
         }
 
         /// <summary>
@@ -100,14 +111,16 @@ namespace Coika.UI
             _newBestBanner.SetActive(summary.IsNewBest);
             _piecesText.SetText(NUMBER_FORMAT, summary.PiecesDropped);
 
+            // Minutes and seconds go in as separate digits, so the two-digit padding (mm:ss) does not depend on
+            // TMP number-format rules. Minutes past 99 simply grow the tens digit.
             var totalSeconds = Mathf.FloorToInt(summary.DurationSeconds);
-            // The seconds are two digits (tens, units) so the padding does not depend on TMP number-format rules.
+            var minutes = totalSeconds / SECONDS_PER_MINUTE;
             var seconds = totalSeconds % SECONDS_PER_MINUTE;
-            _timeText.SetText(TIME_FORMAT, totalSeconds / SECONDS_PER_MINUTE, seconds / SECONDS_PER_TEN, seconds % SECONDS_PER_TEN);
+            _timeText.SetText(TIME_FORMAT, minutes / DIGIT_BASE, minutes % DIGIT_BASE, seconds / DIGIT_BASE, seconds % DIGIT_BASE);
 
             _fadeElapsed = 0f;
             _group.alpha = 0f;
-            enabled = true;
+            _fading = true;
         }
 
         /// <summary>
@@ -115,7 +128,7 @@ namespace Coika.UI
         /// </summary>
         public void Hide()
         {
-            enabled = false;
+            _fading = false;
             gameObject.SetActive(false);
         }
 
@@ -129,6 +142,9 @@ namespace Coika.UI
             _highestTierIcon.enabled = sprite != null;
         }
 
+        /// <summary>
+        /// Raises <see cref="RetryClicked"/> for a click on the Retry button.
+        /// </summary>
         private void HandleRetryClicked()
         {
             RetryClicked?.Invoke();

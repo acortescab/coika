@@ -31,6 +31,9 @@ namespace Coika.UI
         [SerializeField]
         private Button _pauseButton;
 
+        /// <summary>
+        /// Checks the serialized references and disables the pause placeholder, which does nothing in M1.
+        /// </summary>
         private void Awake()
         {
             if (_scoreText == null || _bestText == null || _comboText == null || _nextPreview == null)

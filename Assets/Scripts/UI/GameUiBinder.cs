@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Coika.Core;
 using Coika.Gameplay;
 using UnityEngine;
@@ -14,6 +15,10 @@ namespace Coika.UI
     /// The canvas and the run arrive in any order, so each handler stores what it got and the wiring runs once both
     /// are there. Errors are logged, never thrown, because the loading is asynchronous. Everything it loaded or
     /// subscribed to is released when it is destroyed, even while the loading is still running.
+    /// </para>
+    /// <para>
+    /// It wires one run: a second <see cref="DropControllerBootstrap.RunStarted"/> is ignored. The Retry click
+    /// reaches <see cref="GameOverPresenter.RetryRequested"/> and goes no further until issue #11.
     /// </para>
     /// </summary>
     [AddComponentMenu("Coika/UI/Game UI Binder")]
@@ -42,15 +47,18 @@ namespace Coika.UI
         private bool _wiring;
         private bool _destroyed;
 
-        /// <summary>Raised when the player asks to retry. Nobody starts a run in M1; the game manager will.</summary>
-        public event Action RetryRequested;
-
+        /// <summary>
+        /// Caches the event handlers, so subscribing allocates nothing.
+        /// </summary>
         private void Awake()
         {
             _onRunStarted = HandleRunStarted;
             _onRunEnded = HandleRunEnded;
         }
 
+        /// <summary>
+        /// Starts listening to the run announcements of the bootstrap (S-23).
+        /// </summary>
         private void OnEnable()
         {
             if (_bootstrap == null)
@@ -62,6 +70,9 @@ namespace Coika.UI
             _bootstrap.RunEnded += _onRunEnded;
         }
 
+        /// <summary>
+        /// Stops listening to the bootstrap (S-23).
+        /// </summary>
         private void OnDisable()
         {
             if (_bootstrap == null)
@@ -73,18 +84,17 @@ namespace Coika.UI
             _bootstrap.RunEnded -= _onRunEnded;
         }
 
-        private async void Start()
+        /// <summary>
+        /// Starts loading the canvas. A failure is logged, not thrown.
+        /// </summary>
+        private void Start()
         {
-            try
-            {
-                await LoadCanvasAsync();
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"GameUiBinder could not load the canvas: {e.Message}", this);
-            }
+            Observe(LoadCanvasAsync(), "load the canvas");
         }
 
+        /// <summary>
+        /// Releases the presenters, the sprites, the canvas and the prefab handle.
+        /// </summary>
         private void OnDestroy()
         {
             _destroyed = true;
@@ -111,7 +121,7 @@ namespace Coika.UI
         /// <summary>
         /// Loads and instantiates the canvas, finds its two views, and wires the run if it already started.
         /// </summary>
-        private async System.Threading.Tasks.Task LoadCanvasAsync()
+        private async Task LoadCanvasAsync()
         {
             if (_bootstrap == null || _canvasPrefab == null || !_canvasPrefab.RuntimeKeyIsValid())
             {
@@ -146,12 +156,18 @@ namespace Coika.UI
             await TryWireAsync();
         }
 
+        /// <summary>
+        /// Remembers the run and wires the UI if the canvas is ready.
+        /// </summary>
         private void HandleRunStarted(RunContext run)
         {
             _run = run;
-            RunAsync(TryWireAsync());
+            Observe(TryWireAsync(), "wire the UI");
         }
 
+        /// <summary>
+        /// Remembers the summary and shows it, or shows it later when the wiring is done.
+        /// </summary>
         private void HandleRunEnded(RunSummary summary)
         {
             _summary = summary;
@@ -159,9 +175,12 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Observes a wiring task started from an event handler, so a failure is logged instead of lost.
+        /// Awaits a task started from a Unity message or an event handler, so a failure is logged with its
+        /// context instead of being lost in an unobserved task.
         /// </summary>
-        private async void RunAsync(System.Threading.Tasks.Task task)
+        /// <param name="task">The running task.</param>
+        /// <param name="what">What the task does, for the error message.</param>
+        private async void Observe(Task task, string what)
         {
             try
             {
@@ -169,14 +188,16 @@ namespace Coika.UI
             }
             catch (Exception e)
             {
-                Debug.LogError($"GameUiBinder could not wire the UI: {e.Message}", this);
+                Debug.LogError($"GameUiBinder could not {what}: {e.Message}", this);
             }
         }
 
         /// <summary>
-        /// Builds the sprite cache and the presenters once the canvas and the run are both available.
+        /// Builds the sprite cache and the presenters once the canvas and the run are both available. When the
+        /// sprites fail to load, the partial cache is released and the error is rethrown to be logged, so no
+        /// half-built state stays behind.
         /// </summary>
-        private async System.Threading.Tasks.Task TryWireAsync()
+        private async Task TryWireAsync()
         {
             if (_wiring || _hudPresenter != null || _run == null || _hud == null || _gameOver == null)
             {
@@ -190,6 +211,16 @@ namespace Coika.UI
             try
             {
                 await sprites.LoadAsync(run.Tiers);
+            }
+            catch
+            {
+                sprites.Dispose();
+                if (_sprites == sprites)
+                {
+                    _sprites = null;
+                }
+
+                throw;
             }
             finally
             {
@@ -206,16 +237,10 @@ namespace Coika.UI
             _hudPresenter.BindQueue(run.Queue);
 
             _gameOverPresenter = new GameOverPresenter(_gameOver, sprites.Get);
-            _gameOverPresenter.RetryRequested += HandleRetryRequested;
             if (_summary.HasValue)
             {
                 _gameOverPresenter.Present(_summary.Value);
             }
-        }
-
-        private void HandleRetryRequested()
-        {
-            RetryRequested?.Invoke();
         }
     }
 }

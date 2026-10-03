@@ -43,14 +43,6 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Hides the view, for example when a new run starts.
-        /// </summary>
-        public void Dismiss()
-        {
-            _view.Hide();
-        }
-
-        /// <summary>
         /// Unsubscribes from the view. Safe to call more than once.
         /// </summary>
         public void Dispose()
@@ -58,6 +50,9 @@ namespace Coika.UI
             _view.RetryClicked -= _onRetryClicked;
         }
 
+        /// <summary>
+        /// Forwards the Retry click of the view as <see cref="RetryRequested"/>.
+        /// </summary>
         private void HandleRetryClicked()
         {
             RetryRequested?.Invoke();
