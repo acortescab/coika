@@ -1,6 +1,12 @@
 {
 	"name": "Coika.UI",
 	"references": [
-		"Coika.Core"
-	]
+		"Coika.Core",
+		"Coika.Data",
+		"Coika.Gameplay",
+		"Unity.Addressables",
+		"Unity.ugui",
+		"Unity.TextMeshPro"
+	],
+	"autoReferenced": false
 }

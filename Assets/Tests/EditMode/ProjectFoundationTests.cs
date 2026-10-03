@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -46,12 +47,15 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// The project has no Resources folder and no script calls Resources.Load.
+        /// The project has no Resources folder and no script calls Resources.Load. The only exception is the
+        /// folder of the TMP Essentials, which TMP loads by itself (see C-01 in constraints.md).
         /// </summary>
         [Test]
         public void Project_Always_HasNoResourcesFolderOrResourcesLoad()
         {
-            var folders = Directory.GetDirectories(Application.dataPath, "Resources", SearchOption.AllDirectories);
+            var folders = Array.FindAll(
+                Directory.GetDirectories(Application.dataPath, "Resources", SearchOption.AllDirectories),
+                folder => !IsTmpEssentialsFolder(folder));
             var violations = FindViolations(@"\bResources\.Load");
 
             Assert.IsEmpty(folders, "Resources folders are forbidden: " + string.Join(", ", folders));
@@ -97,6 +101,17 @@ namespace Coika.Tests.EditMode
             Assert.IsNotNull(gameEntry, "The Game scene must be Addressable.");
             Assert.AreEqual("Scenes", gameEntry.parentGroup.Name);
             Assert.IsNull(bootEntry, "The Boot scene must stay in the initial build, not in an Addressables group.");
+        }
+
+        /// <summary>
+        /// Whether a Resources folder is the one the TMP Essentials import creates (<c>Assets/TextMesh Pro/Resources</c>),
+        /// the only Resources folder C-01 allows.
+        /// </summary>
+        /// <param name="folder">Full path of a Resources folder.</param>
+        private static bool IsTmpEssentialsFolder(string folder)
+        {
+            var normalized = folder.Replace('\\', '/').TrimEnd('/');
+            return normalized.EndsWith("/Assets/TextMesh Pro/Resources", StringComparison.Ordinal);
         }
 
         /// <summary>
