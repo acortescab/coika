@@ -31,6 +31,8 @@ namespace Coika.Gameplay
         private PointerInputReader _input;
         [SerializeField]
         private MergeSystem _mergeSystem;
+        [SerializeField]
+        private OverflowDetector _overflowDetector;
         // Addressable assets, loaded through the asset service (C-01).
         [SerializeField]
         private AssetReferenceT<GameConfig> _config;
@@ -79,9 +81,9 @@ namespace Coika.Gameplay
         /// </summary>
         private async System.Threading.Tasks.Task SetUpAsync()
         {
-            if (_jar == null || _controller == null || _input == null || _mergeSystem == null || _config == null || !_config.RuntimeKeyIsValid() || !_piecePrefab.RuntimeKeyIsValid())
+            if (_jar == null || _controller == null || _input == null || _mergeSystem == null || _overflowDetector == null || _config == null || !_config.RuntimeKeyIsValid() || !_piecePrefab.RuntimeKeyIsValid())
             {
-                Debug.LogError("DropControllerBootstrap needs the Jar, the DropController, the PointerInputReader, the MergeSystem, the GameConfig and the Piece prefab.", this);
+                Debug.LogError("DropControllerBootstrap needs the Jar, the DropController, the PointerInputReader, the MergeSystem, the OverflowDetector, the GameConfig and the Piece prefab.", this);
                 return;
             }
 
@@ -128,6 +130,10 @@ namespace Coika.Gameplay
             _mergeSystem.Initialize(_factory, _tiers, _loadedConfig);
             _controller.Initialize(_input, _jar, _factory, queue, _tiers, _loadedConfig);
             _controller.Enable();
+
+            // TODO #10/#11: the game manager listens to GameOverTriggered; until then the detector only drives the line.
+            _overflowDetector.Initialize(_factory, _jar, _loadedConfig);
+            _overflowDetector.Enable();
         }
 
         /// <summary>
@@ -144,6 +150,11 @@ namespace Coika.Gameplay
             if (_mergeSystem != null)
             {
                 _mergeSystem.enabled = false;
+            }
+
+            if (_overflowDetector != null)
+            {
+                _overflowDetector.Disable();
             }
 
             _factory?.Dispose();

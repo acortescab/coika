@@ -58,6 +58,13 @@ namespace Coika.Gameplay
         /// <summary>Whether the piece was created by a merge a moment ago and is still in its overflow grace.</summary>
         public bool IsInSpawnGrace => Time.time < SpawnGraceUntil;
 
+        /// <summary>
+        /// Seconds the piece has been continuously overflowing, for the overflow detector (issue #9). It lives on the
+        /// piece so tracking costs no lookup or allocation, and a piece that goes back to the pool and is reused
+        /// starts at 0 because <see cref="Initialize"/> clears it.
+        /// </summary>
+        public float OverflowSeconds { get; private set; }
+
         /// <summary>Whether the player is holding the piece: kinematic, on the held layer and without collisions.</summary>
         public bool IsHeld { get; private set; }
 
@@ -116,6 +123,7 @@ namespace Coika.Gameplay
             Merged = false;
             SpawnTime = Time.time;
             SpawnGraceUntil = 0f;
+            OverflowSeconds = 0f;
             _settledVelocitySquared = config.SettledVelocity * config.SettledVelocity;
 
             var radius = tier.DiameterUnits * 0.5f;
@@ -203,12 +211,29 @@ namespace Coika.Gameplay
 
         /// <summary>
         /// Stamps the time until which the piece is exempt from the overflow timer. The merge system calls it on the
-        /// piece it creates; this class only stores it, the overflow check (issue #9) reads it.
+        /// piece it creates; this class only stores it, the overflow detector (issue #9) reads it.
         /// </summary>
         /// <param name="graceUntil">Value of <see cref="Time.time"/> at which the grace ends.</param>
         public void StampSpawnGrace(float graceUntil)
         {
             SpawnGraceUntil = graceUntil;
+        }
+
+        /// <summary>
+        /// Adds time to the continuous overflow of the piece. Only the overflow detector calls it.
+        /// </summary>
+        /// <param name="seconds">Seconds to add.</param>
+        public void AddOverflowTime(float seconds)
+        {
+            OverflowSeconds += seconds;
+        }
+
+        /// <summary>
+        /// Sets the continuous overflow back to 0, because the piece stopped overflowing.
+        /// </summary>
+        public void ClearOverflowTime()
+        {
+            OverflowSeconds = 0f;
         }
 
         /// <summary>

@@ -24,6 +24,8 @@ namespace Coika.Data
         private float _overflowGrace = 1f;
         [SerializeField]
         private float _settledVelocity = 0.2f;
+        [SerializeField, Min(0f)]
+        private float _dangerWarnDistance = 2f;
         [SerializeField]
         private float _comboWindow = 1f;
         [SerializeField]
@@ -86,6 +88,9 @@ namespace Coika.Data
 
         /// <summary>Seconds after a piece is created by a merge during which it does not count for the overflow.</summary>
         public float OverflowGrace => _overflowGrace;
+
+        /// <summary>Distance in world units below the Danger Line from which a piece makes the line appear.</summary>
+        public float DangerWarnDistance => _dangerWarnDistance;
 
         /// <summary>Seconds within which a new merge continues the combo.</summary>
         public float ComboWindow => _comboWindow;
