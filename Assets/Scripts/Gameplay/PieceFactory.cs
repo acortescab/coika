@@ -28,6 +28,7 @@ namespace Coika.Gameplay
         private readonly GameConfig _config;
         private readonly PrefabPool<Piece> _pool;
         private readonly Dictionary<TierDefinition, Sprite> _sprites = new();
+        private readonly Func<float> _clock;
 
         private bool _prewarmed;
         private bool _prewarming;
@@ -48,14 +49,19 @@ namespace Coika.Gameplay
         /// <param name="config">Config passed to every piece when it is initialized.</param>
         /// <param name="container">Object that parents every piece, active or pooled.</param>
         /// <param name="prewarmCount">Number of pieces built when pre-warming.</param>
+        /// <param name="clock">Gives the time that stamps <see cref="Piece.SpawnTime"/> and the merge grace; <see cref="Time.time"/> when null.</param>
         /// <exception cref="ArgumentNullException">A dependency is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The pre-warm count is negative.</exception>
-        public PieceFactory(IAssetService assets, AssetReference prefabReference, GameConfig config, Transform container, int prewarmCount = PrefabPool<Piece>.DEFAULT_PREWARM_COUNT)
+        public PieceFactory(IAssetService assets, AssetReference prefabReference, GameConfig config, Transform container, int prewarmCount = PrefabPool<Piece>.DEFAULT_PREWARM_COUNT, Func<float> clock = null)
         {
+            _clock = clock ?? DefaultClock;
             _assets = assets ?? throw new ArgumentNullException(nameof(assets));
             _config = config != null ? config : throw new ArgumentNullException(nameof(config));
             _pool = new PrefabPool<Piece>(assets, prefabReference, container, prewarmCount, ClearSubscribers);
         }
+
+        /// <summary>Current time on the clock the factory stamps pieces with, shared with the merge and overflow systems.</summary>
+        public float Now => _clock();
 
         /// <summary>The pieces that are in play now, for the overflow and merge systems. Read-only.</summary>
         public IReadOnlyList<Piece> ActivePieces => _pool.Active;
@@ -139,7 +145,7 @@ namespace Coika.Gameplay
 
             // The first placement may use the transform: the body takes its pose from it when it is enabled.
             var piece = _pool.Get(new Vector3(position.x, position.y, 0f), Quaternion.identity);
-            piece.Initialize(tier, sprite, _config);
+            piece.Initialize(tier, sprite, _config, _clock());
             piece.Rigidbody.linearVelocity = velocity;
             piece.AssignSequenceId(_nextSequenceId++);
             PieceCreated?.Invoke(piece);
@@ -204,6 +210,15 @@ namespace Coika.Gameplay
                 _assets.ReleaseAsset(sprite);
 
             _sprites.Clear();
+        }
+
+        /// <summary>
+        /// The clock used when none is given: the time of the player loop.
+        /// </summary>
+        /// <returns>The value of <see cref="Time.time"/>.</returns>
+        private static float DefaultClock()
+        {
+            return Time.time;
         }
 
         /// <summary>
