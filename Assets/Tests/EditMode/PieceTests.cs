@@ -146,6 +146,64 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Two different pieces of the same tier that are free and not merged can merge, from either side.
+        /// </summary>
+        [Test]
+        public void CanMergeWith_TwoFreePiecesOfTheSameTier_IsTrueFromBothSides()
+        {
+            var tier = CreateTier(1f);
+            var other = CreateInitializedPiece(tier);
+            _piece.Initialize(tier, CreateSprite(16), _config);
+
+            Assert.IsTrue(_piece.CanMergeWith(other), "This piece asks");
+            Assert.IsTrue(other.CanMergeWith(_piece), "The other piece asks");
+        }
+
+        /// <summary>
+        /// A missing piece, the piece itself, a piece of another tier and a piece without tier cannot merge.
+        /// </summary>
+        [Test]
+        public void CanMergeWith_NullSelfOtherTierOrNoTier_IsFalse()
+        {
+            var tier = CreateTier(1f);
+            _piece.Initialize(tier, CreateSprite(16), _config);
+            var differentTier = CreateInitializedPiece(CreateTier(1.5f));
+            var uninitialized = CreateUninitializedPiece();
+
+            Assert.IsFalse(_piece.CanMergeWith(null), "Null");
+            Assert.IsFalse(_piece.CanMergeWith(_piece), "The same piece");
+            Assert.IsFalse(_piece.CanMergeWith(differentTier), "Another tier");
+            Assert.IsFalse(uninitialized.CanMergeWith(uninitialized), "No tier, same piece");
+            Assert.IsFalse(uninitialized.CanMergeWith(_piece), "This piece has no tier");
+            Assert.IsFalse(_piece.CanMergeWith(uninitialized), "The other piece has no tier");
+        }
+
+        /// <summary>
+        /// A piece that was merged or is held cannot merge, and neither can its partner, whichever asks.
+        /// </summary>
+        [Test]
+        public void CanMergeWith_MergedOrHeldPiece_IsFalseFromBothSides()
+        {
+            var tier = CreateTier(1f);
+            var other = CreateInitializedPiece(tier);
+            _piece.Initialize(tier, CreateSprite(16), _config);
+
+            other.MarkMerged();
+            Assert.IsFalse(_piece.CanMergeWith(other), "The other piece is merged");
+            Assert.IsFalse(other.CanMergeWith(_piece), "This piece asks a merged piece");
+
+            other.Initialize(tier, CreateSprite(16), _config);
+            other.SetHeld(true);
+            Assert.IsFalse(_piece.CanMergeWith(other), "The other piece is held");
+            Assert.IsFalse(other.CanMergeWith(_piece), "A held piece asks");
+
+            other.SetHeld(false);
+            _piece.MarkMerged();
+            Assert.IsFalse(_piece.CanMergeWith(other), "This piece is merged");
+            Assert.IsFalse(other.CanMergeWith(_piece), "The partner is merged");
+        }
+
+        /// <summary>
         /// A piece is settled when it moves slower than the settled velocity of the config (0.2).
         /// </summary>
         [Test]
@@ -183,6 +241,29 @@ namespace Coika.Tests.EditMode
             Assert.Throws<ArgumentNullException>(() => _piece.Initialize(null, sprite, _config), "tier");
             Assert.Throws<ArgumentNullException>(() => _piece.Initialize(tier, null, _config), "sprite");
             Assert.Throws<ArgumentNullException>(() => _piece.Initialize(tier, sprite, null), "config");
+        }
+
+        /// <summary>
+        /// Creates a second piece object like the prefab, without calling <see cref="Piece.Initialize"/> on it.
+        /// </summary>
+        /// <returns>The piece. The test destroys it.</returns>
+        private Piece CreateUninitializedPiece()
+        {
+            var pieceObject = new GameObject("OtherPiece", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(Piece));
+            _created.Add(pieceObject);
+            return pieceObject.GetComponent<Piece>();
+        }
+
+        /// <summary>
+        /// Creates a second piece object and initializes it for a tier.
+        /// </summary>
+        /// <param name="tier">The tier of the piece.</param>
+        /// <returns>The piece. The test destroys it.</returns>
+        private Piece CreateInitializedPiece(TierDefinition tier)
+        {
+            var piece = CreateUninitializedPiece();
+            piece.Initialize(tier, CreateSprite(16), _config);
+            return piece;
         }
 
         /// <summary>
