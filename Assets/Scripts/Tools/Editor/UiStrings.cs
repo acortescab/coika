@@ -20,6 +20,9 @@ namespace Coika.Tools
         public const string GameOverTime = "gameover.time";
         public const string GameOverRetry = "gameover.retry";
         public const string GameOverMenu = "gameover.menu";
+        public const string LoadingText = "loading.text";
+        public const string LoadingFailed = "loading.failed";
+        public const string LoadingRetry = "loading.retry";
 
         /// <summary>Every key with its English text.</summary>
         public static readonly (string Key, string English)[] All =
@@ -34,6 +37,9 @@ namespace Coika.Tools
             (GameOverTime, "TIME"),
             (GameOverRetry, "RETRY"),
             (GameOverMenu, "MENU"),
+            (LoadingText, "LOADING..."),
+            (LoadingFailed, "COULD NOT LOAD THE GAME"),
+            (LoadingRetry, "RETRY"),
         };
     }
 }

@@ -47,6 +47,29 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// No script looks objects up by type: the scene references live in the installer (issue #11). The only
+        /// exceptions are the editor setup tool and the debug spawner that predates the installer.
+        /// </summary>
+        [Test]
+        public void Scripts_Always_DoNotFindObjectsByType()
+        {
+            var violations = FindViolations(@"\bFindObject(s)?OfType|\bFindAnyObjectByType|\bFindFirstObjectByType|\bFindObjectsBy", "GameUiSetup.cs", "PieceDebugSpawner.cs");
+
+            Assert.IsEmpty(violations, string.Join("\n", violations));
+        }
+
+        /// <summary>
+        /// No script declares a singleton: a static instance of its own type (issue #11).
+        /// </summary>
+        [Test]
+        public void Scripts_Always_DeclareNoSingletons()
+        {
+            var violations = FindViolations(@"\bstatic\s+\w+\s+(Instance|instance|_instance)\b");
+
+            Assert.IsEmpty(violations, string.Join("\n", violations));
+        }
+
+        /// <summary>
         /// The project has no Resources folder and no script calls Resources.Load. The only exception is the
         /// folder of the TMP Essentials, which TMP loads by itself (see C-01 in constraints.md).
         /// </summary>

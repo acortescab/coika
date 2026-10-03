@@ -416,7 +416,6 @@ GameObject:
   - component: {fileID: 622843840}
   - component: {fileID: 622843839}
   - component: {fileID: 622843838}
-  - component: {fileID: 622843837}
   m_Layer: 0
   m_Name: DropController
   m_TagString: Untagged
@@ -424,35 +423,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &622843837
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 622843836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79058dc5d3330f74586336df1934a166, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Coika.Gameplay::Coika.Gameplay.DropControllerBootstrap
-  _jar: {fileID: 2130574023}
-  _controller: {fileID: 622843838}
-  _input: {fileID: 622843839}
-  _mergeSystem: {fileID: 787396360}
-  _overflowDetector: {fileID: 787396410}
-  _config:
-    m_AssetGUID: 0f56718d57424ae6be016d7992404ce6
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 0
-  _piecePrefab:
-    m_AssetGUID: 7ad1e545af5eacc43be664921ca33777
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
-    m_EditorAssetChanged: 0
 --- !u!114 &622843838
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -778,7 +748,7 @@ GameObject:
   - component: {fileID: 2063483153}
   - component: {fileID: 2063483152}
   m_Layer: 0
-  m_Name: GameUi
+  m_Name: GameSceneInstaller
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -793,10 +763,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 2063483151}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b38bdbb56986b1b48a913005bd4eaafb, type: 3}
+  m_Script: {fileID: 11500000, guid: f3e8b9ea543c4729a4efe740e6ee5fc9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Coika.UI::Coika.UI.GameUiBinder
-  _bootstrap: {fileID: 622843837}
+  m_EditorClassIdentifier: Coika.UI::Coika.UI.GameSceneInstaller
+  _jar: {fileID: 2130574023}
+  _dropController: {fileID: 622843838}
+  _input: {fileID: 622843839}
+  _mergeSystem: {fileID: 787396360}
+  _overflowDetector: {fileID: 787396410}
+  _config:
+    m_AssetGUID: 0f56718d57424ae6be016d7992404ce6
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  _piecePrefab:
+    m_AssetGUID: 7ad1e545af5eacc43be664921ca33777
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
   _canvasPrefab:
     m_AssetGUID: 124c6ba7cd5a7274abcfdbaacf4bd7dd
     m_SubObjectName: 

@@ -1,0 +1,268 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using Coika.Core;
+using Coika.Data;
+using Coika.Gameplay;
+using Coika.UI;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+using UnityEngine.UI;
+
+namespace Coika.Tests.PlayMode
+{
+    /// <summary>
+    /// Plays the real Game scene (issue #11): loads it through Addressables, drives whole runs through the
+    /// <see cref="GameManager"/> and checks that nothing of one run survives into the next. Run with the Addressables
+    /// Play Mode Script set to "Use Asset Database".
+    /// </summary>
+    public class GameLoopPlayModeTests
+    {
+        private const string SCENE_KEY = "Assets/Scenes/GameScene.unity";
+        private const float LOAD_TIMEOUT = 20f;
+        private const float DELAY_MARGIN = 0.15f;
+
+        private SceneLoaderService _loader;
+        private GameSceneInstaller _installer;
+
+        /// <summary>
+        /// Loads the Game scene and waits until the first run is playing.
+        /// </summary>
+        [UnitySetUp]
+        public IEnumerator SetUp()
+        {
+            _loader = new SceneLoaderService();
+            var load = _loader.LoadScene(SCENE_KEY, LoadSceneMode.Additive);
+            yield return new WaitUntil(() => load.IsCompleted);
+            Assert.IsFalse(load.IsFaulted, load.Exception?.ToString());
+
+            _installer = UnityEngine.Object.FindFirstObjectByType<GameSceneInstaller>();
+            Assert.IsNotNull(_installer, "The Game scene needs a GameSceneInstaller.");
+            yield return WaitUntilPlaying();
+        }
+
+        /// <summary>
+        /// Unloads the scene, which releases everything the installer loaded, and gives the physics back.
+        /// </summary>
+        [UnityTearDown]
+        public IEnumerator TearDown()
+        {
+            if (_loader.IsSceneLoaded(SCENE_KEY))
+            {
+                var unload = _loader.UnloadScene(SCENE_KEY);
+                yield return new WaitUntil(() => unload.IsCompleted);
+            }
+
+            Physics2D.simulationMode = SimulationMode2D.FixedUpdate;
+        }
+
+        /// <summary>
+        /// The scene starts a run by itself, with the frame rate of the GDD and the physics running.
+        /// </summary>
+        [Test]
+        public void Scene_AfterLoading_IsPlayingWithTheBootSettings()
+        {
+            Assert.AreEqual(GameState.Playing, _installer.Manager.State);
+            Assert.AreEqual(60, Application.targetFrameRate);
+            Assert.AreEqual(0, QualitySettings.vSyncCount);
+            Assert.AreEqual(SimulationMode2D.FixedUpdate, Physics2D.simulationMode);
+            Assert.IsFalse(_installer.Overlay.IsVisible);
+        }
+
+        /// <summary>
+        /// Three consecutive runs end with the same number of pieces and event subscribers as the first, an empty
+        /// board, a zero score and no combo.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Retry_ThreeConsecutiveRuns_LeaveNoPiecesOrSubscribers()
+        {
+            var factory = Field<PieceFactory>(_installer, "_factory");
+            var score = Field<ScoreSystem>(_installer, "_score");
+            var baselinePieces = factory.ActivePieces.Count;
+            var baselineSubscribers = CountSubscribers();
+            Assert.Greater(baselineSubscribers, 0, "The subscriber count would prove nothing.");
+
+            for (var run = 0; run < 3; run++)
+            {
+                FillBoard(factory);
+                Assert.Greater(factory.ActivePieces.Count, baselinePieces);
+
+                _installer.Manager.EndRun();
+                Assert.AreEqual(GameState.GameOver, _installer.Manager.State);
+
+                _installer.Manager.Retry();
+                yield return null;
+
+                Assert.AreEqual(GameState.Playing, _installer.Manager.State);
+                Assert.AreEqual(baselinePieces, factory.ActivePieces.Count, $"Run {run + 2} started with leftover pieces.");
+                Assert.AreEqual(baselineSubscribers, CountSubscribers(), $"Run {run + 2} changed the event subscribers.");
+                Assert.AreEqual(0, score.Score);
+                Assert.AreEqual(1f, score.ComboTracker.Multiplier);
+            }
+        }
+
+        /// <summary>
+        /// While the game is over the drop, the merges and the detector are off and the physics is frozen, so nothing
+        /// can be dropped and the score cannot change.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GameOver_WhileOver_NothingCanDropOrScore()
+        {
+            var controller = Field<DropController>(_installer, "_dropController");
+            var merge = Field<MergeSystem>(_installer, "_mergeSystem");
+            var detector = Field<OverflowDetector>(_installer, "_overflowDetector");
+            var score = Field<ScoreSystem>(_installer, "_score");
+            Assert.IsTrue(controller.IsEnabled);
+
+            _installer.Manager.EndRun();
+            yield return null;
+
+            Assert.IsFalse(controller.IsEnabled);
+            Assert.IsFalse(merge.enabled);
+            Assert.IsFalse(detector.IsRunning);
+            Assert.AreEqual(SimulationMode2D.Script, Physics2D.simulationMode);
+
+            var before = score.Score;
+            yield return new WaitForSeconds(0.5f);
+            Assert.AreEqual(before, score.Score);
+        }
+
+        /// <summary>
+        /// The Game Over view appears after the 1.2 second wait, not before, and the Retry button starts a new run
+        /// and hides it again.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GameOver_AfterTheDelay_ShowsTheViewAndRetryHidesIt()
+        {
+            var view = UnityEngine.Object.FindFirstObjectByType<GameOverView>(FindObjectsInactive.Include);
+            Assert.IsNotNull(view);
+            Assert.IsFalse(view.gameObject.activeSelf);
+
+            _installer.Manager.EndRun();
+            yield return new WaitForSecondsRealtime(GameManager.GAME_OVER_DELAY - DELAY_MARGIN * 2f);
+            Assert.IsFalse(view.gameObject.activeSelf, "The view appeared before the delay.");
+
+            yield return new WaitForSecondsRealtime(DELAY_MARGIN * 4f);
+            Assert.IsTrue(view.gameObject.activeSelf, "The view did not appear after the delay.");
+
+            var retry = Field<Button>(view, "_retryButton");
+            retry.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(GameState.Playing, _installer.Manager.State);
+            Assert.IsFalse(view.gameObject.activeSelf);
+        }
+
+        /// <summary>
+        /// Unloading the Game scene and loading it again plays a fresh run.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Scene_UnloadedAndReloaded_PlaysAgain()
+        {
+            var unload = _loader.UnloadScene(SCENE_KEY);
+            yield return new WaitUntil(() => unload.IsCompleted);
+            yield return null;
+            Assert.AreEqual(SimulationMode2D.FixedUpdate, Physics2D.simulationMode);
+
+            var load = _loader.LoadScene(SCENE_KEY, LoadSceneMode.Additive);
+            yield return new WaitUntil(() => load.IsCompleted);
+            Assert.IsFalse(load.IsFaulted, load.Exception?.ToString());
+
+            _installer = UnityEngine.Object.FindFirstObjectByType<GameSceneInstaller>();
+            yield return WaitUntilPlaying();
+
+            Assert.AreEqual(GameState.Playing, _installer.Manager.State);
+        }
+
+        /// <summary>
+        /// An installer that cannot load shows the Retry button, logs the error and does not spin forever.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Installer_WithMissingReferences_ShowsTheRetryUi()
+        {
+            LogAssert.Expect(LogType.Error, new Regex("could not load the game"));
+            var host = new GameObject("BrokenInstaller");
+            host.SetActive(false);
+            var broken = host.AddComponent<GameSceneInstaller>();
+            host.SetActive(true);
+
+            var until = Time.realtimeSinceStartup + LOAD_TIMEOUT;
+            yield return new WaitUntil(() => broken.Overlay.IsShowingFailure || Time.realtimeSinceStartup > until);
+
+            Assert.IsTrue(broken.Overlay.IsShowingFailure);
+            Assert.IsNull(broken.Manager);
+
+            UnityEngine.Object.Destroy(host);
+        }
+
+        /// <summary>
+        /// Waits until the installer built the manager and the first run is playing.
+        /// </summary>
+        private IEnumerator WaitUntilPlaying()
+        {
+            var until = Time.realtimeSinceStartup + LOAD_TIMEOUT;
+            yield return new WaitUntil(() => (_installer.Manager != null && _installer.Manager.State == GameState.Playing) || Time.realtimeSinceStartup > until);
+            Assert.IsNotNull(_installer.Manager, "The game did not finish loading.");
+            Assert.AreEqual(GameState.Playing, _installer.Manager.State);
+        }
+
+        /// <summary>
+        /// Puts a few pieces in the jar, as a run in progress would have.
+        /// </summary>
+        private void FillBoard(PieceFactory factory)
+        {
+            var tiers = Field<IReadOnlyList<TierDefinition>>(_installer, "_tiers");
+            for (var i = 0; i < 3; i++)
+            {
+                factory.Create(tiers[i], new Vector2(i - 1f, 0f), Vector2.zero);
+            }
+        }
+
+        /// <summary>
+        /// Counts the listeners of the events that a run connects, across the systems of the scene.
+        /// </summary>
+        private int CountSubscribers()
+        {
+            var score = Field<ScoreSystem>(_installer, "_score");
+            return Count(Field<OverflowDetector>(_installer, "_overflowDetector"), "GameOverTriggered")
+                + Count(Field<OverflowDetector>(_installer, "_overflowDetector"), "OverflowProgressChanged")
+                + Count(Field<MergeSystem>(_installer, "_mergeSystem"), "Merged")
+                + Count(Field<MergeSystem>(_installer, "_mergeSystem"), "SupernovaTriggered")
+                + Count(Field<DropController>(_installer, "_dropController"), "PieceDropped")
+                + Count(Field<DropController>(_installer, "_dropController"), "StateChanged")
+                + Count(Field<PieceFactory>(_installer, "_factory"), "PieceCreated")
+                + Count(score, "ScoreChanged")
+                + Count(score, "NewBestReached")
+                + Count(score.ComboTracker, "ComboChanged")
+                + Count(_installer.Manager, "RunStarted")
+                + Count(_installer.Manager, "RunEnded")
+                + Count(_installer.Manager, "GameOverReady")
+                + Count(_installer.Manager, "StateChanged");
+        }
+
+        /// <summary>
+        /// Number of listeners of a field-like event, found by the name of its backing field.
+        /// </summary>
+        private static int Count(object owner, string eventName)
+        {
+            var field = owner.GetType().GetField(eventName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.IsNotNull(field, $"{owner.GetType().Name} has no event field {eventName}.");
+            var handler = (Delegate)field.GetValue(owner);
+            return handler == null ? 0 : handler.GetInvocationList().Length;
+        }
+
+        /// <summary>
+        /// Reads a private field of a scene object.
+        /// </summary>
+        private static T Field<T>(object owner, string name)
+        {
+            var field = owner.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.IsNotNull(field, $"{owner.GetType().Name} has no field {name}.");
+            return (T)field.GetValue(owner);
+        }
+    }
+}

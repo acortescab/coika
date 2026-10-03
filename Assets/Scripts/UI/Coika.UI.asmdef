@@ -6,7 +6,9 @@
 		"Coika.Gameplay",
 		"Unity.Addressables",
 		"Unity.ugui",
-		"Unity.TextMeshPro"
+		"Unity.TextMeshPro",
+		"Unity.InputSystem",
+		"Unity.Localization"
 	],
 	"autoReferenced": false
 }
