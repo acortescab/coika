@@ -146,6 +146,13 @@ namespace Coika.Tests.PlayMode
             Assert.AreEqual(1, _world.CountActive(TIER + 1), "The pair must have merged.");
             var created = _world.Factory.ActivePieces[0];
 
+            // The physics step after the merge gave it gravity and the push of the overlap: hold it still, as settled.
+            created.Rigidbody.gravityScale = 0f;
+            created.Rigidbody.linearVelocity = Vector2.zero;
+            Physics2D.SyncTransforms();
+            Assert.IsTrue(created.IsSettled);
+            Assert.Greater(created.Collider.bounds.max.y, _world.Jar.DangerLineY, "The merged piece must be above the line.");
+
             // 0.5 s in: the piece counts neither for the age nor for the merge grace.
             _clock = mergeTime + 0.5f;
             _detector.Evaluate(TICK, _clock);
