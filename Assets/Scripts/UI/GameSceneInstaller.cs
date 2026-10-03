@@ -17,7 +17,7 @@ namespace Coika.UI
     /// preloads the assets through the asset service (C-01) behind a <see cref="LoadingOverlay"/>, builds the plain
     /// objects (<see cref="ScoreSystem"/>, <see cref="RunSystems"/>, <see cref="GameManager"/>, the presenters),
     /// hands them their dependencies through <c>Initialize</c>, connects the events, and starts the first run. It
-    /// uses no singleton and no lookup by type.
+    /// uses no singleton and no lookup by type; the optional save arrives from Boot through <see cref="UseSave"/>.
     /// <para>
     /// It lives in <c>Coika.UI</c> because the assembly rules (S-03) let only UI see both the gameplay and the views;
     /// the game rules stay in <see cref="GameManager"/>, which knows nothing of the scene.
@@ -31,7 +31,7 @@ namespace Coika.UI
     /// </summary>
     [AddComponentMenu("Coika/UI/Game Scene Installer")]
     [DisallowMultipleComponent]
-    public class GameSceneInstaller : MonoBehaviour
+    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer
     {
         // Same-scene objects, so direct references are allowed (C-01).
         [SerializeField]
@@ -75,12 +75,23 @@ namespace Coika.UI
         private Action<RunContext> _onRunStarted;
         private Action<RunSummary> _onGameOverReady;
         private Action _onRetryRequested;
+        private Action<RunSummary> _onRunEnded;
+        private SaveSystem _save;
         private Action _onOverlayRetry;
         private bool _subscribed;
         private bool _loading;
 
         /// <summary>The manager of the run, or null until the assets are loaded.</summary>
         public GameManager Manager => _manager;
+
+        /// <summary>
+        /// Receives the save system from the Boot installer. It must arrive before the objects are built.
+        /// </summary>
+        /// <param name="save">The loaded save system.</param>
+        public void UseSave(SaveSystem save)
+        {
+            _save = save;
+        }
 
         /// <summary>The loading overlay, for tests.</summary>
         public LoadingOverlay Overlay => _overlay;
@@ -96,6 +107,7 @@ namespace Coika.UI
             _onGameOverTriggered = HandleGameOverTriggered;
             _onRunStarted = HandleRunStarted;
             _onGameOverReady = HandleGameOverReady;
+            _onRunEnded = HandleRunEnded;
             _onRetryRequested = HandleRetryRequested;
             _onOverlayRetry = HandleOverlayRetry;
 
@@ -287,6 +299,13 @@ namespace Coika.UI
             _overflowDetector.Initialize(_factory, _jar, _loadedConfig);
 
             _score = new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
+
+            // The Boot installer hands the save over through UseSave; without it (tests) nothing is persisted.
+            if (_save != null)
+            {
+                _score.BestScore = _save.Data.bestScore.classic;
+            }
+
             _systems = new RunSystems(_loadedConfig, _tiers, _assets, _factory, _mergeSystem, _dropController, _overflowDetector, _score);
             _manager = new GameManager(_systems, () => Environment.TickCount);
 
@@ -309,6 +328,7 @@ namespace Coika.UI
             _overflowDetector.GameOverTriggered += _onGameOverTriggered;
             _manager.RunStarted += _onRunStarted;
             _manager.GameOverReady += _onGameOverReady;
+            _manager.RunEnded += _onRunEnded;
             _gameOverPresenter.RetryRequested += _onRetryRequested;
         }
 
@@ -326,6 +346,7 @@ namespace Coika.UI
             _overflowDetector.GameOverTriggered -= _onGameOverTriggered;
             _manager.RunStarted -= _onRunStarted;
             _manager.GameOverReady -= _onGameOverReady;
+            _manager.RunEnded -= _onRunEnded;
             _gameOverPresenter.RetryRequested -= _onRetryRequested;
         }
 
@@ -345,6 +366,20 @@ namespace Coika.UI
             _gameOver.Hide();
             _hudPresenter.BindQueue(run.Queue);
             _hudPresenter.Refresh();
+        }
+
+        /// <summary>
+        /// Folds the finished run into the save and requests a write (GDD §13).
+        /// </summary>
+        private void HandleRunEnded(RunSummary summary)
+        {
+            if (_save == null)
+            {
+                return;
+            }
+
+            _save.Data.RecordRun(summary.Score, summary.HighestTier, summary.Merges, summary.DurationSeconds);
+            _save.RequestSave();
         }
 
         /// <summary>

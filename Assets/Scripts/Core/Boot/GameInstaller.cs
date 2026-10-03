@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.SceneManagement;
 
 namespace Coika.Core
 {
@@ -21,6 +22,12 @@ namespace Coika.Core
         /// <summary>Service used to load and unload scenes. Available once Start has run.</summary>
         public ISceneLoader Scenes { get; private set; }
 
+        /// <summary>Persisted save data. Loaded before the first scene.</summary>
+        public SaveSystem Save { get; private set; }
+
+        /// <summary>Observable user settings backed by <see cref="Save"/>.</summary>
+        public SettingsService Settings { get; private set; }
+
         /// <summary>
         /// Keeps this object alive across scenes, creates the services and starts the boot flow.
         /// </summary>
@@ -32,7 +39,34 @@ namespace Coika.Core
             Assets = new AssetService();
             Scenes = new SceneLoaderService();
 
+            Save = new SaveSystem(new FileSaveStorage(Application.persistentDataPath));
+            Save.Load();
+            Settings = new SettingsService();
+            Settings.Initialize(Save);
+            gameObject.AddComponent<SaveTriggers>().Initialize(Save);
+
             await Boot();
+        }
+
+        /// <summary>
+        /// Gives the save system to the roots of the loaded scene that ask for it. The scene builds its objects
+        /// after an asynchronous asset load, so this runs before they need the save.
+        /// </summary>
+        /// <param name="scene">The scene that was just loaded.</param>
+        private void HandSaveToScene(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                foreach (var consumer in root.GetComponentsInChildren<ISaveConsumer>(true))
+                {
+                    consumer.UseSave(Save);
+                }
+            }
         }
 
         /// <summary>
@@ -44,7 +78,8 @@ namespace Coika.Core
             try
             {
                 await Addressables.InitializeAsync().Task;
-                await Scenes.LoadScene(_gameScene);
+                var scene = await Scenes.LoadScene(_gameScene);
+                HandSaveToScene(scene.Scene);
             }
             catch (Exception e)
             {
