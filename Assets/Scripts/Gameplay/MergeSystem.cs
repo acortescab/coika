@@ -196,12 +196,12 @@ namespace Coika.Gameplay
         {
             var low = pair.Low;
             var high = pair.High;
-            if (low.Merged || high.Merged || low.IsHeld || high.IsHeld)
+            if (!low.CanMergeWith(high))
             {
                 return false;
             }
 
-            if (!low.gameObject.activeInHierarchy || !high.gameObject.activeInHierarchy || low.Tier != high.Tier)
+            if (!low.gameObject.activeInHierarchy || !high.gameObject.activeInHierarchy)
             {
                 return false;
             }

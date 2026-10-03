@@ -33,17 +33,7 @@ namespace Coika.Gameplay
         /// <returns>True when the pair was added.</returns>
         public bool TryEnqueue(Piece reporter, Piece other)
         {
-            if (reporter == null || other == null || reporter == other)
-            {
-                return false;
-            }
-
-            if (reporter.Tier == null || reporter.Tier != other.Tier)
-            {
-                return false;
-            }
-
-            if (reporter.Merged || other.Merged || reporter.IsHeld || other.IsHeld)
+            if (reporter == null || !reporter.CanMergeWith(other))
             {
                 return false;
             }

@@ -160,6 +160,29 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
+        /// Whether this piece and another one are allowed to merge right now (GDD §3.4): they are two different
+        /// pieces of the same tier, and neither is held nor already merged. It does not look at where the pieces
+        /// are or who owns the pair; the merge queue and the merge system add those rules on top of this one, so the
+        /// eligibility rules live in a single place.
+        /// </summary>
+        /// <param name="other">The piece to merge with. May be null.</param>
+        /// <returns>True when both pieces can take part in a merge.</returns>
+        public bool CanMergeWith(Piece other)
+        {
+            if (other == null || other == this)
+            {
+                return false;
+            }
+
+            if (Tier == null || Tier != other.Tier)
+            {
+                return false;
+            }
+
+            return !Merged && !other.Merged && !IsHeld && !other.IsHeld;
+        }
+
+        /// <summary>
         /// Marks the piece as merged. The merge system calls it before releasing the piece, so a piece in a chain
         /// is never merged twice.
         /// </summary>

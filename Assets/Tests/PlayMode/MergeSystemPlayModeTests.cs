@@ -209,13 +209,18 @@ namespace Coika.Tests.PlayMode
                 mergedVelocity = velocity;
             };
 
-            // The merge happens at the start of the step, so the bodies are read just before each step.
+            // The merge happens at the start of the step, so the bodies are read just before each merge pass and the
+            // new piece is read right after it, before the physics step moves it.
             Vector2 expectedPosition = default, expectedVelocity = default;
             for (var i = 0; i < MAX_STEPS && _merged == 0; i++)
             {
                 expectedPosition = (left.Rigidbody.position + right.Rigidbody.position) * 0.5f;
                 expectedVelocity = (left.Rigidbody.linearVelocity + right.Rigidbody.linearVelocity) * 0.5f;
-                _world.Step();
+                _world.Merge.ProcessQueue();
+                if (_merged == 0)
+                {
+                    Physics2D.Simulate(Time.fixedDeltaTime);
+                }
             }
 
             Assert.AreEqual(1, _merged, "The merge did not happen.");
@@ -315,6 +320,53 @@ namespace Coika.Tests.PlayMode
                 Assert.AreEqual(first[i].Position.x, second[i].Position.x, TOLERANCE, $"Piece {i}: x.");
                 Assert.AreEqual(first[i].Position.y, second[i].Position.y, TOLERANCE, $"Piece {i}: y.");
             }
+        }
+
+        /// <summary>
+        /// Once the pool and the buffers are warm, the merge pass allocates nothing, with merges, chains and resting
+        /// contacts of different tiers in play (GDD §14.5). Only <see cref="MergeSystem.ProcessQueue"/> is measured:
+        /// the physics step reports the contacts to the queue, but the engine itself may allocate in there.
+        /// </summary>
+        [Test]
+        public void Merge_InSteadyState_AllocatesNothing()
+        {
+            StartWorld(30);
+            CreateAllocationScenario();
+            StepFor(MAX_STEPS);
+
+            _world.Factory.ReleaseAll();
+            _world.Merge.ResetForNewRun();
+            Physics2D.SyncTransforms();
+            CreateAllocationScenario();
+            var mergedBefore = _merged;
+            System.Action process = _world.Merge.ProcessQueue;
+
+            long allocations = 0;
+            for (var i = 0; i < MAX_STEPS; i++)
+            {
+                Physics2D.Simulate(Time.fixedDeltaTime);
+                allocations += AllocationMeter.Measure(process);
+            }
+
+            Assert.Greater(_merged - mergedBefore, 1, "The measured steps should include merges and a chain.");
+            Assert.LessOrEqual(allocations, AllocationMeter.TOLERANCE_COUNT, "Allocations in the merge pass.");
+        }
+
+        /// <summary>
+        /// Places what the allocation test merges: a pair of tier 4, a pair of tier 2 that touches a piece of
+        /// tier 3, so the merge starts a chain, and two touching pieces of different tiers that never merge.
+        /// </summary>
+        private void CreateAllocationScenario()
+        {
+            var origin = _world.Origin;
+            CreateTouchingPair(4, origin + new Vector2(-3f, 0f), 0f);
+
+            var chainCentre = origin + new Vector2(3f, 0f);
+            CreateTouchingPair(2, chainCentre, 0f);
+            _world.CreateFloating(3, chainCentre + new Vector2(0f, TierRadius(3) * (1f + OVERLAP)), Vector2.zero);
+
+            _world.CreateFloating(1, origin + new Vector2(0f, -2f), Vector2.zero);
+            _world.CreateFloating(6, origin + new Vector2(0f, -2f + (TierRadius(1) + TierRadius(6)) * OVERLAP), Vector2.zero);
         }
 
         /// <summary>

@@ -171,35 +171,68 @@ namespace Coika.Tests.PlayMode
         {
             private readonly List<UnityEngine.Object> _created;
 
+            /// <summary>
+            /// Creates the service.
+            /// </summary>
+            /// <param name="created">List that receives every asset the service hands out, so the world destroys them.</param>
             public TestAssetService(List<UnityEngine.Object> created)
             {
                 _created = created;
             }
 
+            /// <summary>
+            /// Hands out a test asset of the requested type, whatever the reference.
+            /// </summary>
+            /// <param name="assetReference">Ignored.</param>
+            /// <typeparam name="T">A <see cref="GameObject"/> (the Piece prefab) or a <see cref="Sprite"/>.</typeparam>
             public Task<T> LoadAsset<T>(AssetReference assetReference)
             {
                 return Task.FromResult(Provide<T>());
             }
 
+            /// <summary>
+            /// Hands out a test asset of the requested type, whatever the label.
+            /// </summary>
+            /// <param name="label">Ignored.</param>
+            /// <typeparam name="T">A <see cref="GameObject"/> (the Piece prefab) or a <see cref="Sprite"/>.</typeparam>
             public Task<T> LoadAsset<T>(string label)
             {
                 return Task.FromResult(Provide<T>());
             }
 
+            /// <summary>
+            /// Does nothing: the world destroys the assets it handed out.
+            /// </summary>
+            /// <param name="objectToRelease">Ignored.</param>
             public void ReleaseAsset(UnityEngine.Object objectToRelease)
             {
             }
 
+            /// <summary>
+            /// Does nothing: the test assets are created on demand.
+            /// </summary>
+            /// <param name="assetReference">Ignored.</param>
+            /// <param name="onProgress">Ignored.</param>
             public Task PreloadAsset(AssetReference assetReference, Action<float> onProgress = null)
             {
                 return Task.CompletedTask;
             }
 
+            /// <summary>
+            /// Does nothing: the test assets are created on demand.
+            /// </summary>
+            /// <param name="label">Ignored.</param>
+            /// <param name="onProgress">Ignored.</param>
             public Task PreloadAsset(string label, Action<float> onProgress = null)
             {
                 return Task.CompletedTask;
             }
 
+            /// <summary>
+            /// Builds a new test asset of the requested type and registers it for destruction.
+            /// </summary>
+            /// <typeparam name="T">A <see cref="GameObject"/> (the Piece prefab) or a <see cref="Sprite"/>.</typeparam>
+            /// <exception cref="NotSupportedException">Any other type.</exception>
             private T Provide<T>()
             {
                 UnityEngine.Object asset;
