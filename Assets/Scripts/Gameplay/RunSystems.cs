@@ -42,6 +42,7 @@ namespace Coika.Gameplay
         /// <param name="controller">Holds and drops the next piece.</param>
         /// <param name="overflow">Detects the game over.</param>
         /// <param name="score">Score of the scene; bound here to the merges and the drops.</param>
+        /// <param name="clock">Gives the time of the run timer; <see cref="Time.timeAsDouble"/> when null.</param>
         /// <exception cref="ArgumentNullException">A dependency is null.</exception>
         public RunSystems(
             GameConfig config,
@@ -51,7 +52,8 @@ namespace Coika.Gameplay
             MergeSystem merge,
             DropController controller,
             OverflowDetector overflow,
-            ScoreSystem score)
+            ScoreSystem score,
+            Func<double> clock = null)
         {
             _config = config != null ? config : throw new ArgumentNullException(nameof(config));
             _tiers = tiers ?? throw new ArgumentNullException(nameof(tiers));
@@ -62,7 +64,7 @@ namespace Coika.Gameplay
             _overflow = overflow != null ? overflow : throw new ArgumentNullException(nameof(overflow));
             Score = score ?? throw new ArgumentNullException(nameof(score));
 
-            _timer = new RunTimer(() => Time.timeAsDouble);
+            _timer = new RunTimer(clock ?? (() => Time.timeAsDouble));
             Score.Bind(_merge, _controller);
         }
 

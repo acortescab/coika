@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
-using Coika.Core;
 using Coika.Data;
 using Coika.Gameplay;
 using UnityEngine;
@@ -18,7 +16,7 @@ namespace Coika.Tests.PlayMode
     public sealed class MergeTestWorld : IDisposable
     {
         /// <summary>Number of tiers of the test theme, like the real one (tier 10 is the Black Hole).</summary>
-        public const int TIER_COUNT = 11;
+        public const int TIER_COUNT = TestTiers.TIER_COUNT;
 
         private readonly List<UnityEngine.Object> _created = new();
         private readonly SimulationMode2D _simulationMode;
@@ -33,25 +31,15 @@ namespace Coika.Tests.PlayMode
 
             Config = ScriptableObject.CreateInstance<GameConfig>();
             _created.Add(Config);
-            SetField(Config, "_jarSize", new Vector2(10f, 12.5f));
-            SetField(Config, "_dropLineOffset", 1.5f);
+            TestReflection.SetField(Config, "_jarSize", new Vector2(10f, 12.5f));
+            TestReflection.SetField(Config, "_dropLineOffset", 1.5f);
 
             var jarObject = new GameObject("Jar");
             _created.Add(jarObject);
             Jar = jarObject.AddComponent<Jar>();
             JarBuilder.Build(Jar, Config);
 
-            var tiers = new List<TierDefinition>();
-            for (var i = 0; i < TIER_COUNT; i++)
-            {
-                var tier = ScriptableObject.CreateInstance<TierDefinition>();
-                _created.Add(tier);
-                SetField(tier, "_index", i);
-                SetField(tier, "_diameterUnits", 0.6f + 0.1f * i);
-                tiers.Add(tier);
-            }
-
-            Tiers = tiers;
+            Tiers = TestTiers.Build(_created, i => 0.6f + 0.1f * i, i => 0f);
 
             var container = new GameObject("PieceContainer");
             _created.Add(container);
@@ -152,111 +140,6 @@ namespace Coika.Tests.PlayMode
             }
 
             _created.Clear();
-        }
-
-        /// <summary>
-        /// Sets a private instance field by reflection.
-        /// </summary>
-        private static void SetField(object target, string fieldName, object value)
-        {
-            target.GetType()
-                .GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(target, value);
-        }
-
-        /// <summary>
-        /// Asset service that hands out an inactive Piece prefab and a sprite, and counts nothing.
-        /// </summary>
-        private sealed class TestAssetService : IAssetService
-        {
-            private readonly List<UnityEngine.Object> _created;
-
-            /// <summary>
-            /// Creates the service.
-            /// </summary>
-            /// <param name="created">List that receives every asset the service hands out, so the world destroys them.</param>
-            public TestAssetService(List<UnityEngine.Object> created)
-            {
-                _created = created;
-            }
-
-            /// <summary>
-            /// Hands out a test asset of the requested type, whatever the reference.
-            /// </summary>
-            /// <param name="assetReference">Ignored.</param>
-            /// <typeparam name="T">A <see cref="GameObject"/> (the Piece prefab) or a <see cref="Sprite"/>.</typeparam>
-            public Task<T> LoadAsset<T>(AssetReference assetReference)
-            {
-                return Task.FromResult(Provide<T>());
-            }
-
-            /// <summary>
-            /// Hands out a test asset of the requested type, whatever the label.
-            /// </summary>
-            /// <param name="label">Ignored.</param>
-            /// <typeparam name="T">A <see cref="GameObject"/> (the Piece prefab) or a <see cref="Sprite"/>.</typeparam>
-            public Task<T> LoadAsset<T>(string label)
-            {
-                return Task.FromResult(Provide<T>());
-            }
-
-            /// <summary>
-            /// Does nothing: the world destroys the assets it handed out.
-            /// </summary>
-            /// <param name="objectToRelease">Ignored.</param>
-            public void ReleaseAsset(UnityEngine.Object objectToRelease)
-            {
-            }
-
-            /// <summary>
-            /// Does nothing: the test assets are created on demand.
-            /// </summary>
-            /// <param name="assetReference">Ignored.</param>
-            /// <param name="onProgress">Ignored.</param>
-            public Task PreloadAsset(AssetReference assetReference, Action<float> onProgress = null)
-            {
-                return Task.CompletedTask;
-            }
-
-            /// <summary>
-            /// Does nothing: the test assets are created on demand.
-            /// </summary>
-            /// <param name="label">Ignored.</param>
-            /// <param name="onProgress">Ignored.</param>
-            public Task PreloadAsset(string label, Action<float> onProgress = null)
-            {
-                return Task.CompletedTask;
-            }
-
-            /// <summary>
-            /// Builds a new test asset of the requested type and registers it for destruction.
-            /// </summary>
-            /// <typeparam name="T">A <see cref="GameObject"/> (the Piece prefab) or a <see cref="Sprite"/>.</typeparam>
-            /// <exception cref="NotSupportedException">Any other type.</exception>
-            private T Provide<T>()
-            {
-                UnityEngine.Object asset;
-                if (typeof(T) == typeof(GameObject))
-                {
-                    // Inactive, so the original never takes part in the physics: only its clones do.
-                    var prefab = new GameObject("PiecePrefab", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(Piece));
-                    prefab.SetActive(false);
-                    asset = prefab;
-                }
-                else if (typeof(T) == typeof(Sprite))
-                {
-                    var texture = new Texture2D(16, 16);
-                    _created.Add(texture);
-                    asset = Sprite.Create(texture, new Rect(0f, 0f, 16f, 16f), new Vector2(0.5f, 0.5f), TierDefinition.PixelsPerUnit);
-                }
-                else
-                {
-                    throw new NotSupportedException(typeof(T).Name);
-                }
-
-                _created.Add(asset);
-                return (T)(object)asset;
-            }
         }
     }
 }

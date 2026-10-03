@@ -233,7 +233,7 @@ namespace Coika.Gameplay
             }
 
             ReleasePair(low, high);
-            created.StampSpawnGrace(Time.time + _config.OverflowGrace);
+            created.StampSpawnGrace(_factory.Now + _config.OverflowGrace);
             Merged?.Invoke(nextTier, midpoint, velocity);
         }
 

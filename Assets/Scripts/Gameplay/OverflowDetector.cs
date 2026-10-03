@@ -119,7 +119,7 @@ namespace Coika.Gameplay
         /// so tests can drive it without waiting for physics steps.
         /// </summary>
         /// <param name="deltaTime">Seconds since the previous evaluation, added to the pieces that overflow.</param>
-        /// <param name="now">Current time on the clock of <see cref="Piece.SpawnTime"/>, which is <see cref="Time.time"/>.</param>
+        /// <param name="now">Current time on the clock of <see cref="Piece.SpawnTime"/>, which is <see cref="PieceFactory.Now"/>.</param>
         public void Evaluate(float deltaTime, float now)
         {
             if (!_active || _triggered || _factory == null)
@@ -188,7 +188,7 @@ namespace Coika.Gameplay
 
             var elapsed = _accumulator;
             _accumulator = 0f;
-            Evaluate(elapsed, Time.time);
+            Evaluate(elapsed, _factory.Now);
         }
 
         /// <summary>

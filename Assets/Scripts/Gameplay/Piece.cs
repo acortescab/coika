@@ -56,7 +56,15 @@ namespace Coika.Gameplay
         public float SpawnGraceUntil { get; private set; }
 
         /// <summary>Whether the piece was created by a merge a moment ago and is still in its overflow grace.</summary>
-        public bool IsInSpawnGrace => Time.time < SpawnGraceUntil;
+        public bool IsInSpawnGrace => IsInSpawnGraceAt(Time.time);
+
+        /// <summary>Whether the piece is still in its overflow grace at the given time.</summary>
+        /// <param name="now">Current time on the clock of <see cref="SpawnTime"/>.</param>
+        /// <returns>True while <paramref name="now"/> is before <see cref="SpawnGraceUntil"/>.</returns>
+        public bool IsInSpawnGraceAt(float now)
+        {
+            return now < SpawnGraceUntil;
+        }
 
         /// <summary>
         /// Seconds the piece has been continuously overflowing, for the overflow detector (issue #9). It lives on the
@@ -108,6 +116,21 @@ namespace Coika.Gameplay
         /// <exception cref="InvalidOperationException">The Piece or HeldPiece physics layer is not defined.</exception>
         public void Initialize(TierDefinition tier, Sprite sprite, GameConfig config)
         {
+            Initialize(tier, sprite, config, Time.time);
+        }
+
+        /// <summary>
+        /// Same as <see cref="Initialize(TierDefinition, Sprite, GameConfig)"/>, stamping <see cref="SpawnTime"/> with
+        /// the given time instead of <see cref="Time.time"/>, so a simulation that owns its clock stays consistent.
+        /// </summary>
+        /// <param name="tier">The tier to become.</param>
+        /// <param name="sprite">Sprite of the tier, already loaded by the caller.</param>
+        /// <param name="config">Source of the settled velocity.</param>
+        /// <param name="spawnTime">Current time on the clock the overflow detector uses.</param>
+        /// <exception cref="ArgumentNullException">The tier, the sprite or the config is null.</exception>
+        /// <exception cref="InvalidOperationException">The Piece or HeldPiece physics layer is not defined.</exception>
+        public void Initialize(TierDefinition tier, Sprite sprite, GameConfig config, float spawnTime)
+        {
             if (tier == null)
                 throw new ArgumentNullException(nameof(tier));
 
@@ -121,7 +144,7 @@ namespace Coika.Gameplay
 
             Tier = tier;
             Merged = false;
-            SpawnTime = Time.time;
+            SpawnTime = spawnTime;
             SpawnGraceUntil = 0f;
             OverflowSeconds = 0f;
             _settledVelocitySquared = config.SettledVelocity * config.SettledVelocity;
