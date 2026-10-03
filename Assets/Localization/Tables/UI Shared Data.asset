@@ -55,6 +55,18 @@ MonoBehaviour:
     m_Key: gameover.menu
     m_Metadata:
       m_Items: []
+  - m_Id: 141274034192384
+    m_Key: loading.text
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141274055163904
+    m_Key: loading.failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141274055163905
+    m_Key: loading.retry
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

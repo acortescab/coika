@@ -1,4 +1,3 @@
-using Coika.Gameplay;
 using Coika.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -7,14 +6,13 @@ using UnityEngine;
 namespace Coika.Tools
 {
     /// <summary>
-    /// Runs the whole setup of issue #10 in order (localization, then the canvas prefab) and adds the
-    /// <see cref="GameUiBinder"/> to the Game scene, pointing it at the bootstrap and at the Addressable canvas
-    /// prefab. Idempotent: running it again updates what exists and adds nothing twice.
+    /// Runs the whole setup of issue #10 in order (localization, then the canvas prefab) and points the
+    /// <see cref="GameSceneInstaller"/> of the Game scene at the Addressable canvas
+    /// prefab. Idempotent: running it again updates what exists.
     /// </summary>
     public static class GameUiSetup
     {
         private const string ScenePath = "Assets/Scenes/GameScene.unity";
-        private const string BinderObjectName = "GameUi";
 
         /// <summary>
         /// Sets up the localization, the canvas prefab and the scene wiring. Stops at the first step that fails.
@@ -35,26 +33,20 @@ namespace Coika.Tools
         }
 
         /// <summary>
-        /// Opens the Game scene, adds or updates the binder, and saves the scene.
+        /// Opens the Game scene, points the installer at the Addressable canvas prefab, and saves the scene. The
+        /// installer itself and its scene references are part of the scene.
         /// </summary>
         private static void WireScene()
         {
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            var bootstrap = Object.FindFirstObjectByType<DropControllerBootstrap>();
-            if (bootstrap == null)
+            var installer = Object.FindFirstObjectByType<GameSceneInstaller>();
+            if (installer == null)
             {
-                Debug.LogError($"Setup Game UI stopped: no DropControllerBootstrap in {ScenePath}.");
+                Debug.LogError($"Setup Game UI stopped: no GameSceneInstaller in {ScenePath}.");
                 return;
             }
 
-            var binder = Object.FindFirstObjectByType<GameUiBinder>();
-            if (binder == null)
-            {
-                binder = new GameObject(BinderObjectName).AddComponent<GameUiBinder>();
-            }
-
-            var serialized = new SerializedObject(binder);
-            serialized.FindProperty("_bootstrap").objectReferenceValue = bootstrap;
+            var serialized = new SerializedObject(installer);
             serialized.FindProperty("_canvasPrefab.m_AssetGUID").stringValue = AssetDatabase.AssetPathToGUID(GameCanvasPrefabTool.PrefabPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
