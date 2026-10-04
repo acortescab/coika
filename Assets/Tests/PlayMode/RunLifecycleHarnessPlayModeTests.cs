@@ -65,7 +65,7 @@ namespace Coika.Tests.PlayMode
             builder.Append(" score=").Append(world.Score.Score);
             builder.Append(" multiplier=").Append(world.Score.ComboTracker.Multiplier);
             builder.Append(" activePieces=").Append(world.Factory.ActivePieces.Count);
-            builder.Append(" piecesInWorld=").Append(Object.FindObjectsByType<Piece>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length);
+            builder.Append(" piecesInWorld=").Append(Object.FindObjectsByType<Piece>(FindObjectsInactive.Include).Length);
             builder.Append(" drop=").Append(world.Controller.State).Append('/').Append(world.Controller.IsEnabled);
             builder.Append(" overflowRunning=").Append(world.Overflow.IsRunning);
             builder.Append(" mergeEnabled=").Append(world.Merge.enabled);

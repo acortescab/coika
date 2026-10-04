@@ -14,7 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: FX
   m_GUID: 25049c558e07ee045a5f7ab2b7aba50b
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 286a27c864c0d3744ad61ab08974550c
+    m_Address: Assets/Art/Sprites/Fx/GuideDot.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fa06196beba3ca74b82e930dbf144c7a
+    m_Address: Assets/Prefabs/Fx/GuideLine.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 461287701ca2f3940b9955fcf5c57c47, type: 2}
   m_SchemaSet:

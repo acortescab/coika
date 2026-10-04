@@ -68,6 +68,27 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// The press is on from its start (while aiming) until its release, cancel or drop.
+        /// </summary>
+        [Test]
+        public void IsPressing_FromThePressUntilItsReleaseOrCancel_IsTrue()
+        {
+            Assert.IsFalse(_flow.IsPressing, "Nothing is pressed at first.");
+
+            _flow.Press();
+            Assert.IsTrue(_flow.IsPressing, "A press while aiming counts.");
+            _flow.CancelPress();
+            Assert.IsFalse(_flow.IsPressing, "A cancel ends it.");
+
+            _flow.Press();
+            _flow.TryRelease();
+            Assert.IsFalse(_flow.IsPressing, "The release ends it.");
+
+            _flow.Press();
+            Assert.IsFalse(_flow.IsPressing, "A press during the cooldown is ignored.");
+        }
+
+        /// <summary>
         /// A release without a press does nothing.
         /// </summary>
         [Test]

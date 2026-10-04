@@ -76,7 +76,7 @@ namespace Coika.Tests.PlayMode
             Assert.IsFalse(boot.IsFaulted, boot.Exception?.ToString());
             Assert.IsTrue(_inner.IsSceneLoaded(_sceneKey), "Boot should have loaded the Game scene through the scene loader.");
 
-            var sceneInstaller = UnityEngine.Object.FindFirstObjectByType<GameSceneInstaller>();
+            var sceneInstaller = UnityEngine.Object.FindAnyObjectByType<GameSceneInstaller>();
             Assert.IsNotNull(sceneInstaller, "The Game scene needs a GameSceneInstaller.");
 
             for (var frame = 0; frame < MAX_WAIT_FRAMES; frame++)

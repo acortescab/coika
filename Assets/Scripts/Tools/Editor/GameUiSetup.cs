@@ -39,7 +39,7 @@ namespace Coika.Tools
         private static void WireScene()
         {
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            var installer = Object.FindFirstObjectByType<GameSceneInstaller>();
+            var installer = Object.FindAnyObjectByType<GameSceneInstaller>();
             if (installer == null)
             {
                 Debug.LogError($"Setup Game UI stopped: no GameSceneInstaller in {ScenePath}.");

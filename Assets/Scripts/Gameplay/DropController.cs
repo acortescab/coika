@@ -53,6 +53,8 @@ namespace Coika.Gameplay
         private float _followOffset;
         private bool _dropPending;
         private bool _pressFollowsPointer;
+        private bool _inputDown;
+        private bool _releaseHadPress;
         private float _releaseTargetX;
 
         /// <summary>Raised when the substate changes: after a release (Dropping) and when the cooldown ends (Aiming).</summary>
@@ -66,6 +68,15 @@ namespace Coika.Gameplay
 
         /// <summary>Whether the controller is reading input and holding a piece.</summary>
         public bool IsEnabled { get; private set; }
+
+        /// <summary>
+        /// Whether the player is pressing on a piece they can control: a finger is down or the drop key is held while
+        /// aiming. A press that began during the cooldown counts once the cooldown ends, and letting go drops the
+        /// piece (the release decides). The flow's armed press keeps it true while a quickly released piece still
+        /// slides to its release point. It ends on the drop, on a cancel, and when the controller is
+        /// disabled.
+        /// </summary>
+        public bool IsPressing => IsEnabled && _flow != null && _flow.State == DropState.Aiming && (_inputDown || _flow.IsPressing);
 
         /// <summary>The piece being held, or null when the controller is disabled.</summary>
         public Piece HeldPiece => _held;
@@ -91,7 +102,7 @@ namespace Coika.Gameplay
         private void OnDisable()
         {
             Unsubscribe();
-            ClearQueuedInput();
+            ClearPress();
         }
 
         /// <summary>
@@ -168,7 +179,7 @@ namespace Coika.Gameplay
 
             var wasDropping = _flow.State == DropState.Dropping;
             _flow.Begin();
-            ClearQueuedInput();
+            ClearPress();
             IsEnabled = true;
             Subscribe();
             Attach();
@@ -192,7 +203,7 @@ namespace Coika.Gameplay
 
             IsEnabled = false;
             Unsubscribe();
-            ClearQueuedInput();
+            ClearPress();
             DiscardHeld();
         }
 
@@ -212,7 +223,7 @@ namespace Coika.Gameplay
 
             DiscardHeld();
             _flow.Begin();
-            ClearQueuedInput();
+            ClearPress();
             if (IsEnabled)
             {
                 Attach();
@@ -270,9 +281,13 @@ namespace Coika.Gameplay
                 _dropPending = false;
             }
 
-            if (released)
+            // The release decides: a press seen at any time (even one that began during the cooldown) is enough
+            // to drop once the piece can be dropped. A release with no press before it, such as the tail of a
+            // tap on a button, drops nothing and does not send the piece anywhere.
+            if (released && _releaseHadPress && _flow.State == DropState.Aiming)
             {
                 _dropPending = true;
+                _flow.Press();
             }
 
             // A quick tap releases before the piece has followed the finger: it keeps going to the release point and drops there.
@@ -315,6 +330,8 @@ namespace Coika.Gameplay
         private void OnDropPressed()
         {
             _pressQueued = true;
+            _inputDown = true;
+            _dropPending = false; // A new press ends any glide to the point of an earlier release.
             _followOffset = _input.GetPointerOffset(_heldX);
             _pressFollowsPointer = _input.HasPointer;
         }
@@ -326,6 +343,7 @@ namespace Coika.Gameplay
         private void OnDropCancelled()
         {
             _cancelQueued = true;
+            _inputDown = false;
             _followOffset = 0f;
         }
 
@@ -335,6 +353,8 @@ namespace Coika.Gameplay
         private void OnDropReleased()
         {
             _releaseQueued = true;
+            _releaseHadPress = _inputDown;
+            _inputDown = false;
             _releaseTargetX = _pressFollowsPointer ? ClampToJar(_input.PointerWorldX + _followOffset) : _heldX;
             _followOffset = 0f;
         }
@@ -437,6 +457,17 @@ namespace Coika.Gameplay
             _pressQueued = false;
             _releaseQueued = false;
             _cancelQueued = false;
+        }
+
+        /// <summary>
+        /// Forgets the queued input and that a finger or key is down, for when the controller starts, stops or
+        /// restarts. <see cref="Tick"/> calls <see cref="ClearQueuedInput"/> alone, because the press it just read
+        /// may still be down.
+        /// </summary>
+        private void ClearPress()
+        {
+            ClearQueuedInput();
+            _inputDown = false;
         }
 
         /// <summary>
