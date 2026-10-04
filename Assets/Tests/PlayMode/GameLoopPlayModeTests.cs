@@ -40,7 +40,7 @@ namespace Coika.Tests.PlayMode
             yield return new WaitUntil(() => load.IsCompleted);
             Assert.IsFalse(load.IsFaulted, load.Exception?.ToString());
 
-            _installer = UnityEngine.Object.FindFirstObjectByType<GameSceneInstaller>();
+            _installer = UnityEngine.Object.FindAnyObjectByType<GameSceneInstaller>();
             Assert.IsNotNull(_installer, "The Game scene needs a GameSceneInstaller.");
             yield return WaitUntilPlaying();
         }
@@ -138,7 +138,7 @@ namespace Coika.Tests.PlayMode
         [UnityTest]
         public IEnumerator GameOver_AfterTheDelay_ShowsTheViewAndRetryHidesIt()
         {
-            var view = UnityEngine.Object.FindFirstObjectByType<GameOverView>(FindObjectsInactive.Include);
+            var view = UnityEngine.Object.FindAnyObjectByType<GameOverView>(FindObjectsInactive.Include);
             Assert.IsNotNull(view);
             Assert.IsFalse(view.gameObject.activeSelf);
 
@@ -172,7 +172,7 @@ namespace Coika.Tests.PlayMode
             yield return new WaitUntil(() => load.IsCompleted);
             Assert.IsFalse(load.IsFaulted, load.Exception?.ToString());
 
-            _installer = UnityEngine.Object.FindFirstObjectByType<GameSceneInstaller>();
+            _installer = UnityEngine.Object.FindAnyObjectByType<GameSceneInstaller>();
             yield return WaitUntilPlaying();
 
             Assert.AreEqual(GameState.Playing, _installer.Manager.State);
