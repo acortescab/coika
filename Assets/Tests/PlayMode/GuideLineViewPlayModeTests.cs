@@ -198,16 +198,18 @@ namespace Coika.Tests.PlayMode
 
         /// <summary>
         /// Pressing soon after a drop, while the cooldown still runs, and holding on: the guide appears as soon as the
-        /// piece is controllable, and letting go drops it.
+        /// piece is controllable, but letting go drops it (the release decides, not when the press began).
         /// </summary>
         [UnityTest]
-        public IEnumerator Refresh_WhenPressedDuringTheCooldownAndHeld_ShowsTheGuideOnceAimingResumes()
+        public IEnumerator Refresh_WhenPressedDuringTheCooldownAndHeld_ShowsTheGuideOnceAimingResumesAndDropsOnRelease()
         {
             yield return SetUp(0);
             _input.Click();
             yield return null;
             Assert.AreEqual(DropState.Dropping, _controller.State);
 
+            _input.HasPointer = true;
+            _input.PointerWorldX = 3f;
             _input.Press();
             yield return null;
             _view.Refresh();
@@ -224,11 +226,18 @@ namespace Coika.Tests.PlayMode
             yield return null;
             _view.Refresh();
             Assert.IsTrue(_view.IsShown, "Visible once the piece is controllable and the press is held.");
+            Assert.Less(_controller.HeldPiece.transform.position.x, 2.9f, "The piece slides to the finger instead of jumping.");
+            yield return WaitUntilHeldAt(3f);
+            yield return new WaitForFixedUpdate();
+            _view.Refresh();
+            Assert.IsTrue(_view.IsShown, "Still visible while the piece slides.");
+            Assert.AreEqual(3f, _controller.HeldPiece.transform.position.x, LANDING_TOLERANCE, "The piece reached the finger.");
+            Assert.AreEqual(3f, _view.Ghost.transform.position.x, LANDING_TOLERANCE, "The ghost is under the finger.");
 
             var held = _controller.HeldPiece;
             _input.Release();
             yield return null;
-            Assert.IsFalse(held.IsHeld, "Letting go drops the piece.");
+            Assert.IsFalse(held.IsHeld, "A press that began during the cooldown still drops on release.");
             _view.Refresh();
             Assert.IsFalse(_view.IsShown);
         }

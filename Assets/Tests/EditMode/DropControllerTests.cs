@@ -386,10 +386,10 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// A press that begins during the cooldown does not drop when it is released after the cooldown ends.
+        /// A press that begins during the cooldown still drops when it is released after the cooldown ends.
         /// </summary>
         [Test]
-        public void Tick_PressDuringTheCooldownReleasedAfter_DoesNotDrop()
+        public void Tick_PressDuringTheCooldownReleasedAfter_Drops()
         {
             var queue = Start();
             _input.Click();
@@ -402,7 +402,54 @@ namespace Coika.Tests.EditMode
             _input.RaiseReleased();
             _controller.Tick(STEP);
 
-            Assert.AreEqual(1, queue.GetState().AdvanceCount);
+            Assert.AreEqual(2, queue.GetState().AdvanceCount);
+        }
+
+        /// <summary>
+        /// A release with no press before it, such as the tail of a tap on a button, drops nothing.
+        /// </summary>
+        [Test]
+        public void Tick_ReleaseWithNoPressBefore_DoesNotDrop()
+        {
+            var queue = Start();
+
+            _input.RaiseReleased();
+            _controller.Tick(STEP);
+
+            Assert.AreEqual(0, queue.GetState().AdvanceCount);
+            Assert.AreEqual(DropState.Aiming, _controller.State);
+        }
+
+        /// <summary>
+        /// A touch that began during the cooldown does nothing until the cooldown ends, then the controller reports
+        /// the press, for the guide, and the piece slides to the finger at the capped speed instead of jumping.
+        /// </summary>
+        [Test]
+        public void Tick_TouchBeganDuringTheCooldownAndStillDown_SlidesThePieceToTheFingerWhenItEnds()
+        {
+            Start();
+            _input.Click();
+            _controller.Tick(STEP);
+            Assert.AreEqual(DropState.Dropping, _controller.State, "The first click dropped the piece.");
+            _input.HasPointer = true;
+            _input.PointerWorldX = 1f;
+            _input.RaisePressed();
+            _controller.Tick(STEP);
+            Assert.AreEqual(DropState.Dropping, _controller.State);
+            Assert.IsFalse(_controller.IsPressing, "Nothing is pressing while the cooldown runs.");
+
+            for (int i = 0; i < 40 && _controller.State != DropState.Aiming; i++)
+            {
+                _controller.Tick(STEP);
+            }
+
+            Assert.AreEqual(DropState.Aiming, _controller.State);
+            Assert.Greater(Mathf.Abs(1f - _controller.HeldX), 0.1f, "The piece does not jump to the finger.");
+            Assert.IsTrue(_controller.IsPressing, "The press is reported once the cooldown ends.");
+
+            Run(5);
+
+            Assert.AreEqual(1f, _controller.HeldX, TOLERANCE, "The piece reaches the finger.");
         }
 
         /// <summary>
