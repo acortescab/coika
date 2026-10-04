@@ -147,8 +147,8 @@ namespace Coika.Tests.PlayMode
             Assert.GreaterOrEqual(Time.time - dropStart, 0.45f, "The cooldown lasts about 0.5 s.");
 
             _input.Click();
-            yield return null;
-            Assert.AreEqual(2, droppedTiers.Count, "After the cooldown it drops again.");
+            yield return new WaitUntil(() => droppedTiers.Count == 2);
+            Assert.AreEqual(2, droppedTiers.Count, "After the cooldown it drops again, once the piece reaches the release point.");
         }
 
         /// <summary>

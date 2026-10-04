@@ -237,16 +237,16 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// A touch keeps the offset the piece had under the finger when the press began, so it never jumps.
+        /// A touch without the finger offset has no offset: the piece heads to the finger at the capped speed.
         /// </summary>
         [Test]
-        public void GetPointerOffset_TouchWithoutFingerOffset_KeepsTheOffsetOfThePressStart()
+        public void GetPointerOffset_TouchWithoutFingerOffset_IsZero()
         {
             _state.PointerMoved(2f, true);
             _state.PointerMoved(3f, true);
             _state.PointerPressed(false, true);
 
-            Assert.AreEqual(-1f, _state.GetPointerOffset(2f));
+            Assert.AreEqual(0f, _state.GetPointerOffset(2f));
         }
 
         /// <summary>

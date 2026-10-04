@@ -52,9 +52,13 @@ namespace Coika.Gameplay
         /// <param name="worldX">World X under the pointer.</param>
         /// <param name="isInsideScreen">Whether the pointer is inside the game screen.</param>
         /// <param name="fromTouch">Whether a finger is down, so the position comes from the touch screen and not the mouse.</param>
-        public void PointerMoved(float worldX, bool isInsideScreen, bool fromTouch = false)
+        /// <param name="screenMoved">
+        /// Whether the pointer moved on the screen. When null, a change of <paramref name="worldX"/> counts, but a
+        /// camera that reframes moves the world X of a pointer that stayed still, so the reader passes it.
+        /// </param>
+        public void PointerMoved(float worldX, bool isInsideScreen, bool fromTouch = false, bool? screenMoved = null)
         {
-            if (_hasPointerPosition && worldX != _pointerWorldX)
+            if (_hasPointerPosition && screenMoved.GetValueOrDefault(worldX != _pointerWorldX))
             {
                 _pointerLast = true;
                 _pointerIsTouch = fromTouch;
@@ -99,7 +103,7 @@ namespace Coika.Gameplay
                 return 0f;
             }
 
-            return _fingerOffsetEnabled ? _fingerShift : heldX - _pointerWorldX;
+            return _fingerOffsetEnabled ? _fingerShift : 0f;
         }
 
         /// <summary>

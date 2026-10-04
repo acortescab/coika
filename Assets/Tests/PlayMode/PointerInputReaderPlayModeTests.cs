@@ -280,7 +280,7 @@ namespace Coika.Tests.PlayMode
             _reader.ConfigureFingerOffset(false, false, 2f);
             BeginTouch(3, center);
             yield return null;
-            Assert.AreEqual(5f - _reader.PointerWorldX, _reader.GetPointerOffset(5f), 0.01f, "Off: the piece keeps its place under the finger.");
+            Assert.AreEqual(0f, _reader.GetPointerOffset(5f), 0.01f, "Off: the piece heads to the finger.");
         }
 
         /// <summary>

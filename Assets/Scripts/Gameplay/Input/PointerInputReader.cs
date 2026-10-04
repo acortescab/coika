@@ -46,6 +46,7 @@ namespace Coika.Gameplay
         private InputAction _move;
         private InputAction _drop;
         private InputAction _back;
+        private Vector2 _lastScreen;
         private bool _pressPending;
         private bool _releasePending;
         private bool _cancelPending;
@@ -194,7 +195,8 @@ namespace Coika.Gameplay
 
             var touchscreen = Touchscreen.current;
             var fromTouch = touchscreen != null && touchscreen.primaryTouch.isInProgress;
-            _state.PointerMoved(world.x, isInside, fromTouch);
+            _state.PointerMoved(world.x, isInside, fromTouch, screen != _lastScreen);
+            _lastScreen = screen;
             _state.KeyboardAxisChanged(_move.ReadValue<float>());
             ProcessPointerPress();
         }

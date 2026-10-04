@@ -30,6 +30,8 @@ namespace Coika.Gameplay
     [DisallowMultipleComponent]
     public class DropController : MonoBehaviour
     {
+        private const float REACH_EPSILON = 0.001f;
+
 #if UNITY_EDITOR
         private const float GIZMO_Z = -1f;
         private static readonly Color RangeGizmoColor = new(0.3f, 0.8f, 1f, 1f); // Light blue
@@ -49,6 +51,9 @@ namespace Coika.Gameplay
         private bool _releaseQueued;
         private bool _cancelQueued;
         private float _followOffset;
+        private bool _dropPending;
+        private bool _pressFollowsPointer;
+        private float _releaseTargetX;
 
         /// <summary>Raised when the substate changes: after a release (Dropping) and when the cooldown ends (Aiming).</summary>
         public event Action<DropState> StateChanged;
@@ -260,9 +265,24 @@ namespace Coika.Gameplay
                 released = false;
             }
 
-            if (released && _flow.TryRelease())
+            if (cancelled || _flow.State != DropState.Aiming)
             {
-                Drop();
+                _dropPending = false;
+            }
+
+            if (released)
+            {
+                _dropPending = true;
+            }
+
+            // A quick tap releases before the piece has followed the finger: it keeps going to the release point and drops there.
+            if (_dropPending && Mathf.Abs(_heldX - _releaseTargetX) <= REACH_EPSILON)
+            {
+                _dropPending = false;
+                if (_flow.TryRelease())
+                {
+                    Drop();
+                }
             }
         }
 
@@ -280,7 +300,9 @@ namespace Coika.Gameplay
             }
 
             var maxSpeed = _config.MaxFollowSpeed;
-            var target = _input.HasPointer ? _input.PointerWorldX + _followOffset : _heldX + _input.MoveAxis * maxSpeed * fixedDeltaTime;
+            var target = _dropPending
+                ? _releaseTargetX
+                : _input.HasPointer ? _input.PointerWorldX + _followOffset : _heldX + _input.MoveAxis * maxSpeed * fixedDeltaTime;
             _heldX = DropFlow.Follow(_heldX, ClampToJar(target), maxSpeed, fixedDeltaTime);
 
             _held.Rigidbody.MovePosition(new Vector2(_heldX, _jar.DropLineY));
@@ -294,6 +316,7 @@ namespace Coika.Gameplay
         {
             _pressQueued = true;
             _followOffset = _input.GetPointerOffset(_heldX);
+            _pressFollowsPointer = _input.HasPointer;
         }
 
         /// <summary>
@@ -312,6 +335,7 @@ namespace Coika.Gameplay
         private void OnDropReleased()
         {
             _releaseQueued = true;
+            _releaseTargetX = _pressFollowsPointer ? ClampToJar(_input.PointerWorldX + _followOffset) : _heldX;
             _followOffset = 0f;
         }
 
