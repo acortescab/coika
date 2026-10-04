@@ -53,6 +53,7 @@ namespace Coika.Gameplay
         private float _followOffset;
         private bool _dropPending;
         private bool _pressFollowsPointer;
+        private bool _inputDown;
         private float _releaseTargetX;
 
         /// <summary>Raised when the substate changes: after a release (Dropping) and when the cooldown ends (Aiming).</summary>
@@ -66,6 +67,14 @@ namespace Coika.Gameplay
 
         /// <summary>Whether the controller is reading input and holding a piece.</summary>
         public bool IsEnabled { get; private set; }
+
+        /// <summary>
+        /// Whether the player is pressing to drop: a finger is down or the drop key is held, on a piece that is held
+        /// and controllable (a press that began during the cooldown counts once the cooldown ends)
+        /// and not yet released. It ends on the release (once the piece has dropped), on a cancel, and when the
+        /// controller is disabled.
+        /// </summary>
+        public bool IsPressing => IsEnabled && _flow != null && _flow.IsPressing;
 
         /// <summary>The piece being held, or null when the controller is disabled.</summary>
         public Piece HeldPiece => _held;
@@ -92,6 +101,7 @@ namespace Coika.Gameplay
         {
             Unsubscribe();
             ClearQueuedInput();
+            _inputDown = false;
         }
 
         /// <summary>
@@ -169,6 +179,7 @@ namespace Coika.Gameplay
             var wasDropping = _flow.State == DropState.Dropping;
             _flow.Begin();
             ClearQueuedInput();
+            _inputDown = false;
             IsEnabled = true;
             Subscribe();
             Attach();
@@ -193,6 +204,7 @@ namespace Coika.Gameplay
             IsEnabled = false;
             Unsubscribe();
             ClearQueuedInput();
+            _inputDown = false;
             DiscardHeld();
         }
 
@@ -213,6 +225,7 @@ namespace Coika.Gameplay
             DiscardHeld();
             _flow.Begin();
             ClearQueuedInput();
+            _inputDown = false;
             if (IsEnabled)
             {
                 Attach();
@@ -242,6 +255,13 @@ namespace Coika.Gameplay
 
             if (_flow.Tick(deltaTime))
             {
+                // A finger or key held down through the cooldown counts as a press from the moment the piece is
+                // controllable, so the guide appears and letting go drops it.
+                if (_inputDown)
+                {
+                    _flow.Press();
+                }
+
                 StateChanged?.Invoke(DropState.Aiming);
             }
 
@@ -315,6 +335,7 @@ namespace Coika.Gameplay
         private void OnDropPressed()
         {
             _pressQueued = true;
+            _inputDown = true;
             _followOffset = _input.GetPointerOffset(_heldX);
             _pressFollowsPointer = _input.HasPointer;
         }
@@ -326,6 +347,7 @@ namespace Coika.Gameplay
         private void OnDropCancelled()
         {
             _cancelQueued = true;
+            _inputDown = false;
             _followOffset = 0f;
         }
 
@@ -335,6 +357,7 @@ namespace Coika.Gameplay
         private void OnDropReleased()
         {
             _releaseQueued = true;
+            _inputDown = false;
             _releaseTargetX = _pressFollowsPointer ? ClampToJar(_input.PointerWorldX + _followOffset) : _heldX;
             _followOffset = 0f;
         }

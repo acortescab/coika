@@ -50,6 +50,9 @@ namespace Coika.Gameplay
         /// <summary>The current substate.</summary>
         public DropState State { get; private set; }
 
+        /// <summary>Whether a press began while aiming and has not been released, cancelled or dropped yet.</summary>
+        public bool IsPressing => _armed;
+
         /// <summary>Scale of the held piece, from 0 up to 1. It is 1 while aiming.</summary>
         public float ScaleFactor { get; private set; }
 

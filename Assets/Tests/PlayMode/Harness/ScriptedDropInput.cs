@@ -49,6 +49,18 @@ namespace Coika.Tests.PlayMode
             BackPressed?.Invoke();
         }
 
+        /// <summary>Raises <see cref="DropPressed"/>: a finger goes down or the drop key is pressed.</summary>
+        public void Press()
+        {
+            DropPressed?.Invoke();
+        }
+
+        /// <summary>Raises <see cref="DropReleased"/>: the finger lifts or the drop key is released.</summary>
+        public void Release()
+        {
+            DropReleased?.Invoke();
+        }
+
         /// <summary>Raises a press and then its release, as a quick click does.</summary>
         public void Click()
         {

@@ -789,6 +789,12 @@ MonoBehaviour:
     m_SubObjectType: 
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
+  _guideLinePrefab:
+    m_AssetGUID: fa06196beba3ca74b82e930dbf144c7a
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
 --- !u!4 &2063483153
 Transform:
   m_ObjectHideFlags: 0

@@ -52,6 +52,8 @@ namespace Coika.UI
         private AssetReference _piecePrefab;
         [SerializeField]
         private AssetReference _canvasPrefab;
+        [SerializeField]
+        private AssetReference _guideLinePrefab;
 
         private bool _destroyed;
 
@@ -64,6 +66,9 @@ namespace Coika.UI
         private PieceFactory _factory;
         private GameObject _loadedCanvasPrefab;
         private GameObject _canvas;
+        private GameObject _loadedGuideLinePrefab;
+        private GameObject _guideLine;
+        private GuideLineView _guideLineView;
         private HudView _hud;
         private GameOverView _gameOver;
         private TierSpriteCache _sprites;
@@ -236,9 +241,10 @@ namespace Coika.UI
         {
             if (_jar == null || _dropController == null || _input == null || _mergeSystem == null || _overflowDetector == null
                 || _config == null || !_config.RuntimeKeyIsValid() || _piecePrefab == null || !_piecePrefab.RuntimeKeyIsValid()
-                || _canvasPrefab == null || !_canvasPrefab.RuntimeKeyIsValid())
+                || _canvasPrefab == null || !_canvasPrefab.RuntimeKeyIsValid()
+                || _guideLinePrefab == null || !_guideLinePrefab.RuntimeKeyIsValid())
             {
-                throw new InvalidOperationException("The installer needs the Jar, the DropController, the PointerInputReader, the MergeSystem, the OverflowDetector, the GameConfig, the Piece prefab and the GameCanvas prefab.");
+                throw new InvalidOperationException("The installer needs the Jar, the DropController, the PointerInputReader, the MergeSystem, the OverflowDetector, the GameConfig, the Piece prefab, the GameCanvas prefab and the GuideLine prefab.");
             }
 
             _assets ??= new AssetService();
@@ -297,6 +303,21 @@ namespace Coika.UI
                 return;
             }
 
+            // The guide line comes with the rest of the load phase, never on demand (C-01).
+            var guideLinePrefab = await _assets.LoadAsset<GameObject>(_guideLinePrefab);
+            _loadedGuideLinePrefab = guideLinePrefab;
+            if (_destroyed)
+            {
+                return;
+            }
+
+            _guideLine = Instantiate(guideLinePrefab);
+            _guideLineView = _guideLine.GetComponent<GuideLineView>();
+            if (_guideLineView == null)
+            {
+                throw new InvalidOperationException("The GuideLine prefab needs a GuideLineView.");
+            }
+
             Compose();
         }
 
@@ -310,6 +331,8 @@ namespace Coika.UI
             _mergeSystem.Initialize(_factory, _tiers, _loadedConfig);
             _dropController.Initialize(_input, _jar, _factory, firstQueue, _tiers, _loadedConfig);
             ApplyFingerOffset();
+            _guideLineView.Initialize(_dropController, _jar, _tiers);
+            ApplyGuideLine();
             _overflowDetector.Initialize(_factory, _jar, _loadedConfig);
 
             _score = new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
@@ -351,6 +374,18 @@ namespace Coika.UI
 
             // A setting may have changed while this component was disabled and not listening.
             ApplyFingerOffset();
+            ApplyGuideLine();
+        }
+
+        /// <summary>
+        /// Gives the guide line view the Guide Line setting (on without Boot, as in tests).
+        /// </summary>
+        private void ApplyGuideLine()
+        {
+            if (_guideLineView != null)
+            {
+                _guideLineView.SetSettingOn(_settings == null || _settings.GuideLine);
+            }
         }
 
         /// <summary>
@@ -373,6 +408,10 @@ namespace Coika.UI
             if (change.Key == SettingKey.FingerOffset || change.Key == SettingKey.LeftHanded)
             {
                 ApplyFingerOffset();
+            }
+            else if (change.Key == SettingKey.GuideLine)
+            {
+                ApplyGuideLine();
             }
         }
 
@@ -504,6 +543,21 @@ namespace Coika.UI
 
             _sprites?.Dispose();
             _sprites = null;
+
+            if (_guideLine != null)
+            {
+                Destroy(_guideLine);
+            }
+
+            _guideLine = null;
+            _guideLineView = null;
+
+            if (_assets != null && _loadedGuideLinePrefab != null)
+            {
+                _assets.ReleaseAsset(_loadedGuideLinePrefab);
+            }
+
+            _loadedGuideLinePrefab = null;
 
             if (_canvas != null)
             {
