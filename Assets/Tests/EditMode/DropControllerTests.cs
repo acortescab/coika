@@ -421,6 +421,33 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// A tap that begins and ends inside the cooldown leaves nothing pending: when the cooldown ends, a new press
+        /// makes the piece follow the new finger and does not drop it on its own.
+        /// </summary>
+        [Test]
+        public void Tick_TapInsideTheCooldownThenANewPress_FollowsTheNewFingerWithoutDropping()
+        {
+            var queue = Start();
+            _input.Click();
+            _controller.Tick(STEP);
+            Assert.AreEqual(DropState.Dropping, _controller.State);
+            _input.HasPointer = true;
+            _input.PointerWorldX = 1f;
+            _input.RaisePressed();
+            _input.RaiseReleased();
+            _controller.Tick(STEP);
+            Run(30);
+            Assert.AreEqual(DropState.Aiming, _controller.State);
+
+            _input.PointerWorldX = -1f;
+            _input.RaisePressed();
+            Run(10);
+
+            Assert.AreEqual(1, queue.GetState().AdvanceCount, "Nothing was dropped without a release.");
+            Assert.AreEqual(-1f, _controller.HeldX, TOLERANCE, "The piece follows the new finger.");
+        }
+
+        /// <summary>
         /// A touch that began during the cooldown does nothing until the cooldown ends, then the controller reports
         /// the press, for the guide, and the piece slides to the finger at the capped speed instead of jumping.
         /// </summary>

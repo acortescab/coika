@@ -72,12 +72,11 @@ namespace Coika.Gameplay
         /// <param name="radius">Radius of the held piece.</param>
         /// <param name="maxDistance">How far down to look: the height of the jar is enough.</param>
         /// <param name="stamp">Changes whenever the physics stepped, for instance <see cref="Time.fixedTime"/>.</param>
-        /// <returns>True when the landing was recomputed.</returns>
-        public bool Update(PhysicsScene2D scene, Vector2 origin, float radius, float maxDistance, float stamp)
+        public void Update(PhysicsScene2D scene, Vector2 origin, float radius, float maxDistance, float stamp)
         {
             if (_cached && Mathf.Approximately(origin.x, _lastX) && Mathf.Approximately(radius, _lastRadius) && Mathf.Approximately(stamp, _lastStamp))
             {
-                return false;
+                return;
             }
 
             _cached = true;
@@ -97,8 +96,6 @@ namespace Coika.Gameplay
                     Landing = _hits[i].centroid;
                 }
             }
-
-            return true;
         }
     }
 }

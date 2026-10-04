@@ -32,9 +32,9 @@ namespace Coika.Gameplay
 
             foreach (var tier in tiers)
             {
-                if (tier != null && !_sprites.ContainsKey(tier))
+                if (tier != null)
                 {
-                    _sprites.Add(tier, CreateSprite(tier));
+                    Get(tier);
                 }
             }
         }

@@ -21,8 +21,6 @@ namespace Coika.Gameplay
     [DisallowMultipleComponent]
     public class GuideLineView : MonoBehaviour
     {
-        private const float GHOST_ALPHA = 0.8f;
-
         [SerializeField]
         private SpriteRenderer _line;
         [SerializeField]
@@ -34,10 +32,9 @@ namespace Coika.Gameplay
         private GhostOutlineSprites _outlines;
         private Piece _lastHeld;
         private bool _settingOn = true;
-        private bool _shown;
 
         /// <summary>Whether the line and the ghost are being drawn.</summary>
-        public bool IsShown => _shown;
+        public bool IsShown => _ghost != null && _ghost.enabled;
 
         /// <summary>The ghost renderer, for tests.</summary>
         public SpriteRenderer Ghost => _ghost;
@@ -52,9 +49,14 @@ namespace Coika.Gameplay
         /// <param name="jar">The jar, to know how far down to look.</param>
         /// <param name="tiers">Every tier, to draw the outline of each one now instead of while playing.</param>
         /// <exception cref="ArgumentNullException">A dependency or the tiers are null.</exception>
-        /// <exception cref="InvalidOperationException">The prefab lacks a renderer, or a physics layer is not defined.</exception>
+        /// <exception cref="InvalidOperationException">It was already initialized, the prefab lacks a renderer, or a physics layer is not defined.</exception>
         public void Initialize(DropController controller, Jar jar, IReadOnlyList<TierDefinition> tiers)
         {
+            if (_aim != null)
+            {
+                throw new InvalidOperationException("The guide line view is already initialized.");
+            }
+
             _controller = controller != null ? controller : throw new ArgumentNullException(nameof(controller));
             _jar = jar != null ? jar : throw new ArgumentNullException(nameof(jar));
             if (_line == null || _ghost == null)
@@ -69,11 +71,8 @@ namespace Coika.Gameplay
             }
 
             _aim = new GuideLineAim(mask);
-            _outlines?.Dispose();
             _outlines = new GhostOutlineSprites();
             _outlines.Build(tiers);
-            _line.drawMode = SpriteDrawMode.Tiled;
-            _ghost.color = new Color(1f, 1f, 1f, GHOST_ALPHA);
             Hide();
         }
 
@@ -161,7 +160,6 @@ namespace Coika.Gameplay
             }
 
             _ghost.enabled = true;
-            _shown = true;
         }
 
         /// <summary>
@@ -169,15 +167,14 @@ namespace Coika.Gameplay
         /// </summary>
         private void Hide()
         {
-            if (!_shown && !_line.enabled && !_ghost.enabled)
+            _lastHeld = null;
+            if (!_line.enabled && !_ghost.enabled)
             {
                 return;
             }
 
             _line.enabled = false;
             _ghost.enabled = false;
-            _shown = false;
-            _lastHeld = null;
         }
 
         /// <summary>

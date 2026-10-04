@@ -28,6 +28,7 @@ namespace Coika.Tools
 
         private const string ScenePath = "Assets/Scenes/GameScene.unity";
         private const float LINE_ALPHA = 0.8f;
+        private const float GHOST_ALPHA = 0.8f;
 
         /// <summary>
         /// Builds the sprite and the prefab, registers both in the Fx group and wires the Game scene.
@@ -99,6 +100,7 @@ namespace Coika.Tools
                 line.drawMode = SpriteDrawMode.Tiled;
                 line.color = new Color(1f, 1f, 1f, LINE_ALPHA);
                 var ghost = CreateRenderer(root.transform, "Ghost", GHOST_SORTING_ORDER);
+                ghost.color = new Color(1f, 1f, 1f, GHOST_ALPHA);
 
                 var serialized = new SerializedObject(view);
                 serialized.FindProperty("_line").objectReferenceValue = line;
