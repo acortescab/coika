@@ -33,6 +33,9 @@ namespace Coika.Core
         /// <summary>Language code.</summary>
         public string language = "en";
 
+        /// <summary>Whether the held piece sits beside the finger instead of keeping its place under it.</summary>
+        public bool fingerOffset;
+
         /// <summary>
         /// Brings the volumes into 0 to 1 and replaces a missing language with the default.
         /// </summary>

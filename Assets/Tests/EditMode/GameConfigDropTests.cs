@@ -51,6 +51,7 @@ namespace Coika.Tests.EditMode
             Assert.AreEqual(40f, config.MaxFollowSpeed);
             Assert.AreEqual(0.5f, config.DropCooldown);
             Assert.AreEqual(0.15f, config.ScaleInDuration);
+            Assert.AreEqual(2f, config.FingerOffset);
         }
     }
 }

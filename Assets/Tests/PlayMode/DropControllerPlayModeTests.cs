@@ -10,6 +10,7 @@ using Coika.Gameplay;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
@@ -21,8 +22,9 @@ namespace Coika.Tests.PlayMode
     /// holds the next piece back, the follow never exceeds the maximum speed, and the smallest and the largest
     /// piece stay inside the jar at both walls. Run with the Addressables Play Mode Script set to "Use Asset Database".
     /// </summary>
-    public class DropControllerPlayModeTests
+    public class DropControllerPlayModeTests : InputTestFixture
     {
+        private const string ACTIONS_PATH = "Assets/Input/Coika.inputactions";
         private const string PIECE_PREFAB_PATH = "Assets/Prefabs/Piece/Piece.prefab";
         private const string TIER_KEY_FORMAT = "Assets/Data/Tiers/{0}.asset";
         private const float MAX_SPEED = 40f;
@@ -36,15 +38,14 @@ namespace Coika.Tests.PlayMode
         private GameConfig _config;
         private Jar _jar;
         private PieceFactory _factory;
-        private ScriptedInput _input;
+        private ScriptedDropInput _input;
         private DropController _controller;
         private SpawnQueue _queue;
 
         /// <summary>
-        /// Disposes the factory, releases the tiers and destroys everything the test created.
+        /// Disposes the factory, releases the tiers, destroys everything the test created and restores the input system.
         /// </summary>
-        [TearDown]
-        public void TearDown()
+        public override void TearDown()
         {
             if (_controller != null)
             {
@@ -66,6 +67,43 @@ namespace Coika.Tests.PlayMode
             }
 
             _created.Clear();
+            base.TearDown();
+        }
+
+        /// <summary>
+        /// The held piece never leaves the jar for any touch X, on the screen edges or far outside the screen, with the
+        /// smallest and the largest spawnable piece. The touch is injected into the real reader with virtual devices.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Touch_AtAnyXIncludingFarOutsideTheScreen_NeverTakesThePieceOutOfTheJar([Values(0, 4)] int tierIndex)
+        {
+            yield return SetUp(TestFirstTier(tierIndex));
+            var touchscreen = InputSystem.AddDevice<Touchscreen>();
+            var reader = CreateReader();
+            _controller.Disable();
+            _controller.Initialize(reader, _jar, _factory, _queue, _tiers, _config);
+            _controller.Enable();
+            var held = _controller.HeldPiece;
+            var radius = _tiers[tierIndex].DiameterUnits * 0.5f;
+            var middleY = Screen.height * 0.5f;
+
+            BeginTouch(1, new Vector2(Screen.width * 0.5f, middleY), screen: touchscreen);
+            yield return null;
+
+            foreach (var screenX in new[] { 0f, Screen.width - 1f, -5000f, 5000f })
+            {
+                MoveTouch(1, new Vector2(screenX, middleY), screen: touchscreen);
+                for (int i = 0; i < 40; i++)
+                {
+                    yield return new WaitForFixedUpdate();
+
+                    var x = held.Rigidbody.position.x;
+                    Assert.GreaterOrEqual(x - radius, _jar.InteriorMin.x - POSITION_TOLERANCE, $"tier {tierIndex} touch x {screenX}, left wall, step {i}");
+                    Assert.LessOrEqual(x + radius, _jar.InteriorMax.x + POSITION_TOLERANCE, $"tier {tierIndex} touch x {screenX}, right wall, step {i}");
+                }
+            }
+
+            EndTouch(1, new Vector2(Screen.width * 0.5f, middleY), screen: touchscreen);
         }
 
         /// <summary>
@@ -109,8 +147,8 @@ namespace Coika.Tests.PlayMode
             Assert.GreaterOrEqual(Time.time - dropStart, 0.45f, "The cooldown lasts about 0.5 s.");
 
             _input.Click();
-            yield return null;
-            Assert.AreEqual(2, droppedTiers.Count, "After the cooldown it drops again.");
+            yield return new WaitUntil(() => droppedTiers.Count == 2);
+            Assert.AreEqual(2, droppedTiers.Count, "After the cooldown it drops again, once the piece reaches the release point.");
         }
 
         /// <summary>
@@ -196,6 +234,30 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// Creates a camera and a pointer reader over the real actions, so a test can drive the controller with
+        /// virtual devices.
+        /// </summary>
+        /// <returns>The reader, enabled.</returns>
+        private PointerInputReader CreateReader()
+        {
+            var cameraObject = new GameObject("Camera");
+            _created.Add(cameraObject);
+            cameraObject.transform.position = new Vector3(0f, 0f, -10f);
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.orthographic = true;
+            camera.orthographicSize = 10f;
+
+            var readerObject = new GameObject("Reader");
+            _created.Add(readerObject);
+            readerObject.SetActive(false);
+            var reader = readerObject.AddComponent<PointerInputReader>();
+            SetField(reader, "_camera", camera);
+            SetField(reader, "_actions", UnityEditor.AssetDatabase.LoadAssetAtPath<InputActionAsset>(ACTIONS_PATH));
+            readerObject.SetActive(true);
+            return reader;
+        }
+
+        /// <summary>
         /// Settings with a forced opening that makes the first piece the given tier.
         /// </summary>
         /// <param name="tierIndex">Tier of the first piece.</param>
@@ -232,7 +294,7 @@ namespace Coika.Tests.PlayMode
             yield return new WaitUntil(() => prewarm.IsCompleted);
             Assert.IsFalse(prewarm.IsFaulted, prewarm.Exception?.ToString());
 
-            _input = new ScriptedInput();
+            _input = new ScriptedDropInput();
             var controllerObject = new GameObject("DropController");
             _created.Add(controllerObject);
             _controller = controllerObject.AddComponent<DropController>();
@@ -302,34 +364,6 @@ namespace Coika.Tests.PlayMode
             target.GetType()
                 .GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(target, value);
-        }
-
-        /// <summary>
-        /// An input the test controls by hand.
-        /// </summary>
-        private sealed class ScriptedInput : IDropInput
-        {
-            /// <inheritdoc />
-            public event Action DropPressed;
-
-            /// <inheritdoc />
-            public event Action DropReleased;
-
-            /// <inheritdoc />
-            public bool HasPointer { get; set; }
-
-            /// <inheritdoc />
-            public float PointerWorldX { get; set; }
-
-            /// <inheritdoc />
-            public float MoveAxis { get; set; }
-
-            /// <summary>Raises a press and then its release.</summary>
-            public void Click()
-            {
-                DropPressed?.Invoke();
-                DropReleased?.Invoke();
-            }
         }
     }
 }

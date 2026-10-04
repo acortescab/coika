@@ -661,5 +661,83 @@ namespace Coika.Tests.EditMode
 
             Assert.LessOrEqual(allocated, AllocationMeter.TOLERANCE_COUNT, "Managed allocations made by 4 drops.");
         }
+
+        /// <summary>
+        /// The offset taken when the press began is added to the pointer, so the piece keeps its place under the finger.
+        /// </summary>
+        [Test]
+        public void FixedTick_WithAPointerOffset_FollowsThePointerPlusTheOffset()
+        {
+            Start();
+            _input.HasPointer = true;
+            _input.PointerWorldX = 1f;
+            _input.PointerOffset = 2f;
+            _input.RaisePressed();
+
+            Run(10);
+
+            Assert.AreEqual(3f, _controller.HeldX, TOLERANCE);
+        }
+
+        /// <summary>
+        /// The jar bounds apply after the offset, so a finger far outside the screen never takes the piece out.
+        /// </summary>
+        [Test]
+        public void FixedTick_WithAnOffsetAndAFingerFarOutside_StaysInsideTheJar()
+        {
+            Start(TestSpawnSettings.For(TestSpawnSettings.DefaultWeights, 3, 4));
+            _input.HasPointer = true;
+            _input.PointerOffset = 3f;
+            _input.RaisePressed();
+
+            _input.PointerWorldX = 100000f;
+            Run(60);
+            Assert.AreEqual(_jar.InteriorMax.x - 2.5f, _controller.HeldX, TOLERANCE, "right wall");
+
+            _input.PointerWorldX = -100000f;
+            Run(60);
+            Assert.AreEqual(_jar.InteriorMin.x + 2.5f, _controller.HeldX, TOLERANCE, "left wall");
+        }
+
+        /// <summary>
+        /// A cancelled press goes back to hovering: the piece is not dropped, not even by a later release.
+        /// </summary>
+        [Test]
+        public void Tick_AfterACancelledPress_DoesNotDrop()
+        {
+            Start();
+            var held = _controller.HeldPiece;
+            var drops = 0;
+            _controller.PieceDropped += _ => drops++;
+
+            _input.RaisePressed();
+            _input.RaiseCancelled();
+            _controller.Tick(STEP);
+            _input.RaiseReleased();
+            _controller.Tick(STEP);
+
+            Assert.AreEqual(0, drops);
+            Assert.IsTrue(held.IsHeld);
+            Assert.AreEqual(DropState.Aiming, _controller.State);
+        }
+
+        /// <summary>
+        /// After a cancel the next press and release drops normally.
+        /// </summary>
+        [Test]
+        public void Tick_PressAfterACancelledPress_Drops()
+        {
+            Start();
+            var drops = 0;
+            _controller.PieceDropped += _ => drops++;
+            _input.RaisePressed();
+            _input.RaiseCancelled();
+            _controller.Tick(STEP);
+
+            _input.Click();
+            _controller.Tick(STEP);
+
+            Assert.AreEqual(1, drops);
+        }
     }
 }

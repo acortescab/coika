@@ -75,8 +75,9 @@ namespace Coika.Core
         }
 
         /// <summary>
-        /// Gives the save system to the roots of a scene that ask for it. Unity raises sceneLoaded after the Awake
-        /// of the scene and before any Start, so the save always arrives before the scene builds its objects.
+        /// Gives the save system and the settings to the roots of a scene that ask for them. Unity raises
+        /// sceneLoaded after the Awake of the scene and before any Start, so both always arrive before the scene
+        /// builds its objects.
         /// </summary>
         /// <param name="scene">The scene that was just loaded.</param>
         /// <param name="mode">How the scene was loaded.</param>
@@ -84,9 +85,17 @@ namespace Coika.Core
         {
             foreach (var root in scene.GetRootGameObjects())
             {
-                foreach (var consumer in root.GetComponentsInChildren<ISaveConsumer>(true))
+                foreach (var behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
                 {
-                    consumer.UseSave(Save);
+                    if (behaviour is ISaveConsumer saveConsumer)
+                    {
+                        saveConsumer.UseSave(Save);
+                    }
+
+                    if (behaviour is ISettingsConsumer settingsConsumer)
+                    {
+                        settingsConsumer.UseSettings(Settings);
+                    }
                 }
             }
         }

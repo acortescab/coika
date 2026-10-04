@@ -17,7 +17,8 @@ namespace Coika.UI
     /// preloads the assets through the asset service (C-01) behind a <see cref="LoadingOverlay"/>, builds the plain
     /// objects (<see cref="ScoreSystem"/>, <see cref="RunSystems"/>, <see cref="GameManager"/>, the presenters),
     /// hands them their dependencies through <c>Initialize</c>, connects the events, and starts the first run. It
-    /// uses no singleton and no lookup by type; the optional save arrives from Boot through <see cref="UseSave"/>.
+    /// uses no singleton and no lookup by type; the optional save and settings arrive from Boot through
+    /// <see cref="UseSave"/> and <see cref="UseSettings"/>.
     /// <para>
     /// It lives in <c>Coika.UI</c> because the assembly rules (S-03) let only UI see both the gameplay and the views;
     /// the game rules stay in <see cref="GameManager"/>, which knows nothing of the scene.
@@ -31,7 +32,7 @@ namespace Coika.UI
     /// </summary>
     [AddComponentMenu("Coika/UI/Game Scene Installer")]
     [DisallowMultipleComponent]
-    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer
+    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer
     {
         // Same-scene objects, so direct references are allowed (C-01).
         [SerializeField]
@@ -77,6 +78,8 @@ namespace Coika.UI
         private Action _onRetryRequested;
         private Action<RunSummary> _onRunEnded;
         private SaveSystem _save;
+        private SettingsService _settings;
+        private Action<SettingsChanged> _onSettingsChanged;
         private Action _onOverlayRetry;
         private bool _subscribed;
         private bool _loading;
@@ -93,6 +96,15 @@ namespace Coika.UI
             _save = save;
         }
 
+        /// <summary>
+        /// Receives the settings from the Boot installer. It must arrive before the objects are built.
+        /// </summary>
+        /// <param name="settings">The shared settings service.</param>
+        public void UseSettings(SettingsService settings)
+        {
+            _settings = settings;
+        }
+
         /// <summary>The loading overlay, for tests.</summary>
         public LoadingOverlay Overlay => _overlay;
 
@@ -105,6 +117,7 @@ namespace Coika.UI
             QualitySettings.vSyncCount = 0;
 
             _onGameOverTriggered = HandleGameOverTriggered;
+            _onSettingsChanged = HandleSettingsChanged;
             _onRunStarted = HandleRunStarted;
             _onGameOverReady = HandleGameOverReady;
             _onRunEnded = HandleRunEnded;
@@ -296,6 +309,7 @@ namespace Coika.UI
             var firstQueue = new SpawnQueue(_loadedConfig, Environment.TickCount);
             _mergeSystem.Initialize(_factory, _tiers, _loadedConfig);
             _dropController.Initialize(_input, _jar, _factory, firstQueue, _tiers, _loadedConfig);
+            ApplyFingerOffset();
             _overflowDetector.Initialize(_factory, _jar, _loadedConfig);
 
             _score = new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
@@ -330,6 +344,36 @@ namespace Coika.UI
             _manager.GameOverReady += _onGameOverReady;
             _manager.RunEnded += _onRunEnded;
             _gameOverPresenter.RetryRequested += _onRetryRequested;
+            if (_settings != null)
+            {
+                _settings.Changed += _onSettingsChanged;
+            }
+
+            // A setting may have changed while this component was disabled and not listening.
+            ApplyFingerOffset();
+        }
+
+        /// <summary>
+        /// Gives the reader the Finger Offset and Left-handed settings (defaults without Boot, as in tests) and the
+        /// distance of <see cref="GameConfig.FingerOffset"/>.
+        /// </summary>
+        private void ApplyFingerOffset()
+        {
+            var fingerOffset = _settings != null && _settings.FingerOffset;
+            var leftHanded = _settings != null && _settings.LeftHanded;
+            _input.ConfigureFingerOffset(fingerOffset, leftHanded, _loadedConfig.FingerOffset);
+        }
+
+        /// <summary>
+        /// Applies a changed setting that the input depends on while the game runs.
+        /// </summary>
+        /// <param name="change">The setting that changed.</param>
+        private void HandleSettingsChanged(SettingsChanged change)
+        {
+            if (change.Key == SettingKey.FingerOffset || change.Key == SettingKey.LeftHanded)
+            {
+                ApplyFingerOffset();
+            }
         }
 
         /// <summary>
@@ -348,6 +392,10 @@ namespace Coika.UI
             _manager.GameOverReady -= _onGameOverReady;
             _manager.RunEnded -= _onRunEnded;
             _gameOverPresenter.RetryRequested -= _onRetryRequested;
+            if (_settings != null)
+            {
+                _settings.Changed -= _onSettingsChanged;
+            }
         }
 
         /// <summary>

@@ -102,6 +102,15 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
+        /// Forgets the press that was armed, so its release (if one ever comes) drops nothing. The piece goes back to
+        /// hovering in the <see cref="DropState.Aiming"/> state.
+        /// </summary>
+        public void CancelPress()
+        {
+            _armed = false;
+        }
+
+        /// <summary>
         /// Tries to release the held piece. It succeeds when aiming and a press began while aiming. It then starts
         /// the cooldown and sets the scale of the next piece to zero.
         /// </summary>

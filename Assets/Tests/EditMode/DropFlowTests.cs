@@ -251,5 +251,19 @@ namespace Coika.Tests.EditMode
         {
             Assert.AreEqual(0.3f, DropFlow.Follow(0f, 0.3f, 40f, STEP), TOLERANCE);
         }
+
+        /// <summary>
+        /// A cancelled press is forgotten: its release drops nothing and the flow keeps aiming.
+        /// </summary>
+        [Test]
+        public void CancelPress_AfterAPress_MakesTheReleaseDropNothing()
+        {
+            _flow.Press();
+
+            _flow.CancelPress();
+
+            Assert.IsFalse(_flow.TryRelease());
+            Assert.AreEqual(DropState.Aiming, _flow.State);
+        }
     }
 }
