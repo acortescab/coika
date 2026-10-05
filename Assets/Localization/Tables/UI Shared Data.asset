@@ -111,6 +111,70 @@ MonoBehaviour:
     m_Key: confirm.menu.message
     m_Metadata:
       m_Items: []
+  - m_Id: 919888787959808
+    m_Key: confirm.reset.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817408
+    m_Key: confirm.reset.message
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817409
+    m_Key: settings.on
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817410
+    m_Key: settings.off
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817411
+    m_Key: settings.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817412
+    m_Key: settings.music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817413
+    m_Key: settings.sfx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817414
+    m_Key: settings.haptics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817415
+    m_Key: settings.guide_line
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817416
+    m_Key: settings.reduce_shake
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817417
+    m_Key: settings.finger_offset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817418
+    m_Key: settings.left_handed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817419
+    m_Key: settings.language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817420
+    m_Key: settings.language_value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817421
+    m_Key: settings.reset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817422
+    m_Key: settings.back
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

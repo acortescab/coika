@@ -224,6 +224,72 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// Reset progress, reached through Pause and Settings, asks first; confirming it erases the saved bests and
+        /// totals, keeps the settings, writes the save and shows the new best on the HUD.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ResetProgress_WhenConfirmedFromSettings_ErasesProgressKeepsSettingsAndRefreshesTheHud()
+        {
+            var storage = new TestSaveStorage();
+            var save = new SaveSystem(storage);
+            save.Load();
+            var settings = new SettingsService(save);
+            settings.Music = 0.2f;
+            save.Data.bestScore.classic = 500;
+            _installer.UseSave(save);
+            _installer.UseSettings(settings);
+            var score = Field<ScoreSystem>(_installer, "_score");
+            score.BestScore = 500;
+            Field<HudPresenter>(_installer, "_hudPresenter").Refresh();
+            var bestText = Field<TMPro.TMP_Text>(Field<HudView>(_installer, "_hud"), "_bestText");
+            var shownBefore = UiTestViews.Shown(bestText);
+
+            _manager.Pause();
+            yield return null;
+            Field<UnityEngine.UI.Button>(FindPauseView(), "_settingsButton").onClick.Invoke();
+            Assert.IsTrue(FindSettingsView().gameObject.activeSelf, "The Settings screen opens over the pause menu.");
+            Field<UnityEngine.UI.Button>(FindSettingsView(), "_resetButton").onClick.Invoke();
+            Assert.AreEqual(500, save.Data.bestScore.classic, "Nothing is erased before the confirmation.");
+
+            ClickConfirm();
+            yield return null;
+
+            Assert.AreEqual(0, save.Data.bestScore.classic);
+            Assert.AreEqual(0, score.BestScore);
+            Assert.AreEqual(0.2f, settings.Music, 0.0001f);
+            Assert.IsTrue(storage.TryRead(out var json) && json.Contains("\"bestScore\""), "The save is written at once.");
+            Assert.AreNotEqual(shownBefore, UiTestViews.Shown(bestText), "The HUD shows the new best.");
+        }
+
+        /// <summary>
+        /// Back from the Settings screen returns to the pause menu, and a second Back resumes the run.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Back_InSettings_ClosesTheScreenThenResumes()
+        {
+            _manager.Pause();
+            yield return null;
+            Field<UnityEngine.UI.Button>(FindPauseView(), "_settingsButton").onClick.Invoke();
+
+            PressBack();
+            Assert.IsFalse(FindSettingsView().gameObject.activeSelf);
+            Assert.AreEqual(GameState.Paused, _manager.State);
+
+            PressBack();
+            yield return null;
+
+            Assert.AreEqual(GameState.Playing, _manager.State);
+        }
+
+        /// <summary>
+        /// Finds the Settings view of the scene, active or not.
+        /// </summary>
+        private static SettingsView FindSettingsView()
+        {
+            return UnityEngine.Object.FindAnyObjectByType<SettingsView>(FindObjectsInactive.Include);
+        }
+
+        /// <summary>
         /// Finds the pause view of the scene, active or not.
         /// </summary>
         private static PauseView FindPauseView()

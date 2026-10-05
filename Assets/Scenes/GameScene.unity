@@ -840,6 +840,12 @@ MonoBehaviour:
     m_SubObjectType: 
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
+  _settingsPrefab:
+    m_AssetGUID: 9204c8e4a5fb16c4baa778b370a88d11
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
   _fxPrefab:
     m_AssetGUID: 5548e3d0c33bf354cbbd369295a85733
     m_SubObjectName: 

@@ -7,8 +7,7 @@ namespace Coika.UI
     /// <summary>
     /// Passive pause menu (GDD §8.3): Resume, Restart, Settings and Menu. It loads no scene and changes no state:
     /// every button raises <see cref="Clicked"/> with its <see cref="PauseAction"/> for the
-    /// <see cref="PausePresenter"/>. Settings and Menu are disabled placeholders until the Settings screen (#36)
-    /// and the Menu scene (M3) exist. It has no animation, so it does not depend on the time scale, which is 0
+    /// <see cref="PausePresenter"/>. Menu is a disabled placeholder until the Menu scene (M3) exists. It has no animation, so it does not depend on the time scale, which is 0
     /// while it is open (S-64). Put it on a panel that starts inactive.
     /// </summary>
     [AddComponentMenu("Coika/UI/Pause View")]
@@ -30,7 +29,7 @@ namespace Coika.UI
         public event Action<PauseAction> Clicked;
 
         /// <summary>
-        /// Makes one relay per button and disables the placeholders. It runs on the first <see cref="Open"/>,
+        /// Makes one relay per button and disables the placeholder. It runs on the first <see cref="Open"/>,
         /// because the panel starts inactive.
         /// </summary>
         private void Awake()
@@ -42,7 +41,6 @@ namespace Coika.UI
                 new ButtonRelay<PauseAction>(_settingsButton, PauseAction.Settings, RaiseClicked),
                 new ButtonRelay<PauseAction>(_menuButton, PauseAction.Menu, RaiseClicked),
             };
-            _settingsButton.interactable = false;
             _menuButton.interactable = false;
         }
 

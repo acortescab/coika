@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Reflection;
+using Coika.Core;
 using Coika.UI;
 using TMPro;
 using UnityEngine;
@@ -30,10 +32,12 @@ namespace Coika.Tests.PlayMode
             BuildGameOver();
             BuildPause();
             BuildConfirm();
+            BuildSettings();
             _root.SetActive(true);
             GameOverObject.SetActive(false);
             PauseObject.SetActive(false);
             ConfirmObject.SetActive(false);
+            SettingsObject.SetActive(false);
         }
 
         public PauseView Pause { get; private set; }
@@ -47,6 +51,14 @@ namespace Coika.Tests.PlayMode
         public GameObject ConfirmObject { get; private set; }
         public Button ConfirmYes { get; private set; }
         public Button ConfirmCancel { get; private set; }
+
+        public SettingsView Settings { get; private set; }
+        public GameObject SettingsObject { get; private set; }
+        public Button SettingsReset { get; private set; }
+        public Button SettingsBack { get; private set; }
+        public Dictionary<SettingKey, Slider> SettingsSliders { get; } = new Dictionary<SettingKey, Slider>();
+        public Dictionary<SettingKey, Toggle> SettingsToggles { get; } = new Dictionary<SettingKey, Toggle>();
+        public Dictionary<SettingKey, LocalizeStringEvent> SettingsToggleStates { get; } = new Dictionary<SettingKey, LocalizeStringEvent>();
 
         public HudView Hud { get; private set; }
         public TMP_Text HudScore { get; private set; }
@@ -85,6 +97,9 @@ namespace Coika.Tests.PlayMode
             Object.Destroy(_root);
         }
 
+        /// <summary>
+        /// Builds the HUD view and its texts, image and pause button.
+        /// </summary>
         private void BuildHud()
         {
             var hudObject = Child("Hud", _root.transform);
@@ -102,6 +117,9 @@ namespace Coika.Tests.PlayMode
             Set(Hud, "_pauseButton", HudPause);
         }
 
+        /// <summary>
+        /// Builds the Game Over view, with the same fields as the prefab.
+        /// </summary>
         private void BuildGameOver()
         {
             GameOverObject = Child("GameOver", _root.transform);
@@ -126,6 +144,9 @@ namespace Coika.Tests.PlayMode
             Set(GameOver, "_menuButton", OverMenu);
         }
 
+        /// <summary>
+        /// Builds the pause menu with its four buttons.
+        /// </summary>
         private void BuildPause()
         {
             PauseObject = Child("Pause", _root.transform);
@@ -141,6 +162,9 @@ namespace Coika.Tests.PlayMode
             Set(Pause, "_menuButton", PauseMenu);
         }
 
+        /// <summary>
+        /// Builds the confirmation dialog with its title, message and two buttons.
+        /// </summary>
         private void BuildConfirm()
         {
             ConfirmObject = Child("Confirm", _root.transform);
@@ -154,6 +178,42 @@ namespace Coika.Tests.PlayMode
             Set(Confirm, "_cancelButton", ConfirmCancel);
         }
 
+        /// <summary>
+        /// Builds the Settings screen: a row per setting of <see cref="SettingsRows"/>, and the Reset progress and Back buttons.
+        /// </summary>
+        private void BuildSettings()
+        {
+            SettingsObject = Child("Settings", _root.transform);
+            Settings = SettingsObject.AddComponent<SettingsView>();
+            SettingsReset = Child("Reset", SettingsObject.transform).AddComponent<Button>();
+            SettingsBack = Child("Back", SettingsObject.transform).AddComponent<Button>();
+
+            var sliders = new List<SliderRow>();
+            foreach (var key in SettingsRows.Sliders)
+            {
+                var slider = Child(key + "Slider", SettingsObject.transform).AddComponent<Slider>();
+                SettingsSliders[key] = slider;
+                sliders.Add(new SliderRow(key, slider));
+            }
+
+            var toggles = new List<ToggleRow>();
+            foreach (var key in SettingsRows.Toggles)
+            {
+                var toggle = Child(key + "Toggle", SettingsObject.transform).AddComponent<Toggle>();
+                SettingsToggles[key] = toggle;
+                var state = Child(key + "State", SettingsObject.transform).AddComponent<LocalizeStringEvent>();
+                SettingsToggleStates[key] = state;
+                toggles.Add(new ToggleRow(key, toggle, state));
+            }
+            Set(Settings, "_sliders", sliders.ToArray());
+            Set(Settings, "_toggles", toggles.ToArray());
+            Set(Settings, "_resetButton", SettingsReset);
+            Set(Settings, "_backButton", SettingsBack);
+        }
+
+        /// <summary>
+        /// Creates an empty child with a RectTransform.
+        /// </summary>
         private static GameObject Child(string name, Transform parent)
         {
             var child = new GameObject(name, typeof(RectTransform));
@@ -161,11 +221,17 @@ namespace Coika.Tests.PlayMode
             return child;
         }
 
+        /// <summary>
+        /// Creates a TextMeshPro label under a parent.
+        /// </summary>
         private static TMP_Text Label(string name, Transform parent)
         {
             return Child(name, parent).AddComponent<TextMeshProUGUI>();
         }
 
+        /// <summary>
+        /// Sets a private serialized field of a view, the way the prefab does.
+        /// </summary>
         private static void Set(object target, string field, object value)
         {
             target.GetType().GetField(field, PRIVATE_FIELD).SetValue(target, value);

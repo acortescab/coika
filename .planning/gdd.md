@@ -203,7 +203,7 @@ Safe-area: respect `Screen.safeArea` (notches). Add the HUD under the safe area.
 - Shows best score.
 
 ### 8.3 Pause
-Resume · Restart (confirm) · Settings · Menu (confirm). Physics frozen via `Time.timeScale = 0` (UI uses unscaled time for animations). Settings and Menu are disabled until the Settings screen (#36) and the Menu scene (M3) exist.
+Resume · Restart (confirm) · Settings · Menu (confirm). Physics frozen via `Time.timeScale = 0` (UI uses unscaled time for animations). Menu is disabled until the Menu scene (M3) exists; Settings opens the Settings screen (§8.5) over the pause menu.
 
 Entered by the HUD pause button, the Back button, or the app losing focus (`OnApplicationPause(true)` / `OnApplicationFocus(false)`, which also saves). Leaving Pause is only ever the player's choice: Resume, Back on the menu, or a confirmed Restart. Back closes the top panel first (a confirmation dialog counts as Cancel). Input is ignored for 0.15 s of game time after the resume, so the tap on Resume never drops a piece. Restart and Menu go through the reusable confirmation dialog, where Cancel is the default.
 
@@ -211,7 +211,9 @@ Entered by the HUD pause button, the Back button, or the app losing focus (`OnAp
 Final score (count-up), Best score (+ "NEW BEST!"), highest tier reached (icon), pieces dropped, time played. Buttons: **Retry** (primary), **Menu**. Appears 1.2 s after the jar-full animation.
 
 ### 8.5 Settings
-Music volume, SFX volume, Haptics on/off, Guide line on/off, Reduce screen shake on/off, Left-handed finger offset (affects offset side only), Language (EN/ES at launch), Reset progress (confirm).
+Music volume, SFX volume, Haptics on/off, Guide line on/off, Reduce screen shake on/off, Finger offset on/off, Left-handed (affects the offset side only), Language (EN/ES at launch), Reset progress (confirm).
+
+Implemented (#36): a portrait screen over the pause menu, one row per setting (sliders; toggles with an ON/OFF text so colour is never the only state). Changes apply and save at once, with no Apply button. The SFX slider plays a click on release. Language shows "English" as a disabled row until M3. Reset progress goes through the confirmation dialog and erases bests, totals and discovered tiers, keeps the settings, saves at once and refreshes the HUD best score. A reset in the middle of a run does not make that run a new best. Back button and Android Back close the screen. Controls are 140 reference px tall (about 9 mm), so the ten rows fit one panel.
 
 ---
 

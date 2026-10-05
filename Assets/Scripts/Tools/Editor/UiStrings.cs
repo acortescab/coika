@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Coika.Core;
 using Coika.UI;
 
 namespace Coika.Tools
@@ -32,6 +34,30 @@ namespace Coika.Tools
         public const string PauseMenu = "pause.menu";
         public const string ConfirmYes = "confirm.yes";
         public const string ConfirmCancel = "confirm.cancel";
+        public const string SettingsTitle = "settings.title";
+        public const string SettingsMusic = "settings.music";
+        public const string SettingsSfx = "settings.sfx";
+        public const string SettingsHaptics = "settings.haptics";
+        public const string SettingsGuideLine = "settings.guide_line";
+        public const string SettingsReduceShake = "settings.reduce_shake";
+        public const string SettingsFingerOffset = "settings.finger_offset";
+        public const string SettingsLeftHanded = "settings.left_handed";
+        public const string SettingsLanguage = "settings.language";
+        public const string SettingsLanguageValue = "settings.language_value";
+        public const string SettingsReset = "settings.reset";
+        public const string SettingsBack = "settings.back";
+
+        /// <summary>The string key of the name of each setting that has a row on the Settings screen.</summary>
+        public static readonly IReadOnlyDictionary<SettingKey, string> SettingLabels = new Dictionary<SettingKey, string>
+        {
+            { SettingKey.Music, SettingsMusic },
+            { SettingKey.Sfx, SettingsSfx },
+            { SettingKey.Haptics, SettingsHaptics },
+            { SettingKey.GuideLine, SettingsGuideLine },
+            { SettingKey.ReduceShake, SettingsReduceShake },
+            { SettingKey.FingerOffset, SettingsFingerOffset },
+            { SettingKey.LeftHanded, SettingsLeftHanded },
+        };
 
         /// <summary>Every key with its English text.</summary>
         public static readonly (string Key, string English)[] All =
@@ -60,6 +86,22 @@ namespace Coika.Tools
             (UiTextKeys.CONFIRM_RESTART_MESSAGE, "The current run will be lost."),
             (UiTextKeys.CONFIRM_MENU_TITLE, "LEAVE THE GAME?"),
             (UiTextKeys.CONFIRM_MENU_MESSAGE, "The current run will be lost."),
+            (UiTextKeys.CONFIRM_RESET_TITLE, "RESET PROGRESS?"),
+            (UiTextKeys.CONFIRM_RESET_MESSAGE, "Your best scores, totals and discovered tiers will be erased. Settings are kept."),
+            (UiTextKeys.SETTINGS_ON, "ON"),
+            (UiTextKeys.SETTINGS_OFF, "OFF"),
+            (SettingsTitle, "SETTINGS"),
+            (SettingsMusic, "Music"),
+            (SettingsSfx, "Sound effects"),
+            (SettingsHaptics, "Haptics"),
+            (SettingsGuideLine, "Guide line"),
+            (SettingsReduceShake, "Reduce screen shake"),
+            (SettingsFingerOffset, "Finger offset"),
+            (SettingsLeftHanded, "Left-handed"),
+            (SettingsLanguage, "Language"),
+            (SettingsLanguageValue, "English"),
+            (SettingsReset, "RESET PROGRESS"),
+            (SettingsBack, "BACK"),
         };
     }
 }

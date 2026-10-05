@@ -268,6 +268,57 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Erasing the best in the middle of a run does not make the run a new best, however much it scores after.
+        /// </summary>
+        [Test]
+        public void ResetBest_InTheMiddleOfARun_NeverFlagsTheRunAsANewBest()
+        {
+            _score.BestScore = 100;
+            _score.OnPieceDropped(4);
+            _score.OnPieceDropped(4);
+
+            _score.ResetBest();
+            _score.OnPieceDropped(4);
+            _score.OnPieceDropped(4);
+
+            Assert.AreEqual(0, _newBestCount);
+            Assert.IsFalse(_score.IsNewBest);
+            Assert.AreEqual(16, _score.BestScore, "The best follows the score of the run.");
+        }
+
+        /// <summary>
+        /// Erasing the best right after the run was a new best clears the flag too.
+        /// </summary>
+        [Test]
+        public void ResetBest_AfterANewBest_ClearsTheFlag()
+        {
+            _score.BestScore = 1;
+            _score.OnPieceDropped(4);
+            Assert.IsTrue(_score.IsNewBest);
+
+            _score.ResetBest();
+
+            Assert.IsFalse(_score.IsNewBest);
+            Assert.AreEqual(4, _score.BestScore);
+        }
+
+        /// <summary>
+        /// The next run after a reset is a normal one: it can be a new best again.
+        /// </summary>
+        [Test]
+        public void ResetForNewRun_AfterResetBest_AllowsANewBestAgain()
+        {
+            _score.ResetBest();
+            _score.OnPieceDropped(4);
+            _score.ResetForNewRun();
+
+            _score.OnPieceDropped(8);
+
+            Assert.IsTrue(_score.IsNewBest, "8 is above the 4 of the reset run.");
+            Assert.AreEqual(1, _newBestCount);
+        }
+
+        /// <summary>
         /// With the default best score of 0, the first points of a run already beat it.
         /// </summary>
         [Test]

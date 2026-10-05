@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Coika.Core;
 using Coika.UI;
 using TMPro;
 using UnityEngine.TextCore.LowLevel;
@@ -31,6 +33,7 @@ namespace Coika.Tools
     public static class GameCanvasPrefabTool
     {
         public const string PrefabPath = "Assets/Prefabs/UI/GameCanvas.prefab";
+        public const string SettingsPrefabPath = "Assets/Prefabs/UI/SettingsView.prefab";
         public const string UiGroupName = "UI";
 
         /// <summary>Reference width of the canvas, in canvas units.</summary>
@@ -55,6 +58,21 @@ namespace Coika.Tools
         private const float STAT_CAPTION_SIZE = 44f;
         private const float MARGIN = 40f;
         private const float MATCH_WIDTH_OR_HEIGHT = 0.5f;
+
+        // Nine rows must fit one portrait panel, so the Settings controls are about 9 mm tall (GDD §8.5 ≈ 7 % to
+        // 14 % of the reference width) instead of MIN_TOUCH_SIZE.
+        private const float SETTINGS_ROW_HEIGHT = 140f;
+        private const float SETTINGS_ROW_STEP = 150f;
+        private const float SETTINGS_FIRST_ROW_Y = 590f;
+        private const float SETTINGS_LABEL_X = -150f;
+        private const float SETTINGS_LABEL_WIDTH = 520f;
+        private const float SETTINGS_LABEL_SIZE = 46f;
+        private const float SETTINGS_SLIDER_X = 290f;
+        private const float SETTINGS_SLIDER_WIDTH = 340f;
+        private const float SETTINGS_TOGGLE_X = 190f;
+        private const float SETTINGS_TOGGLE_SIZE = 120f;
+        private const float SETTINGS_STATE_X = 360f;
+        private const float SETTINGS_STATE_WIDTH = 190f;
 
         private static readonly Color PanelColor = new Color(0.08f, 0.08f, 0.14f, 0.92f);
         private static readonly Color FrameColor = new Color(0.12f, 0.12f, 0.2f, 0.85f);
@@ -92,9 +110,21 @@ namespace Coika.Tools
                 UnityEngine.Object.DestroyImmediate(root);
             }
 
+            var settingsRoot = new GameObject("SettingsView", typeof(RectTransform));
+            try
+            {
+                BuildSettings(settingsRoot.GetComponent<RectTransform>(), font);
+                PrefabUtility.SaveAsPrefabAsset(settingsRoot, SettingsPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(settingsRoot);
+            }
+
             MakeAddressable(PrefabPath);
+            MakeAddressable(SettingsPrefabPath);
             MakeAddressable(FontAssetPath);
-            Debug.Log($"Game canvas prefab is up to date at {PrefabPath}.");
+            Debug.Log($"Game canvas prefab is up to date at {PrefabPath}, and the Settings prefab at {SettingsPrefabPath}.");
         }
 
         /// <summary>
@@ -190,7 +220,7 @@ namespace Coika.Tools
 
         /// <summary>
         /// Builds the pause menu, inactive: a dimmed backdrop and the Resume, Restart, Settings and Menu buttons.
-        /// Settings and Menu are disabled by the view until #36 and M3.
+        /// Menu is disabled by the view until M3.
         /// </summary>
         private static void BuildPause(RectTransform parent, TMP_FontAsset font)
         {
@@ -245,6 +275,202 @@ namespace Coika.Tools
             Assign(view, "_confirmButton", confirm);
             Assign(view, "_cancelButton", cancel);
             confirmRect.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Builds the Settings screen as its own prefab, inactive, so the Pause menu and the Menu (M3) can push the
+        /// same one: a dimmed backdrop over the safe area, and a panel with a row per setting (a slider or a toggle
+        /// with an ON or OFF text), the disabled Language row, Reset progress and Back. The rows are the settings of
+        /// <see cref="SettingsRows"/>, in that order.
+        /// </summary>
+        /// <param name="root">The root of the prefab, which becomes the view.</param>
+        /// <param name="font">The font of every text.</param>
+        private static void BuildSettings(RectTransform root, TMP_FontAsset font)
+        {
+            Stretch(root);
+            root.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+            var view = root.gameObject.AddComponent<SettingsView>();
+
+            var panel = NewRect("Panel", root);
+            Place(panel, Centered(0f, 0f, 960f, 1700f));
+            panel.gameObject.AddComponent<Image>().color = PanelColor;
+
+            AddText(panel, "Title", font, UiStrings.SettingsTitle, Centered(0f, 760f, 880f, 120f), 90f, TextAlignmentOptions.Center, Color.white);
+
+            var row = 0;
+            var sliders = new List<Slider>();
+            foreach (var key in SettingsRows.Sliders)
+            {
+                var y = AddRowLabel(panel, font, key.ToString(), UiStrings.SettingLabels[key], row++);
+                sliders.Add(AddSlider(panel, key + "Slider", y));
+            }
+
+            var toggles = new List<Toggle>();
+            var states = new List<LocalizeStringEvent>();
+            foreach (var key in SettingsRows.Toggles)
+            {
+                var y = AddRowLabel(panel, font, key.ToString(), UiStrings.SettingLabels[key], row++);
+                toggles.Add(AddToggle(panel, key + "Toggle", y));
+                var state = AddText(panel, key + "State", font, UiTextKeys.SETTINGS_OFF, Centered(SETTINGS_STATE_X, y, SETTINGS_STATE_WIDTH, SETTINGS_ROW_HEIGHT), SETTINGS_LABEL_SIZE, TextAlignmentOptions.Center, Color.white);
+                states.Add(state.GetComponent<LocalizeStringEvent>());
+            }
+
+            // The language is fixed to English until the localization of M3, so its row is a disabled placeholder.
+            var languageY = AddRowLabel(panel, font, "Language", UiStrings.SettingsLanguage, row++);
+            var language = AddButton(panel, "LanguageButton", font, UiStrings.SettingsLanguageValue, Centered(SETTINGS_SLIDER_X, languageY, SETTINGS_SLIDER_WIDTH, SETTINGS_ROW_HEIGHT), ButtonColor, SETTINGS_LABEL_SIZE);
+            language.interactable = false;
+
+            const float buttonWidth = 640f;
+            var reset = AddButton(panel, "ResetButton", font, UiStrings.SettingsReset, Centered(0f, SettingsRowY(row++), buttonWidth, SETTINGS_ROW_HEIGHT), new Color(0.6f, 0.2f, 0.2f, 1f), 56f);
+            var back = AddButton(panel, "BackButton", font, UiStrings.SettingsBack, Centered(0f, SettingsRowY(row), buttonWidth, SETTINGS_ROW_HEIGHT), PrimaryButtonColor, 56f);
+
+            AssignRows(view, "_sliders", SettingsRows.Sliders, ("_slider", sliders.ToArray()));
+            AssignRows(view, "_toggles", SettingsRows.Toggles, ("_toggle", toggles.ToArray()), ("_stateLabel", states.ToArray()));
+            Assign(view, "_resetButton", reset);
+            Assign(view, "_backButton", back);
+            root.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// The vertical position of a row of the Settings panel, counted from the top.
+        /// </summary>
+        /// <param name="row">Index of the row, 0 for the first.</param>
+        private static float SettingsRowY(int row)
+        {
+            return SETTINGS_FIRST_ROW_Y - SETTINGS_ROW_STEP * row;
+        }
+
+        /// <summary>
+        /// Adds the localized, left-aligned name of a setting at the left of a row.
+        /// </summary>
+        /// <param name="parent">The panel.</param>
+        /// <param name="font">The font of the label.</param>
+        /// <param name="name">Name of the row, used for the objects of the row.</param>
+        /// <param name="key">String key of the text.</param>
+        /// <param name="row">Index of the row, 0 for the first.</param>
+        /// <returns>The vertical position of the row, for the control that goes beside the label.</returns>
+        private static float AddRowLabel(RectTransform parent, TMP_FontAsset font, string name, string key, int row)
+        {
+            var y = SettingsRowY(row);
+            var label = AddText(parent, name + "Label", font, key, Centered(SETTINGS_LABEL_X, y, SETTINGS_LABEL_WIDTH, SETTINGS_ROW_HEIGHT), SETTINGS_LABEL_SIZE, TextAlignmentOptions.Left, Color.white);
+            label.textWrappingMode = TextWrappingModes.Normal;
+            return y;
+        }
+
+        /// <summary>
+        /// Adds a 0 to 1 slider: a thin bar, a fill and a handle, inside a transparent row-high rect that takes the
+        /// touches, so the bar is easy to hit.
+        /// </summary>
+        /// <param name="parent">The panel.</param>
+        /// <param name="name">Name of the slider object.</param>
+        /// <param name="y">Vertical position of the row.</param>
+        /// <returns>The slider.</returns>
+        private static Slider AddSlider(RectTransform parent, string name, float y)
+        {
+            var rect = NewRect(name, parent);
+            Place(rect, Centered(SETTINGS_SLIDER_X, y, SETTINGS_SLIDER_WIDTH, SETTINGS_ROW_HEIGHT));
+            rect.gameObject.AddComponent<Image>().color = Color.clear;
+
+            var bar = NewRect("Background", rect);
+            bar.anchorMin = new Vector2(0f, 0.5f);
+            bar.anchorMax = new Vector2(1f, 0.5f);
+            bar.sizeDelta = new Vector2(-SETTINGS_TOGGLE_SIZE * 0.5f, 30f);
+            bar.gameObject.AddComponent<Image>().color = ButtonColor;
+
+            var fillArea = NewRect("Fill Area", rect);
+            fillArea.anchorMin = new Vector2(0f, 0.5f);
+            fillArea.anchorMax = new Vector2(1f, 0.5f);
+            fillArea.sizeDelta = new Vector2(-SETTINGS_TOGGLE_SIZE * 0.5f, 30f);
+            var fill = NewRect("Fill", fillArea);
+            fill.anchorMin = Vector2.zero;
+            fill.anchorMax = Vector2.one;
+            fill.sizeDelta = Vector2.zero;
+            fill.gameObject.AddComponent<Image>().color = PrimaryButtonColor;
+
+            var handleArea = NewRect("Handle Slide Area", rect);
+            Stretch(handleArea);
+            handleArea.offsetMin = new Vector2(SETTINGS_TOGGLE_SIZE * 0.25f, 0f);
+            handleArea.offsetMax = new Vector2(-SETTINGS_TOGGLE_SIZE * 0.25f, 0f);
+            var handle = NewRect("Handle", handleArea);
+            handle.anchorMin = new Vector2(0f, 0.5f);
+            handle.anchorMax = new Vector2(0f, 0.5f);
+            handle.sizeDelta = new Vector2(SETTINGS_TOGGLE_SIZE * 0.5f, SETTINGS_TOGGLE_SIZE * 0.8f);
+            var handleImage = handle.gameObject.AddComponent<Image>();
+            handleImage.color = AccentColor;
+
+            var slider = rect.gameObject.AddComponent<Slider>();
+            slider.fillRect = fill;
+            slider.handleRect = handle;
+            slider.targetGraphic = handleImage;
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            return slider;
+        }
+
+        /// <summary>
+        /// Adds a square toggle with a checkmark. The ON or OFF text beside it is added by the caller, because the
+        /// state is never only a colour.
+        /// </summary>
+        /// <param name="parent">The panel.</param>
+        /// <param name="name">Name of the toggle object.</param>
+        /// <param name="y">Vertical position of the row.</param>
+        /// <returns>The toggle.</returns>
+        private static Toggle AddToggle(RectTransform parent, string name, float y)
+        {
+            var rect = NewRect(name, parent);
+            Place(rect, Centered(SETTINGS_TOGGLE_X, y, SETTINGS_TOGGLE_SIZE, SETTINGS_TOGGLE_SIZE));
+            var background = rect.gameObject.AddComponent<Image>();
+            background.color = ButtonColor;
+
+            var check = NewRect("Checkmark", rect);
+            Stretch(check);
+            check.offsetMin = new Vector2(20f, 20f);
+            check.offsetMax = new Vector2(-20f, -20f);
+            var checkImage = check.gameObject.AddComponent<Image>();
+            checkImage.color = AccentColor;
+            checkImage.raycastTarget = false;
+
+            var toggle = rect.gameObject.AddComponent<Toggle>();
+            toggle.targetGraphic = background;
+            toggle.graphic = checkImage;
+            toggle.isOn = false;
+            return toggle;
+        }
+
+        /// <summary>
+        /// Fills an array of rows of the view: the setting of each row, and one object per column (the slider, the
+        /// switch, the state text), in the order of the keys.
+        /// </summary>
+        /// <param name="view">The Settings view.</param>
+        /// <param name="field">The serialized array of rows.</param>
+        /// <param name="keys">The setting of each row.</param>
+        /// <param name="columns">The field of the row and its object for each row.</param>
+        private static void AssignRows(SettingsView view, string field, SettingKey[] keys, params (string Field, UnityEngine.Object[] Values)[] columns)
+        {
+            var serialized = new SerializedObject(view);
+            var rows = serialized.FindProperty(field);
+            rows.arraySize = keys.Length;
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var element = rows.GetArrayElementAtIndex(i);
+                SetKey(element.FindPropertyRelative("_key"), keys[i]);
+                foreach (var column in columns)
+                {
+                    element.FindPropertyRelative(column.Field).objectReferenceValue = column.Values[i];
+                }
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+        /// <summary>
+        /// Sets an enum property by the name of the value, so it does not depend on the order of the enum.
+        /// </summary>
+        /// <param name="property">The serialized enum.</param>
+        /// <param name="key">The value to set.</param>
+        private static void SetKey(SerializedProperty property, SettingKey key)
+        {
+            property.enumValueIndex = Array.IndexOf(property.enumNames, key.ToString());
         }
 
         /// <summary>

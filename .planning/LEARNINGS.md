@@ -2,6 +2,19 @@
 
 Non-obvious things learned while working on the project. Add a dated section per issue; keep entries short and say why.
 
+## Issue #36: SettingsView (2026-10)
+
+- **Rows are data.** `SettingsView` holds `SliderRow[]` and `ToggleRow[]` (a `SettingKey` + the control), builds the relays for them and raises one `SliderChanged(key, value)` / `ToggleChanged(key, bool)`. The key-to-property mapping lives once, in `SettingsService.GetFloat/SetFloat/GetBool/SetBool`, so the presenter has no `switch`. `SettingsRows` is the only list of the settings that have a row; the prefab builder and the tests read it, so a new setting is one entry there, one `case` in the service and the string key of its name (`UiStrings.SettingLabels`). Values are shown with `SetValueWithoutNotify`, so opening the screen writes nothing.
+- **Relays share an interface.** `IRelay` (`Bind`/`Unbind`) is implemented by `ButtonRelay<T>`, `KeyedRelay<T>` (any `onValueChanged` with a key: slider and toggle) and `ReleaseRelay`; a view keeps one `List<IRelay>` and binds and unbinds it in one loop each, whatever the controls are.
+- **Reset in the middle of a run is not a new best.** `ScoreSystem.ResetBest()` sets the best to the current score and makes it follow the score silently (no `IsNewBest`, no `NewBestReached`) until the next run; setting `BestScore = 0` would have celebrated the next point. The run's final score is then the stored best, shown without the NEW BEST banner.
+- **The view shows values on `Opened`, not on `Awake`.** The prefab starts inactive, so `Awake` runs on the first `Open`; `Opened` fires after it, and the presenter refreshes the controls each time.
+- **Settings is its own prefab (`SettingsView.prefab`, UI group)**, not a child of `GameCanvas`, so the Menu (M3) can load the same one. The installer instantiates it under the safe area and moves it below `Confirm` in the sibling order, so the dialog it opens is drawn over it. It is a required reference of the installer (`_settingsPrefab`).
+- **`PausePresenter` pushes the screen on its own `PanelStack`**, so Back (key or button) pops it with no extra code. `SettingsRequested` was removed: nothing else needed it. Reset progress is `ConfirmKind.ResetProgress` + `ConfirmRequest.ResetProgress`; `GameSceneInstaller.ResetProgress` does `ResetProgress()`, an immediate `Save()` (`ResetProgress` only requests a save, and a crash would bring the old bests back), then `ScoreSystem.ResetBest()` and `HudPresenter.Refresh()` (the HUD has no best-score event).
+- **SFX preview plays on pointer release** (`SliderReleaseNotifier`, an `IPointerUpHandler` that `ReleaseRelay` adds to the slider). `Slider` has no release event, and playing during the drag is noisy. The music slider needs no preview: it is audible live.
+- **Touch size:** `MIN_TOUCH_SIZE` (264 canvas units) cannot fit ten rows, so the Settings rows are 140 units (about 9 mm, GDD §8.5/S-92 read as 7 %–14 % of the width). The other panels still use `MIN_TOUCH_SIZE`.
+- **Finger offset and Left-handed are two toggles**, matching the two stored bools (the issue text named one).
+- **Tooling:** with the Editor open the CLI call that builds prefabs timed out (5 s main-thread limit), so the prefabs, the localization table and the scene wiring were run in batch mode (`Unity.exe -batchmode -quit -executeMethod`, with `Start-Process -Wait`; it must be launched that way because a plain `&` returns at once). After adding strings run Setup Localization before the prefab tool.
+
 ## Issue #35: pause (2026-10)
 
 - **The panels follow `GameState`, not the other way round.** `GameSceneInstaller.HandleStateChanged` opens the `PausePresenter` on `Paused` and closes it on leaving it, so Resume, a confirmed Restart (`StartRun`) and the debug keys all close the menu without each knowing about it. `GameManager.Pause()/Resume()` only change the state; time, music and input react to the state change.

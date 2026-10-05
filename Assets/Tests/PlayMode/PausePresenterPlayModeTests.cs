@@ -18,7 +18,7 @@ namespace Coika.Tests.PlayMode
         private int _resume;
         private int _restart;
         private int _menu;
-        private int _settings;
+        private int _reset;
 
         /// <summary>
         /// Builds the views and a presenter that counts what it asks for.
@@ -29,13 +29,12 @@ namespace Coika.Tests.PlayMode
             _resume = 0;
             _restart = 0;
             _menu = 0;
-            _settings = 0;
+            _reset = 0;
             _views = new UiTestViews();
             _audio = new FakeAudioService();
-            _presenter = new PausePresenter(_views.Pause, _views.Confirm, _audio);
+            _presenter = new PausePresenter(_views.Pause, _views.Confirm, _views.Settings, _audio);
             _presenter.ResumeRequested += () => _resume++;
             _presenter.Confirmed += CountConfirmed;
-            _presenter.SettingsRequested += () => _settings++;
         }
 
         /// <summary>
@@ -54,13 +53,17 @@ namespace Coika.Tests.PlayMode
         /// <param name="kind">What the dialog asked.</param>
         private void CountConfirmed(ConfirmKind kind)
         {
-            if (kind == ConfirmKind.Restart)
+            switch (kind)
             {
-                _restart++;
-            }
-            else
-            {
-                _menu++;
+                case ConfirmKind.Restart:
+                    _restart++;
+                    break;
+                case ConfirmKind.Menu:
+                    _menu++;
+                    break;
+                case ConfirmKind.ResetProgress:
+                    _reset++;
+                    break;
             }
         }
 
@@ -220,16 +223,110 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// Settings and Menu are disabled placeholders until #36 and M3.
+        /// Menu is a disabled placeholder until M3, and Settings is enabled.
         /// </summary>
         [Test]
-        public void Open_Always_LeavesSettingsAndMenuDisabled()
+        public void Open_Always_LeavesOnlyMenuDisabled()
         {
             _presenter.Open();
 
-            Assert.That(_views.PauseSettings.interactable, Is.False);
+            Assert.That(_views.PauseSettings.interactable, Is.True);
             Assert.That(_views.PauseMenu.interactable, Is.False);
-            Assert.That(_settings, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// The Settings button puts the Settings screen over the pause menu and plays the click.
+        /// </summary>
+        [Test]
+        public void Settings_WhenClicked_OpensTheScreenOverThePauseMenu()
+        {
+            _presenter.Open();
+
+            _views.PauseSettings.onClick.Invoke();
+
+            Assert.That(_views.SettingsObject.activeSelf, Is.True);
+            Assert.That(_views.PauseObject.activeSelf, Is.True);
+            Assert.That(_presenter.IsInSettings, Is.True);
+            Assert.That(_audio.SfxCalls[0].Id, Is.EqualTo(SfxId.UiClick));
+        }
+
+        /// <summary>
+        /// Back with the Settings screen open closes it and keeps the pause menu, as the Back button of the screen does.
+        /// </summary>
+        [Test]
+        public void HandleBack_InSettings_ClosesTheScreenOnly()
+        {
+            _presenter.Open();
+            _views.PauseSettings.onClick.Invoke();
+
+            _presenter.HandleBack();
+
+            Assert.That(_views.SettingsObject.activeSelf, Is.False);
+            Assert.That(_views.PauseObject.activeSelf, Is.True);
+            Assert.That(_resume, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// The Back button of the Settings screen closes it like the Back key.
+        /// </summary>
+        [Test]
+        public void SettingsBackButton_WhenClicked_ClosesTheScreen()
+        {
+            _presenter.Open();
+            _views.PauseSettings.onClick.Invoke();
+
+            _views.SettingsBack.onClick.Invoke();
+
+            Assert.That(_views.SettingsObject.activeSelf, Is.False);
+            Assert.That(_presenter.IsOpen, Is.True);
+        }
+
+        /// <summary>
+        /// Reset progress asks over the Settings screen, and nothing is erased until the dialog is confirmed.
+        /// </summary>
+        [Test]
+        public void ResetProgress_WhenClicked_AsksForConfirmationFirst()
+        {
+            _presenter.Open();
+            _views.PauseSettings.onClick.Invoke();
+
+            _views.SettingsReset.onClick.Invoke();
+
+            Assert.That(_presenter.IsConfirming, Is.True);
+            Assert.That(_views.SettingsObject.activeSelf, Is.True);
+            Assert.That(_reset, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// Confirming the Reset progress dialog raises one confirmation and leaves the Settings screen open.
+        /// </summary>
+        [Test]
+        public void ResetProgress_WhenConfirmed_RaisesOneConfirmation()
+        {
+            _presenter.Open();
+            _views.PauseSettings.onClick.Invoke();
+            _views.SettingsReset.onClick.Invoke();
+
+            _views.ConfirmYes.onClick.Invoke();
+
+            Assert.That(_reset, Is.EqualTo(1));
+            Assert.That(_presenter.IsInSettings, Is.True);
+        }
+
+        /// <summary>
+        /// Cancelling the Reset progress dialog erases nothing.
+        /// </summary>
+        [Test]
+        public void ResetProgress_WhenCancelled_RaisesNothing()
+        {
+            _presenter.Open();
+            _views.PauseSettings.onClick.Invoke();
+            _views.SettingsReset.onClick.Invoke();
+
+            _views.ConfirmCancel.onClick.Invoke();
+
+            Assert.That(_reset, Is.EqualTo(0));
+            Assert.That(_presenter.IsInSettings, Is.True);
         }
 
         /// <summary>
@@ -239,7 +336,7 @@ namespace Coika.Tests.PlayMode
         public void Resume_WithoutAudio_StillRaisesTheRequest()
         {
             _presenter.Dispose();
-            _presenter = new PausePresenter(_views.Pause, _views.Confirm, null);
+            _presenter = new PausePresenter(_views.Pause, _views.Confirm, _views.Settings, null);
             _presenter.ResumeRequested += () => _resume++;
             _presenter.Open();
 
