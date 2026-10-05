@@ -85,13 +85,14 @@ namespace Coika.Gameplay
         public bool IsNewBest { get; private set; }
 
         /// <summary>
-        /// Erases the best score while a run is in progress (Reset progress). The run is not a new best for it: the
-        /// points scored so far, and the ones it scores from now on, raise <see cref="BestScore"/> quietly, so
-        /// <see cref="IsNewBest"/> stays false and <see cref="NewBestReached"/> is not raised until the next run.
+        /// Erases the best score while a run is in progress (Reset progress): <see cref="BestScore"/> goes back to 0,
+        /// like the saved one. The run is not a new best for it, however much it scores: <see cref="IsNewBest"/>
+        /// stays false and <see cref="NewBestReached"/> is not raised until the next run. The summary at the end of
+        /// the run still reports the score of the run as the best (<see cref="RunSummary.From"/>).
         /// </summary>
         public void ResetBest()
         {
-            BestScore = Score;
+            BestScore = 0;
             IsNewBest = false;
             _bestWasReset = true;
         }
@@ -283,11 +284,7 @@ namespace Coika.Gameplay
             Score = (int)total;
             ScoreChanged?.Invoke(Score, delta);
 
-            if (_bestWasReset)
-            {
-                BestScore = Math.Max(BestScore, Score);
-            }
-            else if (!IsNewBest && Score > BestScore)
+            if (!_bestWasReset && !IsNewBest && Score > BestScore)
             {
                 IsNewBest = true;
                 NewBestReached?.Invoke();

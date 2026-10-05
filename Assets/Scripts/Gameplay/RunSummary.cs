@@ -1,3 +1,5 @@
+using System;
+
 namespace Coika.Gameplay
 {
     /// <summary>
@@ -55,7 +57,9 @@ namespace Coika.Gameplay
         /// <param name="durationSeconds">Play time of the run in seconds.</param>
         public static RunSummary From(ScoreSystem score, float durationSeconds)
         {
-            var best = score.IsNewBest ? score.Score : score.BestScore;
+            // Max, not BestScore alone: after a Reset progress in the middle of the run the best is 0 and the run is
+            // not flagged as a new best, but its score is the best there is.
+            var best = score.IsNewBest ? score.Score : Math.Max(score.BestScore, score.Score);
             return new RunSummary(score.Score, best, score.IsNewBest, score.HighestTierReached, score.PiecesDropped, durationSeconds, score.Merges);
         }
     }

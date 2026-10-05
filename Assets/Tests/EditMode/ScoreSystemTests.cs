@@ -283,7 +283,7 @@ namespace Coika.Tests.EditMode
 
             Assert.AreEqual(0, _newBestCount);
             Assert.IsFalse(_score.IsNewBest);
-            Assert.AreEqual(16, _score.BestScore, "The best follows the score of the run.");
+            Assert.AreEqual(0, _score.BestScore, "The best stays erased, like the saved one.");
         }
 
         /// <summary>
@@ -299,7 +299,7 @@ namespace Coika.Tests.EditMode
             _score.ResetBest();
 
             Assert.IsFalse(_score.IsNewBest);
-            Assert.AreEqual(4, _score.BestScore);
+            Assert.AreEqual(0, _score.BestScore);
         }
 
         /// <summary>
@@ -314,7 +314,7 @@ namespace Coika.Tests.EditMode
 
             _score.OnPieceDropped(8);
 
-            Assert.IsTrue(_score.IsNewBest, "8 is above the 4 of the reset run.");
+            Assert.IsTrue(_score.IsNewBest, "8 is above the erased best of 0.");
             Assert.AreEqual(1, _newBestCount);
         }
 

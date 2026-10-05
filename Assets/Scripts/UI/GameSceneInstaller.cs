@@ -797,7 +797,14 @@ namespace Coika.UI
             }
 
             _settings.ResetProgress();
-            _save.Save();
+
+            // Save() clears the dirty flag before it writes, so a failed write is asked for again: the next flush
+            // retries it and the old bests do not come back.
+            if (!_save.Save())
+            {
+                _save.RequestSave();
+            }
+
             _score.ResetBest();
             _hudPresenter.Refresh();
         }
