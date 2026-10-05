@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Coika.Gameplay
 {
     /// <summary>
-    /// One visual effect of a piece. It owns its clock and answers with the scale it contributes; the
+    /// One visual effect of a piece. It owns its clock and answers with the scale and the tint it contributes; the
     /// <see cref="PieceAnimator"/> multiplies the contributions of every active effect, so effects never know about
     /// each other. Effects are created once per animator and reused, so nothing allocates while they play.
     /// </summary>
@@ -17,7 +17,7 @@ namespace Coika.Gameplay
         /// <summary>The group of effects this one excludes when it starts.</summary>
         public abstract PieceEffectGroup Group { get; }
 
-        /// <summary>Whether the effect is running and contributes to the scale.</summary>
+        /// <summary>Whether the effect is running and contributes to the scale and the tint.</summary>
         public virtual bool IsActive => _timer.IsActive;
 
         /// <summary>

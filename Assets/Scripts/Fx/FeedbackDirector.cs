@@ -13,7 +13,7 @@ namespace Coika.Fx
     /// neither physics, score nor the simulation result. The numbers live in <see cref="FeedbackConfig"/> and the
     /// formulas in its pure helpers and in <see cref="AudioMath"/>; this class only switches between them.
     /// <para>
-    /// Nothing fires unless a run is being played, so a paused game is silent. The sound and the haptic of merges
+    /// Nothing fires unless a run is being played, so a paused game is silent; the only event that plays outside a run is the game over itself. The sound and the haptic of merges
     /// are held until <see cref="Tick"/>, which plays one of each for all the merges of a chain, with the highest
     /// tier. The handlers are cached delegates, so listening and reacting allocate nothing.
     /// </para>

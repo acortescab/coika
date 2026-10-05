@@ -176,7 +176,7 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// The animations only scale the visual child: the root scale, the collider and the body never change.
+        /// The animations only scale and tint the visual child: the root scale, the collider and the body never change.
         /// </summary>
         [Test]
         public void Animations_WhileRunning_NeverChangeTheRootOrTheCollider()

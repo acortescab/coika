@@ -467,8 +467,8 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Builds the screen effects: the time scale owner, the shake of the camera rig and the flash overlay, all on
-        /// the unscaled clock, and the director that maps every gameplay event to them, to the particles, the sounds
+        /// Builds the feedback: the time scale owner, the shake of the camera rig and the flash overlay, all on the
+        /// unscaled clock, and the director that maps every gameplay event to them, to the particles, the sounds
         /// and the haptics. The parts without an object here do nothing.
         /// </summary>
         private void ComposeFeedback()
@@ -645,8 +645,8 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Pauses the music and the time with the game and resumes them afterwards, stops the shake and the flash
-        /// on pause, and ends a slow-mo when the game is over.
+        /// Pauses the music and the time with the game and resumes them afterwards, and ends a slow-mo when the game
+        /// is over. The <see cref="FeedbackDirector"/> stops the shake and the flash on pause by itself.
         /// </summary>
         /// <param name="previous">The state that was left.</param>
         /// <param name="next">The state that was entered.</param>

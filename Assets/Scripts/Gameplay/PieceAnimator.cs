@@ -62,7 +62,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Stops every effect and sets the visual to identity scale and zero offset.
+        /// Stops every effect and sets the visual to identity scale, zero offset and a white tint.
         /// </summary>
         public void ResetState()
         {
@@ -146,7 +146,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Multiplies the scale of every active effect and applies it to the visual. When no effect is left running
+        /// Multiplies the scale and the tint of every active effect and applies them to the visual. When no effect is left running
         /// it goes back to the exact rest state.
         /// </summary>
         private void Apply()
@@ -194,7 +194,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Puts the visual child at exact identity scale and zero offset: the state in which the sprite is at rest.
+        /// Puts the visual child at exact identity scale, zero offset and white tint: the state in which the sprite is at rest.
         /// </summary>
         private void ApplyRest()
         {

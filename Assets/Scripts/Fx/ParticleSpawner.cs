@@ -8,7 +8,7 @@ namespace Coika.Fx
     /// Draws every effect of <see cref="FxKind"/> with two shared particle systems, one for the pixel particles and one
     /// for the rings, both emitted with <see cref="ParticleSystem.Emit(ParticleSystem.EmitParams, int)"/>. Nothing is
     /// instantiated or destroyed during play, and the emit parameters are structs, so a burst allocates nothing. The
-    /// systems have a hard cap (<see cref="FeedbackConfig.Particles.MaxLiveParticles"/>, <see cref="FeedbackConfig.Particles.MaxLiveRings"/>):
+    /// systems have a hard cap (<see cref="ParticleSettings.MaxLiveParticles"/>, <see cref="ParticleSettings.MaxLiveRings"/>):
     /// when it is reached Unity removes the oldest particles first. Sizes are set in reference pixels (1/16 world
     /// unit), positions are snapped to the pixel grid and the particles are point-sampled, so the look matches the pixel art.
     /// </summary>
@@ -44,7 +44,7 @@ namespace Coika.Fx
         }
 
         /// <summary>
-        /// Applies the Reduce Shake setting: it scales the particle counts by <see cref="FeedbackConfig.Particles.ReduceMotionCountFactor"/>.
+        /// Applies the Reduce Shake setting: it scales the particle counts by <see cref="ParticleSettings.ReduceMotionCountFactor"/>.
         /// </summary>
         public bool ReduceMotion
         {

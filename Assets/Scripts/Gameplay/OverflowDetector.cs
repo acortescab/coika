@@ -207,7 +207,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Shows the Danger Line while a piece is near it and pulses it while a piece overflows.
+        /// Shows the Danger Line while a piece is near it and pulses it while a piece overflows, and raises <see cref="DangerChanged"/> when the pulse starts or stops.
         /// </summary>
         private void ShowDanger(bool visible, bool pulsing)
         {
