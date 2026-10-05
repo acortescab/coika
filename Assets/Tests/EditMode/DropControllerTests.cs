@@ -350,21 +350,19 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// The next piece grows from nothing to full size in the scale-in time while the drop cools down.
+        /// The controller never scales the held piece: its pop-in is a visual effect of the piece itself (issue #31),
+        /// so the root keeps its full size while the drop cools down.
         /// </summary>
         [Test]
-        public void Tick_AfterAClick_GrowsTheNextPieceFromZeroToFullSize()
+        public void Tick_AfterAClick_KeepsTheRootOfTheNextPieceAtFullSize()
         {
             Start();
             _input.Click();
             _controller.Tick(STEP);
-            Assert.AreEqual(0f, _controller.HeldPiece.transform.localScale.x, TOLERANCE, "It starts with no size.");
+            Assert.AreEqual(Vector3.one, _controller.HeldPiece.transform.localScale);
 
             Run(4);
-            Assert.AreEqual(0.08f / 0.15f, _controller.HeldPiece.transform.localScale.x, 0.001f, "0.08 s of 0.15 s.");
-
-            Run(4);
-            Assert.AreEqual(1f, _controller.HeldPiece.transform.localScale.x, TOLERANCE, "0.16 s is past the scale-in time.");
+            Assert.AreEqual(Vector3.one, _controller.HeldPiece.transform.localScale);
         }
 
         /// <summary>

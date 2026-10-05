@@ -14,9 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _gravity: -20
   _dropDownCooldown: 0.5
+  _maxFollowSpeed: 40
+  _fingerOffset: 2
   _overflowTime: 2
   _overflowGrace: 1
   _settledVelocity: 0.2
+  _dangerWarnDistance: 2
   _comboWindow: 1
   _comboStep: 0.25
   _comboCap: 3
@@ -28,10 +31,7 @@ MonoBehaviour:
   - 8
   _spawnableTierCount: 5
   _antiStreakMax: 3
-  _forcedOpeningTiers:
-  - 0
-  - 1
-  - 0
+  _forcedOpeningTiers: 000000000100000000000000i
   _jarSize: {x: 10, y: 12.5}
   _dropLineOffset: 1.5
   _superNovaBonus: 500
@@ -43,3 +43,4 @@ MonoBehaviour:
     m_SubObjectType: 
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
+  _feedback: {fileID: 11400000, guid: 71283f6571ccb194a878fc6a808c7e98, type: 2}

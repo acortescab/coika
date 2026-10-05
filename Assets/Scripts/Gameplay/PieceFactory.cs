@@ -192,13 +192,17 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Removes the subscribers of a piece that goes back to the pool, so a reused piece never keeps listeners
-        /// of its previous life.
+        /// Removes the subscribers of a piece that goes back to the pool and stops its visual animation, so a reused
+        /// piece never keeps listeners or a half-played scale of its previous life.
         /// </summary>
         /// <param name="piece">The piece that was released.</param>
         private static void ClearSubscribers(Piece piece)
         {
             piece.ClearCollidedSubscribers();
+            if (piece.Animator != null)
+            {
+                piece.Animator.ResetState();
+            }
         }
 
         /// <summary>

@@ -18,8 +18,6 @@ namespace Coika.Data
         private float _maxFollowSpeed = 40f;
         [SerializeField, Min(0f)]
         private float _fingerOffset = 2f;
-        [SerializeField, Min(0f)]
-        private float _scaleInDuration = 0.15f;
         [SerializeField]
         private float _overflowTime = 2f;
         [SerializeField]
@@ -54,6 +52,14 @@ namespace Coika.Data
         private PhysicsMaterial2D _wallMaterial;
         [SerializeField]
         private AssetReferenceT<ThemeDefinition> _theme;
+        [SerializeField]
+        private FeedbackConfig _feedback;
+
+        /// <summary>
+        /// Tuning of the visual piece animations. Both assets are in the Core-Data group, so a direct reference is
+        /// allowed (C-01). Null disables the animations.
+        /// </summary>
+        public FeedbackConfig Feedback => _feedback;
 
         /// <summary>Addressable reference to the active theme. Load it through IAssetService.</summary>
         public AssetReferenceT<ThemeDefinition> Theme => _theme;
@@ -86,9 +92,6 @@ namespace Coika.Data
         /// Sideways distance in world units between the finger and the held piece when the Finger Offset setting is on.
         /// </summary>
         public float FingerOffset => _fingerOffset;
-
-        /// <summary>Seconds the next piece takes to grow from nothing to full size while the drop cools down.</summary>
-        public float ScaleInDuration => _scaleInDuration;
 
         /// <summary>Seconds a settled piece must stay above the Danger Line before the game ends.</summary>
         public float OverflowTime => _overflowTime;

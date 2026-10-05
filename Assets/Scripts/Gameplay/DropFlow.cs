@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace Coika.Gameplay
 {
     /// <summary>
-    /// The rules of the drop as plain C# (S-20): the substate, the cooldown, the scale-in of the next piece and the
+    /// The rules of the drop as plain C# (S-20): the substate, the cooldown and the
     /// maths of the sideways follow. It knows nothing of pieces, input or physics, so it is tested with exact time
     /// steps; <see cref="DropController"/> applies its results to the held piece.
     /// <para>
@@ -18,33 +18,23 @@ namespace Coika.Gameplay
         private const float COOLDOWN_EPSILON = 1e-5f;
 
         private readonly float _cooldown;
-        private readonly float _scaleInDuration;
 
         private float _remaining;
-        private float _elapsed;
         private bool _armed;
 
         /// <summary>
         /// Creates the flow in the <see cref="DropState.Aiming"/> state.
         /// </summary>
         /// <param name="cooldown">Seconds between a release and the next piece being controllable.</param>
-        /// <param name="scaleInDuration">Seconds the next piece takes to grow to full size. Zero for no animation.</param>
-        /// <exception cref="ArgumentOutOfRangeException">A duration is negative.</exception>
-        public DropFlow(float cooldown, float scaleInDuration)
+        /// <exception cref="ArgumentOutOfRangeException">The cooldown is negative.</exception>
+        public DropFlow(float cooldown)
         {
             if (cooldown < 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(cooldown), "The cooldown cannot be negative.");
             }
 
-            if (scaleInDuration < 0f)
-            {
-                throw new ArgumentOutOfRangeException(nameof(scaleInDuration), "The scale-in duration cannot be negative.");
-            }
-
             _cooldown = cooldown;
-            _scaleInDuration = scaleInDuration;
-            ScaleFactor = 1f;
         }
 
         /// <summary>The current substate.</summary>
@@ -53,23 +43,19 @@ namespace Coika.Gameplay
         /// <summary>Whether a press began while aiming and has not been released, cancelled or dropped yet.</summary>
         public bool IsPressing => _armed;
 
-        /// <summary>Scale of the held piece, from 0 up to 1. It is 1 while aiming.</summary>
-        public float ScaleFactor { get; private set; }
-
         /// <summary>
-        /// Goes back to <see cref="DropState.Aiming"/> with a full-size piece and no press pending, as at the start
+        /// Goes back to <see cref="DropState.Aiming"/> with no press pending, as at the start
         /// of a run.
         /// </summary>
         public void Begin()
         {
             EndCooldown();
             _remaining = 0f;
-            _elapsed = 0f;
             _armed = false;
         }
 
         /// <summary>
-        /// Moves the cooldown and the scale-in forward. Does nothing while aiming.
+        /// Moves the cooldown forward. Does nothing while aiming.
         /// </summary>
         /// <param name="deltaTime">Seconds since the last call.</param>
         /// <returns>True on the call in which the cooldown ends and the state becomes <see cref="DropState.Aiming"/>.</returns>
@@ -81,8 +67,6 @@ namespace Coika.Gameplay
             }
 
             _remaining -= deltaTime;
-            _elapsed += deltaTime;
-            ScaleFactor = _scaleInDuration <= 0f ? 1f : Mathf.Clamp01(_elapsed / _scaleInDuration);
 
             if (_remaining > COOLDOWN_EPSILON)
             {
@@ -115,7 +99,7 @@ namespace Coika.Gameplay
 
         /// <summary>
         /// Tries to release the held piece. It succeeds when aiming and a press began while aiming. It then starts
-        /// the cooldown and sets the scale of the next piece to zero.
+        /// the cooldown.
         /// </summary>
         /// <returns>True when the piece must be dropped now.</returns>
         public bool TryRelease()
@@ -129,8 +113,6 @@ namespace Coika.Gameplay
 
             State = DropState.Dropping;
             _remaining = _cooldown;
-            _elapsed = 0f;
-            ScaleFactor = _scaleInDuration <= 0f ? 1f : 0f;
 
             if (_cooldown <= COOLDOWN_EPSILON)
             {
@@ -170,12 +152,11 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Goes back to aiming with the piece at full size.
+        /// Goes back to aiming.
         /// </summary>
         private void EndCooldown()
         {
             State = DropState.Aiming;
-            ScaleFactor = 1f;
         }
     }
 }
