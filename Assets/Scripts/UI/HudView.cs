@@ -1,5 +1,7 @@
+using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Coika.UI
@@ -10,7 +12,7 @@ namespace Coika.UI
     /// into it. Numbers go through <c>TMP_Text.SetText</c> with a format, so showing them allocates nothing (S-53).
     /// <para>
     /// The captions ("Best") are separate labels with localize-string events; this view only writes the numbers.
-    /// The pause button is a visible placeholder in M1 and does nothing.
+    /// The pause button only raises <see cref="PauseClicked"/>; the installer pauses the game.
     /// </para>
     /// </summary>
     [AddComponentMenu("Coika/UI/Hud View")]
@@ -31,20 +33,52 @@ namespace Coika.UI
         [SerializeField]
         private Button _pauseButton;
 
+        private UnityAction _onPauseClicked;
+
+        /// <summary>Raised once per click on the pause button.</summary>
+        public event Action PauseClicked;
+
         /// <summary>
-        /// Checks the serialized references and disables the pause placeholder, which does nothing in M1.
+        /// Checks the serialized references and caches the click handler.
         /// </summary>
         private void Awake()
         {
-            if (_scoreText == null || _bestText == null || _comboText == null || _nextPreview == null)
+            if (_scoreText == null || _bestText == null || _comboText == null || _nextPreview == null || _pauseButton == null)
             {
-                Debug.LogError("HudView needs the score, best, combo and next preview references.", this);
+                Debug.LogError("HudView needs the score, best, combo, next preview and pause button references.", this);
             }
 
+            _onPauseClicked = HandlePauseClicked;
+        }
+
+        /// <summary>
+        /// Starts listening to the pause button while the view is on screen (S-23).
+        /// </summary>
+        private void OnEnable()
+        {
             if (_pauseButton != null)
             {
-                _pauseButton.interactable = false;
+                _pauseButton.onClick.AddListener(_onPauseClicked);
             }
+        }
+
+        /// <summary>
+        /// Stops listening when the view is hidden or destroyed (S-23).
+        /// </summary>
+        private void OnDisable()
+        {
+            if (_pauseButton != null)
+            {
+                _pauseButton.onClick.RemoveListener(_onPauseClicked);
+            }
+        }
+
+        /// <summary>
+        /// Raises <see cref="PauseClicked"/>.
+        /// </summary>
+        private void HandlePauseClicked()
+        {
+            PauseClicked?.Invoke();
         }
 
         /// <summary>

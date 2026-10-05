@@ -1,3 +1,5 @@
+using Coika.UI;
+
 namespace Coika.Tools
 {
     /// <summary>
@@ -23,6 +25,17 @@ namespace Coika.Tools
         public const string LoadingText = "loading.text";
         public const string LoadingFailed = "loading.failed";
         public const string LoadingRetry = "loading.retry";
+        public const string PauseTitle = "pause.title";
+        public const string PauseResume = "pause.resume";
+        public const string PauseRestart = "pause.restart";
+        public const string PauseSettings = "pause.settings";
+        public const string PauseMenu = "pause.menu";
+        public const string ConfirmYes = "confirm.yes";
+        public const string ConfirmCancel = "confirm.cancel";
+        public const string ConfirmRestartTitle = UiTextKeys.CONFIRM_RESTART_TITLE;
+        public const string ConfirmRestartMessage = UiTextKeys.CONFIRM_RESTART_MESSAGE;
+        public const string ConfirmMenuTitle = UiTextKeys.CONFIRM_MENU_TITLE;
+        public const string ConfirmMenuMessage = UiTextKeys.CONFIRM_MENU_MESSAGE;
 
         /// <summary>Every key with its English text.</summary>
         public static readonly (string Key, string English)[] All =
@@ -40,6 +53,17 @@ namespace Coika.Tools
             (LoadingText, "LOADING..."),
             (LoadingFailed, "COULD NOT LOAD THE GAME"),
             (LoadingRetry, "RETRY"),
+            (PauseTitle, "PAUSED"),
+            (PauseResume, "RESUME"),
+            (PauseRestart, "RESTART"),
+            (PauseSettings, "SETTINGS"),
+            (PauseMenu, "MENU"),
+            (ConfirmYes, "YES"),
+            (ConfirmCancel, "CANCEL"),
+            (ConfirmRestartTitle, "RESTART?"),
+            (ConfirmRestartMessage, "The current run will be lost."),
+            (ConfirmMenuTitle, "LEAVE THE GAME?"),
+            (ConfirmMenuMessage, "The current run will be lost."),
         };
     }
 }

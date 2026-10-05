@@ -201,6 +201,67 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Pausing a run and resuming it goes Playing, Paused, Playing and touches the systems not at all.
+        /// </summary>
+        [Test]
+        public void PauseResume_WhilePlaying_ChangesOnlyTheStateAndLeavesTheSystemsAlone()
+        {
+            _manager.StartRun();
+            var calls = _systems.Calls.Count;
+            var states = new List<GameState>();
+            _manager.StateChanged += (from, to) => states.Add(to);
+
+            _manager.Pause();
+            _manager.Resume();
+
+            Assert.AreEqual(new[] { GameState.Paused, GameState.Playing }, states.ToArray());
+            Assert.AreEqual(calls, _systems.Calls.Count);
+            Assert.AreEqual(1, _systems.Prepared);
+        }
+
+        /// <summary>
+        /// Pause outside a run is rejected with a warning.
+        /// </summary>
+        [Test]
+        public void Pause_BeforeAnyRun_IsRejectedWithAWarning()
+        {
+            LogAssert.Expect(LogType.Warning, new Regex("Pause ignored"));
+
+            _manager.Pause();
+
+            Assert.AreEqual(GameState.Boot, _manager.State);
+        }
+
+        /// <summary>
+        /// Resume while playing is rejected with a warning.
+        /// </summary>
+        [Test]
+        public void Resume_WhilePlaying_IsRejectedWithAWarning()
+        {
+            _manager.StartRun();
+            LogAssert.Expect(LogType.Warning, new Regex("Resume ignored"));
+
+            _manager.Resume();
+
+            Assert.AreEqual(GameState.Playing, _manager.State);
+        }
+
+        /// <summary>
+        /// Restarting from the pause menu is a StartRun: it prepares a new run and leaves Paused for Playing.
+        /// </summary>
+        [Test]
+        public void StartRun_WhilePaused_PreparesANewRunAndPlays()
+        {
+            _manager.StartRun();
+            _manager.Pause();
+
+            _manager.StartRun();
+
+            Assert.AreEqual(GameState.Playing, _manager.State);
+            Assert.AreEqual(2, _systems.Prepared);
+        }
+
+        /// <summary>
         /// Retry can be repeated: every game over allows one more run.
         /// </summary>
         [Test]

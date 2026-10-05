@@ -2,6 +2,17 @@
 
 Non-obvious things learned while working on the project. Add a dated section per issue; keep entries short and say why.
 
+## Issue #35: pause (2026-10)
+
+- **The panels follow `GameState`, not the other way round.** `GameSceneInstaller.HandleStateChanged` opens the `PausePresenter` on `Paused` and closes it on leaving it, so Resume, a confirmed Restart (`StartRun`) and the debug keys all close the menu without each knowing about it. `GameManager.Pause()/Resume()` only change the state; time, music and input react to the state change.
+- **`PanelStack` + `IPanel` instead of a flag per screen.** `PauseView` and `ConfirmView` are panels; the presenter pushes the dialog over the menu and Back pops the top one (menu alone: asks to resume). The Settings screen (#36) is one more `IPanel`, and Reset progress (M3) is one more `ConfirmRequest` (two string keys), with no new view or branch.
+- **Strings:** there is no `Loc.Get`. Static labels are baked into the prefab by `GameCanvasPrefabTool`; the dialog's title and message are set at runtime from `UiTextKeys` (runtime) whose English texts live in `UiStrings` (Editor). After adding keys run Coika > Setup Localization, then Build Game Canvas Prefab.
+- **UI sounds are played by the presenter**, not the views (`UiClick`, `UiBack` through `IAudioService`; null audio is silent), so views stay dumb.
+- **No drop on resume = `DropController.BlockInput(seconds)` called on pause.** It forgets the press in progress and ignores input for the time, counted by `Tick(deltaTime)`: at timeScale 0 the delta is 0, so the block only runs down after the resume, which is the grace period. A press that starts over the UI never drops anyway (#27); this covers a finger held across the pause and the press right after the tap.
+- **Clocks need no change.** `Piece`, `OverflowDetector`, `RunSystems` and the cooldown read scaled time, so they freeze at timeScale 0 and the run's "time played" and the combo windows exclude the pause. Do not switch them to unscaled.
+- **Auto-pause:** `GameSceneInstaller.PauseForInterruption()` (public for tests) pauses only while `Playing`, then saves at once. Both `OnApplicationPause(true)` and `OnApplicationFocus(false)` call it.
+- **Tooling:** `ExecuteMenuItem` right after a refresh can run the old code, because the domain reload is not finished; probe with `Type.GetType(...)` before running the Coika menu tools. NUnit reuses the fixture instance, so counters that tests increment must be reset in `SetUp`.
+
 ## Issue #34: FeedbackDirector (2026-10)
 
 `FxDirector` and `ScreenFxDirector` (sections #32 and #33 below) were merged into `FeedbackDirector`; what those sections say about them now applies to it.

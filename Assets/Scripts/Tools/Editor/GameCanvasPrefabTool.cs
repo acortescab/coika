@@ -184,6 +184,67 @@ namespace Coika.Tools
 
             BuildHud(safeArea, font);
             BuildGameOver(safeArea, font);
+            BuildPause(safeArea, font);
+            BuildConfirm(safeArea, font);
+        }
+
+        /// <summary>
+        /// Builds the pause menu, inactive: a dimmed backdrop and the Resume, Restart, Settings and Menu buttons.
+        /// Settings and Menu are disabled by the view until #36 and M3.
+        /// </summary>
+        private static void BuildPause(RectTransform parent, TMP_FontAsset font)
+        {
+            var pauseRect = NewRect("Pause", parent);
+            Stretch(pauseRect);
+            pauseRect.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+            var view = pauseRect.gameObject.AddComponent<PauseView>();
+
+            var panel = NewRect("Panel", pauseRect);
+            Place(panel, Centered(0f, 0f, 960f, 1700f));
+            panel.gameObject.AddComponent<Image>().color = PanelColor;
+
+            AddText(panel, "Title", font, UiStrings.PauseTitle, Centered(0f, 700f, 880f, 120f), 96f, TextAlignmentOptions.Center, Color.white);
+
+            const float buttonWidth = 640f;
+            var resume = AddButton(panel, "ResumeButton", font, UiStrings.PauseResume, Centered(0f, 330f, buttonWidth, MIN_TOUCH_SIZE), PrimaryButtonColor, 72f);
+            var restart = AddButton(panel, "RestartButton", font, UiStrings.PauseRestart, Centered(0f, 30f, buttonWidth, MIN_TOUCH_SIZE), ButtonColor, 72f);
+            var settings = AddButton(panel, "SettingsButton", font, UiStrings.PauseSettings, Centered(0f, -270f, buttonWidth, MIN_TOUCH_SIZE), ButtonColor, 72f);
+            var menu = AddButton(panel, "MenuButton", font, UiStrings.PauseMenu, Centered(0f, -570f, buttonWidth, MIN_TOUCH_SIZE), ButtonColor, 72f);
+
+            Assign(view, "_resumeButton", resume);
+            Assign(view, "_restartButton", restart);
+            Assign(view, "_settingsButton", settings);
+            Assign(view, "_menuButton", menu);
+            pauseRect.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Builds the reusable confirmation dialog, inactive, over the pause menu. Its title and message are set
+        /// at runtime from a request; the Restart texts are only the defaults shown in the Editor.
+        /// </summary>
+        private static void BuildConfirm(RectTransform parent, TMP_FontAsset font)
+        {
+            var confirmRect = NewRect("Confirm", parent);
+            Stretch(confirmRect);
+            confirmRect.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+            var view = confirmRect.gameObject.AddComponent<ConfirmView>();
+
+            var panel = NewRect("Panel", confirmRect);
+            Place(panel, Centered(0f, 0f, 960f, 900f));
+            panel.gameObject.AddComponent<Image>().color = PanelColor;
+
+            var title = AddText(panel, "Title", font, UiStrings.ConfirmRestartTitle, Centered(0f, 300f, 880f, 120f), 80f, TextAlignmentOptions.Center, Color.white);
+            var message = AddText(panel, "Message", font, UiStrings.ConfirmRestartMessage, Centered(0f, 60f, 840f, 300f), 56f, TextAlignmentOptions.Center, Color.gray);
+            message.textWrappingMode = TextWrappingModes.Normal;
+
+            var confirm = AddButton(panel, "ConfirmButton", font, UiStrings.ConfirmYes, Centered(230f, -280f, 400f, MIN_TOUCH_SIZE), PrimaryButtonColor, 64f);
+            var cancel = AddButton(panel, "CancelButton", font, UiStrings.ConfirmCancel, Centered(-230f, -280f, 400f, MIN_TOUCH_SIZE), ButtonColor, 64f);
+
+            Assign(view, "_title", title.GetComponent<LocalizeStringEvent>());
+            Assign(view, "_message", message.GetComponent<LocalizeStringEvent>());
+            Assign(view, "_confirmButton", confirm);
+            Assign(view, "_cancelButton", cancel);
+            confirmRect.gameObject.SetActive(false);
         }
 
         /// <summary>

@@ -180,12 +180,18 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// The pause button is a visible placeholder that cannot be pressed in M1.
+        /// The pause button is pressable and raises one PauseClicked per click (issue #35).
         /// </summary>
         [Test]
-        public void PauseButton_InM1_IsNotInteractable()
+        public void PauseButton_WhenClicked_RaisesPauseClickedOnce()
         {
-            Assert.That(_views.HudPause.interactable, Is.False);
+            var clicks = 0;
+            _views.Hud.PauseClicked += () => clicks++;
+
+            _views.HudPause.onClick.Invoke();
+
+            Assert.That(_views.HudPause.interactable, Is.True);
+            Assert.That(clicks, Is.EqualTo(1));
         }
 
         /// <summary>

@@ -203,7 +203,9 @@ Safe-area: respect `Screen.safeArea` (notches). Add the HUD under the safe area.
 - Shows best score.
 
 ### 8.3 Pause
-Resume · Restart (confirm) · Settings · Menu (confirm). Physics frozen via `Time.timeScale = 0` (UI uses unscaled time for animations).
+Resume · Restart (confirm) · Settings · Menu (confirm). Physics frozen via `Time.timeScale = 0` (UI uses unscaled time for animations). Settings and Menu are disabled until the Settings screen (#36) and the Menu scene (M3) exist.
+
+Entered by the HUD pause button, the Back button, or the app losing focus (`OnApplicationPause(true)` / `OnApplicationFocus(false)`, which also saves). Leaving Pause is only ever the player's choice: Resume, Back on the menu, or a confirmed Restart. Back closes the top panel first (a confirmation dialog counts as Cancel). Input is ignored for 0.15 s of game time after the resume, so the tap on Resume never drops a piece. Restart and Menu go through the reusable confirmation dialog, where Cancel is the default.
 
 ### 8.4 Game Over
 Final score (count-up), Best score (+ "NEW BEST!"), highest tier reached (icon), pieces dropped, time played. Buttons: **Retry** (primary), **Menu**. Appears 1.2 s after the jar-full animation.

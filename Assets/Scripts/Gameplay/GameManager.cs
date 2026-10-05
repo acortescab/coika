@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Coika.Gameplay
 {
     /// <summary>
-    /// Owns the <see cref="GameState"/> and coordinates the run lifecycle: start, end, retry (GDD §7, §14.3). It
+    /// Owns the <see cref="GameState"/> and coordinates the run lifecycle: start, pause, resume, end, retry (GDD §7, §14.3). It
     /// holds no gameplay rule (no scoring, no overflow): it only tells the <see cref="IRunSystems"/> when to prepare,
     /// play and stop, and announces the result. It is a plain object, so the transitions are tested without a scene.
     /// <para>
@@ -108,6 +108,36 @@ namespace Coika.Gameplay
             }
 
             StartRun();
+        }
+
+        /// <summary>
+        /// Pauses the run in progress. The systems are not touched: the owner freezes the time on the state change.
+        /// Rejected with a warning in any state but <see cref="GameState.Playing"/>.
+        /// </summary>
+        public void Pause()
+        {
+            if (State != GameState.Playing)
+            {
+                Debug.LogWarning($"Pause ignored: it is only valid in state {GameState.Playing}, not {State}.");
+                return;
+            }
+
+            SetState(GameState.Paused);
+        }
+
+        /// <summary>
+        /// Continues a paused run exactly where it stopped. Rejected with a warning in any state but
+        /// <see cref="GameState.Paused"/>.
+        /// </summary>
+        public void Resume()
+        {
+            if (State != GameState.Paused)
+            {
+                Debug.LogWarning($"Resume ignored: it is only valid in state {GameState.Paused}, not {State}.");
+                return;
+            }
+
+            SetState(GameState.Playing);
         }
 
         /// <summary>
