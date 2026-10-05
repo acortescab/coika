@@ -39,3 +39,8 @@ Unity 6000.6.3f1 mobile merge-physics game (2D URP). Overview, structure and set
 - Commit and push only when asked. End commits with the `Co-Authored-By` line the session gives.
 - Unity creates `.meta` files on the first open: commit them with their sources.
 - Files mix LF and CRLF; edit with a tool that preserves each file's endings.
+
+## Learnings and docs
+
+- **Learnings go in `.planning/LEARNINGS.md`**, not in chat or only in memory. Add or update a dated section per issue with the non-obvious things learned (design decisions, test and tooling gotchas, working agreements), short and with the why.
+- **Docs must be up to date before opening a PR.** Update every document the change touches: `README.md`, `.planning/gdd.md`, `.planning/code-standards.md`, `.planning/constraints.md` and `.planning/LEARNINGS.md`. Commit the doc changes in the same PR as the code.
