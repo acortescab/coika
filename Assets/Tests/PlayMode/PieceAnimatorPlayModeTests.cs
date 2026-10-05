@@ -77,7 +77,7 @@ namespace Coika.Tests.PlayMode
                 max = Mathf.Max(max, _animator.VisualScale.x);
             }
 
-            Assert.AreEqual(_feedback.SpawnDuration, elapsed, STEP + TOLERANCE, "Within one frame of the duration.");
+            Assert.AreEqual(_feedback.Animations.SpawnDuration, elapsed, STEP + TOLERANCE, "Within one frame of the duration.");
             Assert.Greater(max, 1f, "It overshoots.");
             Assert.AreEqual(Vector3.one, _animator.VisualScale, "It ends at exactly one.");
         }
@@ -101,8 +101,8 @@ namespace Coika.Tests.PlayMode
                 max = Mathf.Max(max, _animator.VisualScale.x);
             }
 
-            Assert.AreEqual(_feedback.MergePopDuration, elapsed, STEP + TOLERANCE, "Within one frame of the duration.");
-            Assert.AreEqual(_feedback.MergePopPeak, max, 0.02f, "It peaks at the configured scale.");
+            Assert.AreEqual(_feedback.Animations.MergePopDuration, elapsed, STEP + TOLERANCE, "Within one frame of the duration.");
+            Assert.AreEqual(_feedback.Animations.MergePopPeak, max, 0.02f, "It peaks at the configured scale.");
             Assert.AreEqual(Vector3.one, _animator.VisualScale);
         }
 
@@ -114,7 +114,7 @@ namespace Coika.Tests.PlayMode
         {
             TickUntilRest(1f);
 
-            _animator.Play(PieceEffectId.Land, _feedback.LandImpulseThreshold * 0.5f);
+            _animator.Play(PieceEffectId.Land, _feedback.Animations.LandImpulseThreshold * 0.5f);
 
             Assert.IsFalse(_animator.IsRunning);
             Assert.AreEqual(Vector3.one, _animator.VisualScale);
@@ -128,12 +128,12 @@ namespace Coika.Tests.PlayMode
         {
             TickUntilRest(1f);
 
-            _animator.Play(PieceEffectId.Land, _feedback.LandImpulseThreshold + 1f);
+            _animator.Play(PieceEffectId.Land, _feedback.Animations.LandImpulseThreshold + 1f);
             Assert.IsTrue(_animator.IsRunning);
 
             var elapsed = TickUntilRest(1f);
 
-            Assert.AreEqual(_feedback.LandDuration, elapsed, STEP + TOLERANCE, "Within one frame of the duration.");
+            Assert.AreEqual(_feedback.Animations.LandDuration, elapsed, STEP + TOLERANCE, "Within one frame of the duration.");
             Assert.AreEqual(Vector3.one, _animator.VisualScale);
         }
 
@@ -143,14 +143,14 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Land_WithGrowingImpulse_GrowsTheAmplitudeUntilTheClamp()
         {
-            var small = MaxSquashFor(_feedback.LandImpulseThreshold + 1f);
-            var large = MaxSquashFor(_feedback.LandImpulseThreshold + 4f);
+            var small = MaxSquashFor(_feedback.Animations.LandImpulseThreshold + 1f);
+            var large = MaxSquashFor(_feedback.Animations.LandImpulseThreshold + 4f);
             var huge = MaxSquashFor(1000f);
             var hugest = MaxSquashFor(2000f);
 
             Assert.Greater(large, small, "A harder landing squashes more.");
             Assert.AreEqual(huge, hugest, TOLERANCE, "The amplitude is clamped.");
-            Assert.LessOrEqual(huge, 1f + _feedback.LandAmplitudeMax + TOLERANCE);
+            Assert.LessOrEqual(huge, 1f + _feedback.Animations.LandAmplitudeMax + TOLERANCE);
         }
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace Coika.Tests.PlayMode
         public void Drop_WhileFalling_StretchesUntilItLands()
         {
             TickUntilRest(1f);
-            _piece.Rigidbody.linearVelocity = new Vector2(0f, -_feedback.DropStretchFullSpeed);
+            _piece.Rigidbody.linearVelocity = new Vector2(0f, -_feedback.Animations.DropStretchFullSpeed);
 
             _animator.Play(PieceEffectId.Drop);
             _animator.Tick(STEP);
@@ -176,7 +176,7 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// The animations only scale the visual child: the root scale, the collider and the body never change.
+        /// The animations only scale and tint the visual child: the root scale, the collider and the body never change.
         /// </summary>
         [Test]
         public void Animations_WhileRunning_NeverChangeTheRootOrTheCollider()
@@ -185,7 +185,7 @@ namespace Coika.Tests.PlayMode
             var mass = _piece.Rigidbody.mass;
 
             _animator.Play(PieceEffectId.MergePop);
-            _animator.Play(PieceEffectId.Land, _feedback.LandImpulseThreshold + 3f);
+            _animator.Play(PieceEffectId.Land, _feedback.Animations.LandImpulseThreshold + 3f);
             for (var i = 0; i < 20; i++)
             {
                 _animator.Tick(STEP);
@@ -245,7 +245,7 @@ namespace Coika.Tests.PlayMode
         public void Tick_WhileAnimating_AllocatesNothing()
         {
             _animator.Play(PieceEffectId.MergePop);
-            _animator.Play(PieceEffectId.Land, _feedback.LandImpulseThreshold + 3f);
+            _animator.Play(PieceEffectId.Land, _feedback.Animations.LandImpulseThreshold + 3f);
             _animator.Play(PieceEffectId.Drop);
             _animator.Tick(STEP);
 

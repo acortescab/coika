@@ -2,7 +2,7 @@ namespace Coika.Fx
 {
     /// <summary>
     /// Shakes the camera rig. The seam between the code that decides when a shake happens
-    /// (<see cref="ScreenFxDirector"/>) and the one that moves the camera, so tests can record the requests.
+    /// (<see cref="FeedbackDirector"/>) and the one that moves the camera, so tests can record the requests.
     /// </summary>
     public interface IScreenShake
     {

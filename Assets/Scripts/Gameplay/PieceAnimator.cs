@@ -5,11 +5,11 @@ namespace Coika.Gameplay
 {
     /// <summary>
     /// Purely visual animation of one piece (GDD §9). It lives on the sprite child of the Piece prefab and only
-    /// ever changes that child's local scale, so the body and the collider on the root never change and the physics
-    /// stay deterministic. Each animation is a <see cref="PieceEffect"/>; the animator advances the active ones and
-    /// multiplies what they contribute, so a new animation is a new effect class and nothing here changes. At rest the
-    /// child is set back to an exact identity scale and a zero offset, which keeps the sprite free of sub-pixel
-    /// shimmer.
+    /// ever changes that child's local scale and the colour of its sprite, so the body and the collider on the root
+    /// never change and the physics stay deterministic. Each animation is a <see cref="PieceEffect"/>; the animator
+    /// advances the active ones and multiplies what they contribute, so a new animation is a new effect class and
+    /// nothing here changes. At rest the child is set back to an exact identity scale, a zero offset and a white
+    /// tint, which keeps the sprite free of sub-pixel shimmer.
     /// <para>
     /// The <see cref="Piece"/> starts the effects with <see cref="Play"/> and <see cref="Update"/> advances them with
     /// <see cref="Tick"/>, which tests call directly with exact time steps. Nothing here allocates once the effects
@@ -22,6 +22,7 @@ namespace Coika.Gameplay
         private FeedbackConfig _config;
         private Piece _piece;
         private PieceEffect[] _effects;
+        private SpriteRenderer _renderer;
 
         /// <summary>Whether any effect is still running, so the child is not at rest.</summary>
         public bool IsRunning
@@ -61,7 +62,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Stops every effect and sets the visual to identity scale and zero offset.
+        /// Stops every effect and sets the visual to identity scale, zero offset and a white tint.
         /// </summary>
         public void ResetState()
         {
@@ -140,16 +141,18 @@ namespace Coika.Gameplay
                 new MergePopEffect(),
                 new DropStretchEffect(),
                 new LandSquashEffect(),
+                new GameOverFlashEffect(),
             };
         }
 
         /// <summary>
-        /// Multiplies the scale of every active effect and applies it to the visual. When no effect is left running
+        /// Multiplies the scale and the tint of every active effect and applies them to the visual. When no effect is left running
         /// it goes back to the exact rest state.
         /// </summary>
         private void Apply()
         {
             var scale = Vector2.one;
+            var tint = Color.white;
             var running = false;
             var effects = Effects;
             for (var i = 0; i < effects.Length; i++)
@@ -158,6 +161,7 @@ namespace Coika.Gameplay
                 {
                     running = true;
                     scale.Scale(effects[i].Evaluate(_config, _piece));
+                    tint *= effects[i].Tint(_config, _piece);
                 }
             }
 
@@ -169,15 +173,34 @@ namespace Coika.Gameplay
 
             transform.localScale = new Vector3(scale.x, scale.y, 1f);
             transform.localPosition = Vector3.zero;
+            SetTint(tint);
         }
 
         /// <summary>
-        /// Puts the visual child at exact identity scale and zero offset: the state in which the sprite is at rest.
+        /// Tints the sprite of the visual child. Does nothing when the child has no sprite renderer.
+        /// </summary>
+        /// <param name="tint">The colour to apply.</param>
+        private void SetTint(Color tint)
+        {
+            if (_renderer == null)
+            {
+                _renderer = GetComponent<SpriteRenderer>();
+            }
+
+            if (_renderer != null)
+            {
+                _renderer.color = tint;
+            }
+        }
+
+        /// <summary>
+        /// Puts the visual child at exact identity scale, zero offset and white tint: the state in which the sprite is at rest.
         /// </summary>
         private void ApplyRest()
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
+            SetTint(Color.white);
         }
     }
 }

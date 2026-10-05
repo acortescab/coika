@@ -35,7 +35,7 @@ namespace Coika.Fx
             }
 
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
-            _core = new ShakeCore(FeedbackConfig.SHAKE_SLOTS, config.ShakeMaxAmplitude, SEED);
+            _core = new ShakeCore(FeedbackConfig.SHAKE_SLOTS, config.ScreenFx.ShakeMaxAmplitude, SEED);
             _rest = transform.position;
             _applied = _rest;
         }

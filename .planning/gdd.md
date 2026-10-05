@@ -229,7 +229,9 @@ Music volume, SFX volume, Haptics on/off, Guide line on/off, Reduce screen shake
 
 Tier colours (for particles/UI), in order: `#8E8E8E, #B39B7A, #7A7A9E, #C8D0DC, #D9A66B, #C4623D, #3D86C4, #D99B3D, #FFD84A, #9AF0FF, #2B1A4D`.
 
-**Piece animations (spawn, drop, land, merge) are purely visual.** They only scale the `Sprite` child of the Piece prefab; the body, collider and root scale never change, so physics, merges and score are identical with animations on or off. Durations, amplitudes and the landing impulse threshold are `[TUNE]` values of `FeedbackConfig`. The two source pieces of a merge are released at once; visual-only ghosts shrink in their place.
+**One director owns this table.** `FeedbackDirector` listens to the gameplay events and plays the visual, the sound and the haptic of each row; gameplay code never calls feedback, so removing it leaves the game and the simulation result unchanged. Chained merges of one frame play one sound and one haptic (the highest tier). Nothing plays while paused or after game over, except the game-over sound, haptic and flash themselves. The Heavy merge haptic starts at tier 7 and the shake and the deep sound at tier 8, both `[TUNE]` values of `FeedbackConfig`.
+
+**Piece animations (spawn, drop, land, merge) are purely visual.** They only scale and tint the `Sprite` child of the Piece prefab (the tint is the game-over flash); the body, collider and root scale never change, so physics, merges and score are identical with animations on or off. Durations, amplitudes and the landing impulse threshold are `[TUNE]` values of `FeedbackConfig`. The two source pieces of a merge are released at once; visual-only ghosts shrink in their place.
 
 **Screen shake** must be disabled by the "Reduce screen shake" setting. Implement with a camera offset *that is snapped to whole pixels* (round to 1/16 unit) to keep the pixel look. The offset is applied to a parent rig of the camera, never to the camera that frames the jar. "Reduce screen shake" also removes the slow-mo and softens the Danger Line pulse to 2 Hz; the Supernova white flash stays (one 0.15 s event, flashes limited to 3 per second).
 
@@ -324,9 +326,10 @@ Assets/
     UI/          HudView, GameOverView, PauseView, MenuView, SettingsView,
                  EvolutionChartView
     Audio/       AudioManager
-    Fx/          ParticleSpawner, IParticleSpawner, FxDirector, FxKind,
+    Fx/          ParticleSpawner, IParticleSpawner, FeedbackDirector (maps every event of §9 to particles,
+                 screen effects, sound and haptics), FxKind,
                  ScreenShake (camera rig, 1/16 snap), ScreenFlash (overlay), TimeScaleOwner (slow-mo, pause),
-                 ScreenFxDirector, ShakeCore, FlashCore
+                 ShakeCore, FlashCore
                  (own assembly Coika.Fx; Haptics is still to do;
                  squash and stretch is PieceAnimator, in Gameplay)
     Input/       PointerInputReader

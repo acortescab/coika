@@ -72,8 +72,8 @@ namespace Coika.Tests.PlayMode
                 });
 
                 Assert.Greater(maxParticles, 0, "No particle was ever emitted, so the check proves nothing.");
-                Assert.LessOrEqual(maxParticles, feedback.MaxLiveParticles);
-                Assert.LessOrEqual(maxRings, feedback.MaxLiveRings);
+                Assert.LessOrEqual(maxParticles, feedback.Particles.MaxLiveParticles);
+                Assert.LessOrEqual(maxRings, feedback.Particles.MaxLiveRings);
                 Assert.AreEqual(0, world.Particles.LiveCount, "Every particle ages out once the run settles.");
             }
         }

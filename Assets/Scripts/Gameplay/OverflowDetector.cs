@@ -48,6 +48,12 @@ namespace Coika.Gameplay
         /// <summary>Raised with the new <see cref="WorstOverflowProgress"/> every time it changes, for the HUD and the audio.</summary>
         public event Action<float> OverflowProgressChanged;
 
+        /// <summary>Raised with true when the Danger Line starts pulsing because a piece overflows, and with false when it stops.</summary>
+        public event Action<bool> DangerChanged;
+
+        /// <summary>Whether the Danger Line is pulsing because a piece overflows.</summary>
+        public bool IsDanger { get; private set; }
+
         /// <summary>Overflow of the worst piece as a fraction of the overflow time, from 0 to 1.</summary>
         public float WorstOverflowProgress { get; private set; }
 
@@ -201,10 +207,12 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Shows the Danger Line while a piece is near it and pulses it while a piece overflows.
+        /// Shows the Danger Line while a piece is near it and pulses it while a piece overflows, and raises <see cref="DangerChanged"/> when the pulse starts or stops.
         /// </summary>
         private void ShowDanger(bool visible, bool pulsing)
         {
+            SetDanger(pulsing);
+
             var line = _jar.DangerLine;
             if (line == null)
             {
@@ -220,6 +228,20 @@ namespace Coika.Gameplay
             {
                 line.SetPulse(pulsing);
             }
+        }
+
+        /// <summary>
+        /// Stores the danger state and raises <see cref="DangerChanged"/> when it changed.
+        /// </summary>
+        private void SetDanger(bool danger)
+        {
+            if (IsDanger == danger)
+            {
+                return;
+            }
+
+            IsDanger = danger;
+            DangerChanged?.Invoke(danger);
         }
 
         /// <summary>
@@ -255,6 +277,7 @@ namespace Coika.Gameplay
             }
 
             SetProgress(0f);
+            SetDanger(false);
 
             if (_jar != null && _jar.DangerLine != null)
             {

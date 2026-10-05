@@ -45,7 +45,6 @@ namespace Coika.Tests.PlayMode
         private long _steps;
         private float _overflowAccumulator;
         private bool _disposed;
-        private FxDirector _fxDirector;
         private ParticleSystem[] _particleSystems = Array.Empty<ParticleSystem>();
 
         /// <summary>
@@ -126,8 +125,18 @@ namespace Coika.Tests.PlayMode
                 Particles = TestParticleSpawner.Create(_created, Config.Feedback);
                 SceneManager.MoveGameObjectToScene(Particles.gameObject, _scene);
                 _particleSystems = Particles.GetComponentsInChildren<ParticleSystem>();
-                _fxDirector = new FxDirector(Particles, Config.Feedback, Tiers);
-                _fxDirector.Bind(Merge, Score, Factory, new Vector2(0f, Jar.DangerLineY));
+            }
+
+            if (options.Feedback)
+            {
+                FakeParticles = new FakeParticleSpawner();
+                IParticleSpawner spawner = Particles != null ? Particles : FakeParticles;
+                Audio = new FakeAudioService();
+                Haptics = new FakeHaptics();
+                ScreenFx = new FakeScreenEffects();
+                Feedback = new FeedbackDirector(
+                    Audio, Haptics, spawner, ScreenFx, ScreenFx, ScreenFx, Config.Feedback, Tiers, () => SimulatedSeconds);
+                Feedback.Bind(Merge, Score, Controller, Overflow, Factory, Manager, Jar);
             }
 
             Controller.PieceDropped += HandlePieceDropped;
@@ -181,6 +190,24 @@ namespace Coika.Tests.PlayMode
 
         /// <summary>The pooled particle spawner, or null when the particles are off.</summary>
         public ParticleSpawner Particles { get; }
+
+        /// <summary>The feedback director, or null when the feedback is off.</summary>
+        public FeedbackDirector Feedback { get; }
+
+        /// <summary>The fake audio the director plays on, or null when the feedback is off.</summary>
+        public FakeAudioService Audio { get; }
+
+        /// <summary>The fake haptics the director plays on, or null when the feedback is off.</summary>
+        public FakeHaptics Haptics { get; }
+
+        /// <summary>The fake shake, slow-mo and flash the director asks for, or null when the feedback is off.</summary>
+        public FakeScreenEffects ScreenFx { get; }
+
+        /// <summary>
+        /// The recording spawner of the director, or null when the feedback is off. With the particles on the
+        /// director draws on <see cref="Particles"/> instead, and this one stays empty.
+        /// </summary>
+        public FakeParticleSpawner FakeParticles { get; }
 
         /// <summary>Simulated time in seconds: the steps taken times the fixed step. It is the clock of every system.</summary>
         public double SimulatedSeconds => _steps * (double)_fixedDeltaTime;
@@ -255,6 +282,7 @@ namespace Coika.Tests.PlayMode
             Manager.Tick(dt);
             SecondsSinceLastDrop += dt;
             TickAnimations(dt);
+            Feedback?.Tick();
         }
 
         /// <summary>
@@ -374,7 +402,7 @@ namespace Coika.Tests.PlayMode
             _disposed = true;
             Controller.PieceDropped -= HandlePieceDropped;
             Overflow.GameOverTriggered -= Manager.EndRun;
-            _fxDirector?.Unbind();
+            Feedback?.Unbind();
             Systems.Dispose();
             Factory.Dispose();
 
@@ -448,12 +476,12 @@ namespace Coika.Tests.PlayMode
                 _created.Add(feedback);
                 if (options.ParticleCap.HasValue)
                 {
-                    TestReflection.SetField(feedback, "_maxLiveParticles", options.ParticleCap.Value);
+                    TestReflection.SetField(feedback.Particles, "_maxLiveParticles", options.ParticleCap.Value);
                 }
 
                 if (options.RingCap.HasValue)
                 {
-                    TestReflection.SetField(feedback, "_maxLiveRings", options.RingCap.Value);
+                    TestReflection.SetField(feedback.Particles, "_maxLiveRings", options.RingCap.Value);
                 }
 
                 TestReflection.SetField(config, "_feedback", feedback);

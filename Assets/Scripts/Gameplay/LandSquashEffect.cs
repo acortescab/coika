@@ -22,7 +22,7 @@ namespace Coika.Gameplay
         /// <inheritdoc />
         public override void Start(FeedbackConfig config, float parameter)
         {
-            _amplitude = config.LandAmplitude(parameter);
+            _amplitude = config.Animations.LandAmplitude(parameter);
             if (_amplitude > 0f)
             {
                 base.Start(config, parameter);
@@ -35,14 +35,14 @@ namespace Coika.Gameplay
             var t = _timer.Progress;
             var squash = t < SQUASH_PHASE
                 ? _amplitude * Tween.Bump(t / SQUASH_PHASE)
-                : -config.LandReboundRatio * _amplitude * Tween.Bump((t - SQUASH_PHASE) / (1f - SQUASH_PHASE));
+                : -config.Animations.LandReboundRatio * _amplitude * Tween.Bump((t - SQUASH_PHASE) / (1f - SQUASH_PHASE));
             return new Vector2(1f + squash, 1f - squash);
         }
 
         /// <inheritdoc />
         protected override float Duration(FeedbackConfig config)
         {
-            return config.LandDuration;
+            return config.Animations.LandDuration;
         }
     }
 }

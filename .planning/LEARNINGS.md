@@ -2,6 +2,25 @@
 
 Non-obvious things learned while working on the project. Add a dated section per issue; keep entries short and say why.
 
+## Issue #34: FeedbackDirector (2026-10)
+
+`FxDirector` and `ScreenFxDirector` (sections #32 and #33 below) were merged into `FeedbackDirector`; what those sections say about them now applies to it.
+
+### Design
+- **`FeedbackConfig` is four groups, not 50 fields.** `Animations` (`PieceAnimationSettings`), `Particles` (`ParticleSettings`), `ScreenFx` (`ScreenFxSettings`) and `Sound` (`FeedbackSoundSettings`) are `[Serializable]` classes (not structs: a struct would not run the field initializers that hold the `[TUNE]` defaults), each with its own pure helpers. A new value goes in its group; callers read `config.Sound.DropPitch`. Tests that set a private field by reflection target the group (`SetField(config.Animations, "_landImpulseThreshold", ...)`). The shipped asset kept only the #31 values, all equal to the defaults, so the old keys were removed and Unity fills the groups from the initializers; save the asset in the Editor once to write them out.
+- **One class maps every event to particles, screen effects, sound and haptics.** The numbers are in `FeedbackConfig` (new `[TUNE]` fields: Heavy haptic tier 7, land volume and pitch, drop pitch, danger tick rates, game-over sweep) and the formulas are pure helpers on it (`MergeHaptic`, `LandVolume`, `LandPitch`) plus `AudioMath.MergePitch`, so they are tested in EditMode and the director stays a thin switch. Audio and haptics may be null (tests, no audio device): it then skips them.
+- **The Heavy haptic tier (7) is not the shake tier (8).** The GDD asks for both; they are two config fields.
+- **Merge sound and haptic wait for `Tick()`.** `Merged` handlers fire the visuals at once but only keep the highest tier; `Tick()` (installer `Update`, harness end of `Step`) plays one pop and one haptic, so a chain is one bundle. The combo step is `Combo - 1`, read in `Tick`, which is why the director binds after `new RunSystems(...)`: the score must have registered the merge. Tier >= 8 layers `MergeBig` over the pop.
+- **Events added on their owners:** `DropController.PieceSpawned(tier)` is raised only after a drop (not at run start, Retry or resume, so no bloop there); `OverflowDetector.DangerChanged(bool)` comes from `ShowDanger` and `ClearState`. The danger tick is a loop in `Tick()` on the injected unscaled clock, 4 Hz or 2 Hz with Reduce Shake.
+- **Silence is a state, not a flag per effect.** `_playing` follows `GameManager.StateChanged`; paused or over, every handler returns early (except `RunEnded`, which plays the game over). Pause clears the shake, flash and slow-mo; `RunStarted` forgets held merges and the danger loop. The music duck stays in `GameSceneInstaller.HandleRunEnded`: `GameOver_WithAudio_DucksTheMusicAndRetryRestoresIt` expects exactly one.
+- **The game-over flash is a piece effect that tints.** The flash happens on each piece, so `GameOverFlashEffect` is a `PieceEffect` (id `GameOverFlash`, own `Flash` group so it excludes nothing); the parameter of `Play` is its delay, which the director takes from `PieceAnimationSettings.GameOverDelay` by height (top first). To allow it, `PieceEffect` got a virtual `Tint` (white by default) and `PieceAnimator` multiplies the tints of the active effects into the sprite colour and resets it to white at rest, so `Begin`/`ResetState` of a reused pooled piece also clears a flash that was cut short. The animator now changes the scale and the sprite colour, never the body. A first version scheduled the tint from a `GameOverSweep` class in the director; it was dropped because the animator already owns per-piece time and rest state.
+- **Land thuds fire on any contact of a piece in play,** including the two overlapping pieces of a fresh merge. Tests that look at merge sounds set `_landImpulseThreshold` to `float.MaxValue` first.
+
+### Tests
+- `SimulationOptions.Feedback` (on by default) builds the director with `FakeAudioService`, `FakeHaptics`, `FakeScreenEffects` and `FakeParticleSpawner` (recording, used when the real particles are off); the world calls `Feedback.Tick()` at the end of each `Step`. `FeedbackSimulationPlayModeTests` proves the result with and without it is identical, so the golden file does not change.
+- To test the danger tick without stepping physics (`Overflow.Evaluate` resets the danger every 0.1 s), a test binds its own director on a clock it moves by hand and raises `DangerChanged` through `TestReflection.GetField`.
+- The Retry lifecycle checks (`RunLifecycleHarnessPlayModeTests.Describe`, `GameLoopPlayModeTests.CountSubscribers`) now also count `PieceSpawned`, `DangerChanged` and the `Landed` listeners of the active pieces.
+
 ## Issue #33: screen shake, slow-mo and flash (2026-10)
 
 ### Design

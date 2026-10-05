@@ -15,13 +15,13 @@ namespace Coika.Gameplay
         /// <inheritdoc />
         public override Vector2 Evaluate(FeedbackConfig config, Piece piece)
         {
-            return Vector2.one * Tween.PopThrough(_timer.Progress, config.MergePopPeak, config.MergePopPeakAt);
+            return Vector2.one * Tween.PopThrough(_timer.Progress, config.Animations.MergePopPeak, config.Animations.MergePopPeakAt);
         }
 
         /// <inheritdoc />
         protected override float Duration(FeedbackConfig config)
         {
-            return config.MergePopDuration;
+            return config.Animations.MergePopDuration;
         }
     }
 }

@@ -74,7 +74,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 - **S-63 (MUST)** Gameplay results must be **deterministic** for a given seed and input sequence (GDD §19): use the seeded `System.Random` from the run state, never `UnityEngine.Random`, and resolve ordering with a stable key (lowest `InstanceID` wins), never by iteration order of a hash set or dictionary.
 - **S-64 (MUST)** Use `Time.deltaTime` in `Update` and `Time.fixedDeltaTime` in `FixedUpdate`. Anything that must keep running while paused (`timeScale = 0`) uses `Time.unscaledDeltaTime`.
 - **S-65 (MUST)** Use layers and the collision matrix (GDD §5) for filtering, not runtime checks. Cache layer indices and masks.
-- **S-66 (MUST)** Visual-only animations change only the local scale or offset of a visual child, never the root transform, the `Rigidbody2D` or a collider, and they never feed back into gameplay. Each animation is a `PieceEffect` class; add a new one instead of branching in `PieceAnimator`.
+- **S-66 (MUST)** Visual-only animations change only the local scale or offset of a visual child and the colour of its sprite, never the root transform, the `Rigidbody2D` or a collider, and they never feed back into gameplay. Each animation is a `PieceEffect` class; add a new one instead of branching in `PieceAnimator`.
 
 ## 8. Input (GDD §6)
 

@@ -17,5 +17,8 @@ namespace Coika.Gameplay
 
         /// <summary>Squash and stretch when a piece lands.</summary>
         Land,
+
+        /// <summary>Delayed tint flash of a piece at game over; the parameter is the delay in seconds.</summary>
+        GameOverFlash,
     }
 }

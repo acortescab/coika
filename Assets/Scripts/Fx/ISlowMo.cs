@@ -1,7 +1,7 @@
 namespace Coika.Fx
 {
     /// <summary>
-    /// Briefly slows time down. The seam between <see cref="ScreenFxDirector"/> and <see cref="TimeScaleOwner"/>,
+    /// Briefly slows time down. The seam between <see cref="FeedbackDirector"/> and <see cref="TimeScaleOwner"/>,
     /// so tests can record the requests.
     /// </summary>
     public interface ISlowMo

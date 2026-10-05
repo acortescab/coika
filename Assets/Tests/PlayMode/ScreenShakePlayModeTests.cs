@@ -1,4 +1,4 @@
-﻿using Coika.Data;
+using Coika.Data;
 using Coika.Fx;
 using NUnit.Framework;
 using UnityEngine;
@@ -137,7 +137,7 @@ namespace Coika.Tests.PlayMode
 
             flash.Flash(0.15f);
             TestReflection.GetAction(flash, "LateUpdate")();
-            Assert.AreEqual(_config.ScreenFlashPeakAlpha, group.alpha, 0.0001f);
+            Assert.AreEqual(_config.ScreenFx.ScreenFlashPeakAlpha, group.alpha, 0.0001f);
 
             _now += 0.1;
             flash.Flash(0.15f);

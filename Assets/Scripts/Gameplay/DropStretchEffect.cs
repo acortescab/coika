@@ -25,7 +25,7 @@ namespace Coika.Gameplay
         public override Vector2 Evaluate(FeedbackConfig config, Piece piece)
         {
             var fall = -piece.Rigidbody.linearVelocity.y;
-            var stretch = fall > 0f ? config.DropStretch * Mathf.Min(1f, fall / config.DropStretchFullSpeed) : 0f;
+            var stretch = fall > 0f ? config.Animations.DropStretch * Mathf.Min(1f, fall / config.Animations.DropStretchFullSpeed) : 0f;
             return new Vector2(1f - stretch * WIDTH_COMPENSATION, 1f + stretch);
         }
     }

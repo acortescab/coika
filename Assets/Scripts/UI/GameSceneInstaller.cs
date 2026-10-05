@@ -86,12 +86,11 @@ namespace Coika.UI
         private GameObject _loadedFxPrefab;
         private GameObject _fx;
         private ParticleSpawner _particles;
-        private FxDirector _fxDirector;
+        private FeedbackDirector _feedbackDirector;
         private GameObject _loadedFlashPrefab;
         private GameObject _flashObject;
         private ScreenFlash _screenFlash;
         private TimeScaleOwner _timeScale;
-        private ScreenFxDirector _screenFx;
         private HudView _hud;
         private GameOverView _gameOver;
         private TierSpriteCache _sprites;
@@ -149,7 +148,8 @@ namespace Coika.UI
 
         /// <summary>
         /// Receives the haptics service from the Boot installer. Without it (tests) the scene has no haptics. The
-        /// mapping of game events to haptics is added by issue #34.
+        /// <see cref="FeedbackDirector"/> plays them; it is only built when the game config has a feedback config, so
+        /// without one the scene has no sounds and no haptics of the game events either.
         /// </summary>
         /// <param name="haptics">The shared haptics service.</param>
         public void UseHaptics(IHaptics haptics)
@@ -213,6 +213,7 @@ namespace Coika.UI
         {
             _manager?.Tick(Time.unscaledDeltaTime);
             _timeScale?.Tick();
+            _feedbackDirector?.Tick();
 
 #if UNITY_EDITOR || DEBUG
             ReadDebugKeys();
@@ -440,17 +441,13 @@ namespace Coika.UI
                 _ghosts.Initialize(_mergeSystem, _loadedConfig.Feedback);
             }
 
-            _score =new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
+            _score = new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
 
             if (_particles != null)
             {
                 _particles.Initialize(_loadedConfig.Feedback);
                 ApplyReduceMotion();
-                _fxDirector = new FxDirector(_particles, _loadedConfig.Feedback, _tiers);
-                _fxDirector.Bind(_mergeSystem, _score, _factory, new Vector2(_jar.transform.position.x, _jar.DangerLineY));
             }
-
-            ComposeScreenFx();
 
             // The Boot installer hands the save over through UseSave; without it (tests) nothing is persisted.
             if (_save != null)
@@ -461,16 +458,20 @@ namespace Coika.UI
             _systems = new RunSystems(_loadedConfig, _tiers, _assets, _factory, _mergeSystem, _dropController, _overflowDetector, _score);
             _manager = new GameManager(_systems, () => Environment.TickCount);
 
+            // After the score system, so the combo is already updated when a merge is played.
+            ComposeFeedback();
+
             _hudPresenter = new HudPresenter(_hud, _score, _sprites.Get);
             _gameOverPresenter = new GameOverPresenter(_gameOver, _sprites.Get);
             Subscribe();
         }
 
         /// <summary>
-        /// Builds the screen effects: the time scale owner, the shake of the camera rig and the flash overlay, all on
-        /// the unscaled clock, and the director that asks for them. The parts without an object here do nothing.
+        /// Builds the feedback: the time scale owner, the shake of the camera rig and the flash overlay, all on the
+        /// unscaled clock, and the director that maps every gameplay event to them, to the particles, the sounds
+        /// and the haptics. The parts without an object here do nothing.
         /// </summary>
-        private void ComposeScreenFx()
+        private void ComposeFeedback()
         {
             var feedback = _loadedConfig.Feedback;
             if (feedback == null)
@@ -496,8 +497,10 @@ namespace Coika.UI
                 flash = _screenFlash;
             }
 
-            _screenFx = new ScreenFxDirector(shake, _timeScale, flash, feedback);
-            _screenFx.Bind(_mergeSystem);
+            IParticleSpawner particles = _particles != null ? _particles : NullParticleSpawner.Instance;
+            _feedbackDirector = new FeedbackDirector(
+                _audio, _haptics, particles, shake, _timeScale, flash, feedback, _tiers, unscaledClock);
+            _feedbackDirector.Bind(_mergeSystem, _score, _dropController, _overflowDetector, _factory, _manager, _jar);
             ApplyReduceMotion();
         }
 
@@ -551,9 +554,9 @@ namespace Coika.UI
                 _particles.ReduceMotion = reduce;
             }
 
-            if (_screenFx != null)
+            if (_feedbackDirector != null)
             {
-                _screenFx.ReduceShake = reduce;
+                _feedbackDirector.ReduceShake = reduce;
             }
 
             if (_jar != null && _jar.DangerLine != null)
@@ -632,7 +635,6 @@ namespace Coika.UI
             _gameOver.Hide();
             _ghosts?.ResetAll();
             _particles?.ResetAll();
-            _screenFx?.StopAll();
             ApplyReduceMotion();
             _hudPresenter.BindQueue(run.Queue);
             _hudPresenter.Refresh();
@@ -643,8 +645,8 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Pauses the music and the time with the game and resumes them afterwards, stops the shake and the flash
-        /// on pause, and ends a slow-mo when the game is over.
+        /// Pauses the music and the time with the game and resumes them afterwards, and ends a slow-mo when the game
+        /// is over. The <see cref="FeedbackDirector"/> stops the shake and the flash on pause by itself.
         /// </summary>
         /// <param name="previous">The state that was left.</param>
         /// <param name="next">The state that was entered.</param>
@@ -661,8 +663,6 @@ namespace Coika.UI
 
             if (next == GameState.Paused)
             {
-                // The shake and the flash run on unscaled time, so they would go on moving a paused game.
-                _screenFx?.StopAll();
                 _audio?.PauseMusic();
             }
             else if (previous == GameState.Paused)
@@ -784,8 +784,8 @@ namespace Coika.UI
 
             _loadedGuideLinePrefab = null;
 
-            _screenFx?.Unbind();
-            _screenFx = null;
+            _feedbackDirector?.Unbind();
+            _feedbackDirector = null;
             if (_timeScale != null)
             {
                 // Leaves the scale at 1 for whatever loads next, even when torn down while paused.
@@ -815,8 +815,6 @@ namespace Coika.UI
 
             _loadedFlashPrefab = null;
 
-            _fxDirector?.Unbind();
-            _fxDirector = null;
             if (_fx != null)
             {
                 Destroy(_fx);

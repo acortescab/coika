@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Coika.Gameplay
 {
     /// <summary>
-    /// One visual effect of a piece. It owns its clock and answers with the scale it contributes; the
+    /// One visual effect of a piece. It owns its clock and answers with the scale and the tint it contributes; the
     /// <see cref="PieceAnimator"/> multiplies the contributions of every active effect, so effects never know about
     /// each other. Effects are created once per animator and reused, so nothing allocates while they play.
     /// </summary>
@@ -17,7 +17,7 @@ namespace Coika.Gameplay
         /// <summary>The group of effects this one excludes when it starts.</summary>
         public abstract PieceEffectGroup Group { get; }
 
-        /// <summary>Whether the effect is running and contributes to the scale.</summary>
+        /// <summary>Whether the effect is running and contributes to the scale and the tint.</summary>
         public virtual bool IsActive => _timer.IsActive;
 
         /// <summary>
@@ -54,6 +54,18 @@ namespace Coika.Gameplay
         /// <param name="piece">The piece being animated, for effects that depend on its movement.</param>
         /// <returns>The factor on x and y; (1, 1) changes nothing.</returns>
         public abstract Vector2 Evaluate(FeedbackConfig config, Piece piece);
+
+        /// <summary>
+        /// The tint the effect contributes right now, multiplied with the tint of the other active effects. Only
+        /// called while active. Most effects only scale, so the default changes nothing.
+        /// </summary>
+        /// <param name="config">Tuning of the effect.</param>
+        /// <param name="piece">The piece being animated.</param>
+        /// <returns>The colour factor; white changes nothing.</returns>
+        public virtual Color Tint(FeedbackConfig config, Piece piece)
+        {
+            return Color.white;
+        }
 
         /// <summary>
         /// Length of the effect in seconds, for effects that last a fixed time.

@@ -253,6 +253,8 @@ namespace Coika.Tests.PlayMode
                 + Count(Field<OverflowDetector>(_installer, "_overflowDetector"), "OverflowProgressChanged")
                 + Count(Field<MergeSystem>(_installer, "_mergeSystem"), "Merged")
                 + Count(Field<MergeSystem>(_installer, "_mergeSystem"), "SupernovaTriggered")
+                + Count(Field<OverflowDetector>(_installer, "_overflowDetector"), "DangerChanged")
+                + Count(Field<DropController>(_installer, "_dropController"), "PieceSpawned")
                 + Count(Field<DropController>(_installer, "_dropController"), "PieceDropped")
                 + Count(Field<DropController>(_installer, "_dropController"), "StateChanged")
                 + Count(Field<PieceFactory>(_installer, "_factory"), "PieceCreated")

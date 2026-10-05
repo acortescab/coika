@@ -12,16 +12,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ebe552bb2aba1d4788218a2ad371614, type: 3}
   m_Name: FeedbackConfig
   m_EditorClassIdentifier: Coika.Data::Coika.Data.FeedbackConfig
-  _spawnDuration: 0.15
-  _spawnOvershoot: 1.70158
-  _dropStretch: 0.12
-  _dropStretchFullSpeed: 12
-  _landImpulseThreshold: 2
-  _landDuration: 0.1
-  _landAmplitudePerImpulse: 0.02
-  _landAmplitudeMax: 0.25
-  _mergePopDuration: 0.2
-  _mergePopPeak: 1.2
-  _mergePopPeakAt: 0.5
-  _mergeShrinkDuration: 0.2
-  _mergeGhostPoolSize: 16

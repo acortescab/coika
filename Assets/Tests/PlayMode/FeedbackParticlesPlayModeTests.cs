@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Coika.Data;
 using Coika.Fx;
 using Coika.Gameplay;
@@ -9,10 +8,10 @@ using UnityEngine;
 namespace Coika.Tests.PlayMode
 {
     /// <summary>
-    /// Checks that <see cref="FxDirector"/> asks for each effect of issue #32 at the right position, with the right
-    /// colour and count, for every tier, using a recording spawner instead of real particles.
+    /// Checks that <see cref="FeedbackDirector"/> asks for each particle effect of issue #32 at the right position,
+    /// with the right colour and count, for every tier, using a recording spawner instead of real particles.
     /// </summary>
-    public class FxDirectorPlayModeTests : HarnessTestBase
+    public class FeedbackParticlesPlayModeTests : HarnessTestBase
     {
         private const int MAX_STEPS = 600;
         private const int RESTING_STEPS = 240;
@@ -25,12 +24,11 @@ namespace Coika.Tests.PlayMode
 
         private SimulationWorld _world;
         private FeedbackConfig _feedback;
-        private RecordingSpawner _spawner;
-        private FxDirector _director;
+        private FakeParticleSpawner _spawner;
 
         /// <summary>
-        /// Builds a world without real particles, whose tiers have a distinct colour each, and a director that
-        /// records its requests.
+        /// Builds a world without real particles, whose tiers have a distinct colour each, with the director bound
+        /// to a recording spawner.
         /// </summary>
         [SetUp]
         public void SetUp()
@@ -42,10 +40,8 @@ namespace Coika.Tests.PlayMode
             }
 
             _feedback = _world.Config.Feedback;
-            _spawner = new RecordingSpawner();
-            _director = new FxDirector(_spawner, _feedback, _world.Tiers);
+            _spawner = _world.FakeParticles;
             _world.StartRun();
-            _director.Bind(_world.Merge, _world.Score, _world.Factory, ConfettiOrigin());
         }
 
         /// <summary>
@@ -54,7 +50,6 @@ namespace Coika.Tests.PlayMode
         [TearDown]
         public void TearDown()
         {
-            _director.Unbind();
             _world.Dispose();
         }
 
@@ -71,7 +66,7 @@ namespace Coika.Tests.PlayMode
 
                 var burst = _spawner.Single(FxKind.MergeBurst);
                 Assert.AreEqual(_world.Tiers[tier + 1].TierColor, burst.Color, $"Colour of tier {tier + 1}.");
-                Assert.AreEqual(_feedback.MergeBurstCount(tier + 1, _world.Tiers.Count), burst.Count, $"Count of tier {tier + 1}.");
+                Assert.AreEqual(_feedback.Particles.MergeBurstCount(tier + 1, _world.Tiers.Count), burst.Count, $"Count of tier {tier + 1}.");
                 Assert.AreEqual(0f, burst.Position.x, POSITION_TOLERANCE, "The burst is at the middle of the pair.");
                 Assert.AreEqual(MergeScenario.PairHeight(_world), burst.Position.y, POSITION_TOLERANCE);
 
@@ -98,8 +93,8 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// The first score above the best emits the confetti once, at the origin the director was given, and a
-        /// second merge does not emit it again.
+        /// The first score above the best emits the confetti once, at the middle of the Danger Line, and a second
+        /// merge does not emit it again.
         /// </summary>
         [Test]
         public void NewBest_FirstScoreAboveBest_EmitsConfettiOnce()
@@ -109,7 +104,7 @@ namespace Coika.Tests.PlayMode
 
             MergeFresh(1);
 
-            Assert.AreEqual(_feedback.ConfettiCount, confetti.Count);
+            Assert.AreEqual(_feedback.Particles.ConfettiCount, confetti.Count);
             Assert.AreEqual(ConfettiOrigin(), confetti.Position);
             Assert.AreEqual(0, _spawner.Count(FxKind.Confetti), "The second merge is not a new best again.");
         }
@@ -134,7 +129,7 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Landing_OfEveryTier_EmitsLightenedDustAtTheFloor()
         {
-            TestReflection.SetField(_feedback, "_landImpulseThreshold", ANY_LANDING_THRESHOLD);
+            TestReflection.SetField(_feedback.Animations, "_landImpulseThreshold", ANY_LANDING_THRESHOLD);
 
             for (var tier = 0; tier < _world.Tiers.Count; tier++)
             {
@@ -146,7 +141,7 @@ namespace Coika.Tests.PlayMode
                 var dust = _spawner.First(FxKind.LandingDust);
                 var expected = Color.Lerp(_world.Tiers[tier].TierColor, Color.white, DUST_WHITE_BLEND);
                 Assert.AreEqual(expected, dust.Color, $"Dust colour of tier {tier}.");
-                Assert.AreEqual(_feedback.LandDustCount, dust.Count);
+                Assert.AreEqual(_feedback.Particles.LandDustCount, dust.Count);
                 Assert.AreEqual(_world.Jar.FloorY, dust.Position.y, POSITION_TOLERANCE, $"The dust of tier {tier} is at the floor.");
             }
         }
@@ -157,7 +152,7 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Landing_BelowTheThreshold_EmitsNoDust()
         {
-            TestReflection.SetField(_feedback, "_landImpulseThreshold", HUGE_THRESHOLD);
+            TestReflection.SetField(_feedback.Animations, "_landImpulseThreshold", HUGE_THRESHOLD);
             var piece = _world.Factory.Create(_world.Tiers[2], new Vector2(0f, _world.Jar.FloorY + FALL_HEIGHT), Vector2.zero);
 
             StepFor(RESTING_STEPS);
@@ -172,7 +167,7 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Bind_Twice_EmitsEachEffectOnce()
         {
-            _director.Bind(_world.Merge, _world.Score, _world.Factory, ConfettiOrigin());
+            BindWorldDirector(_world.Feedback);
 
             MergeFresh(0);
 
@@ -186,9 +181,9 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Unbind_ThenMergeAndLand_EmitsNothing()
         {
-            TestReflection.SetField(_feedback, "_landImpulseThreshold", ANY_LANDING_THRESHOLD);
+            TestReflection.SetField(_feedback.Animations, "_landImpulseThreshold", ANY_LANDING_THRESHOLD);
             _world.Factory.Create(_world.Tiers[3], new Vector2(5f, _world.Jar.FloorY + FALL_HEIGHT), Vector2.zero);
-            _director.Unbind();
+            _world.Feedback.Unbind();
             _spawner.Requests.Clear();
 
             MergeFresh(0);
@@ -198,34 +193,50 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// A director needs every dependency, and binding needs every system.
+        /// A director needs every dependency but the audio and the haptics, and binding needs every system.
         /// </summary>
         [Test]
         public void Constructor_AndBind_WithNulls_Throw()
         {
-            Assert.Throws<ArgumentNullException>(() => new FxDirector(null, _feedback, _world.Tiers));
-            Assert.Throws<ArgumentNullException>(() => new FxDirector(_spawner, null, _world.Tiers));
-            Assert.Throws<ArgumentNullException>(() => new FxDirector(_spawner, _feedback, null));
-            Assert.Throws<ArgumentNullException>(() => _director.Bind(null, _world.Score, _world.Factory, Vector2.zero));
-            Assert.Throws<ArgumentNullException>(() => _director.Bind(_world.Merge, null, _world.Factory, Vector2.zero));
-            Assert.Throws<ArgumentNullException>(() => _director.Bind(_world.Merge, _world.Score, null, Vector2.zero));
+            var fx = _world.ScreenFx;
+            Func<double> clock = () => 0.0;
+            var tiers = _world.Tiers;
+            Assert.Throws<ArgumentNullException>(() => new FeedbackDirector(null, null, null, fx, fx, fx, _feedback, tiers, clock));
+            Assert.Throws<ArgumentNullException>(() => new FeedbackDirector(null, null, _spawner, null, fx, fx, _feedback, tiers, clock));
+            Assert.Throws<ArgumentNullException>(() => new FeedbackDirector(null, null, _spawner, fx, null, fx, _feedback, tiers, clock));
+            Assert.Throws<ArgumentNullException>(() => new FeedbackDirector(null, null, _spawner, fx, fx, null, _feedback, tiers, clock));
+            Assert.Throws<ArgumentNullException>(() => new FeedbackDirector(null, null, _spawner, fx, fx, fx, null, tiers, clock));
+            Assert.Throws<ArgumentNullException>(() => new FeedbackDirector(null, null, _spawner, fx, fx, fx, _feedback, null, clock));
+            Assert.Throws<ArgumentNullException>(() => new FeedbackDirector(null, null, _spawner, fx, fx, fx, _feedback, tiers, null));
+            Assert.DoesNotThrow(() => new FeedbackDirector(null, null, _spawner, fx, fx, fx, _feedback, tiers, clock));
+
+            var w = _world;
+            Assert.Throws<ArgumentNullException>(() => w.Feedback.Bind(null, w.Score, w.Controller, w.Overflow, w.Factory, w.Manager, w.Jar));
+            Assert.Throws<ArgumentNullException>(() => w.Feedback.Bind(w.Merge, null, w.Controller, w.Overflow, w.Factory, w.Manager, w.Jar));
+            Assert.Throws<ArgumentNullException>(() => w.Feedback.Bind(w.Merge, w.Score, null, w.Overflow, w.Factory, w.Manager, w.Jar));
+            Assert.Throws<ArgumentNullException>(() => w.Feedback.Bind(w.Merge, w.Score, w.Controller, null, w.Factory, w.Manager, w.Jar));
+            Assert.Throws<ArgumentNullException>(() => w.Feedback.Bind(w.Merge, w.Score, w.Controller, w.Overflow, null, w.Manager, w.Jar));
+            Assert.Throws<ArgumentNullException>(() => w.Feedback.Bind(w.Merge, w.Score, w.Controller, w.Overflow, w.Factory, null, w.Jar));
+            Assert.Throws<ArgumentNullException>(() => w.Feedback.Bind(w.Merge, w.Score, w.Controller, w.Overflow, w.Factory, w.Manager, null));
         }
 
         /// <summary>
-        /// The handlers of every event allocate nothing, called a thousand times each with a spawner that does nothing.
+        /// The handlers of every event allocate nothing, called a thousand times each with fakes that do nothing.
         /// </summary>
         [Test]
         public void Handlers_CalledManyTimes_AllocateNothing()
         {
-            _director.Unbind();
-            var quiet = new FxDirector(new QuietSpawner(), _feedback, _world.Tiers);
-            quiet.Bind(_world.Merge, _world.Score, _world.Factory, ConfettiOrigin());
+            _world.Feedback.Unbind();
+            var quiet = new FeedbackDirector(
+                null, null, NullParticleSpawner.Instance, NullScreenEffects.Instance, new QuietSlowMo(), NullScreenEffects.Instance,
+                _feedback, _world.Tiers, () => 0.0);
+            BindWorldDirector(quiet);
             var piece = _world.Factory.Create(_world.Tiers[2], new Vector2(0f, _world.Jar.FloorY + FALL_HEIGHT), Vector2.zero);
             var merged = (Action<int, Vector2, Vector2>)TestReflection.GetField(_world.Merge, "Merged");
             var supernova = (Action<Vector2>)TestReflection.GetField(_world.Merge, "SupernovaTriggered");
             var newBest = (Action)TestReflection.GetField(_world.Score, "NewBestReached");
             var landed = (Action<Piece, float>)TestReflection.GetField(piece, "Landed");
-            var impulse = _feedback.LandImpulseThreshold + 1f;
+            var impulse = _feedback.Animations.LandImpulseThreshold + 1f;
 
             var allocations = AllocationMeter.Measure(() =>
             {
@@ -235,6 +246,7 @@ namespace Coika.Tests.PlayMode
                     supernova(Vector2.zero);
                     newBest();
                     landed(piece, impulse);
+                    quiet.Tick();
                 }
             });
 
@@ -248,7 +260,16 @@ namespace Coika.Tests.PlayMode
         /// <returns>The middle of the Danger Line.</returns>
         private Vector2 ConfettiOrigin()
         {
-            return new Vector2(0f, _world.Jar.DangerLineY);
+            return new Vector2(_world.Jar.transform.position.x, _world.Jar.DangerLineY);
+        }
+
+        /// <summary>
+        /// Binds a director to the systems of the world.
+        /// </summary>
+        /// <param name="director">The director to bind.</param>
+        private void BindWorldDirector(FeedbackDirector director)
+        {
+            director.Bind(_world.Merge, _world.Score, _world.Controller, _world.Overflow, _world.Factory, _world.Manager, _world.Jar);
         }
 
         /// <summary>
@@ -289,100 +310,19 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// A spawner that ignores every request.
+        /// A slow-mo that ignores every request.
         /// </summary>
-        private sealed class QuietSpawner : IParticleSpawner
+        private sealed class QuietSlowMo : ISlowMo
         {
             /// <inheritdoc />
-            public void Burst(FxKind kind, Vector2 position, Color color, int count)
+            public void Begin(float scale, float duration)
             {
             }
-        }
-
-        /// <summary>
-        /// A spawner that records every request.
-        /// </summary>
-        private sealed class RecordingSpawner : IParticleSpawner
-        {
-            /// <summary>Every request, in order.</summary>
-            public List<Request> Requests { get; } = new();
 
             /// <inheritdoc />
-            public void Burst(FxKind kind, Vector2 position, Color color, int count)
+            public void Cancel()
             {
-                Requests.Add(new Request(kind, position, color, count));
             }
-
-            /// <summary>
-            /// Counts the requests of a kind.
-            /// </summary>
-            /// <param name="kind">The effect.</param>
-            /// <returns>The number of requests of that kind.</returns>
-            public int Count(FxKind kind)
-            {
-                var count = 0;
-                foreach (var request in Requests)
-                {
-                    if (request.Kind == kind)
-                    {
-                        count++;
-                    }
-                }
-
-                return count;
-            }
-
-            /// <summary>
-            /// Returns the first request of a kind.
-            /// </summary>
-            /// <param name="kind">The effect.</param>
-            /// <returns>The first request of that kind, or null.</returns>
-            public Request First(FxKind kind)
-            {
-                return Requests.Find(request => request.Kind == kind);
-            }
-
-            /// <summary>
-            /// Asserts that exactly one request of a kind was made and returns it.
-            /// </summary>
-            /// <param name="kind">The effect.</param>
-            /// <returns>The only request of that kind.</returns>
-            public Request Single(FxKind kind)
-            {
-                Assert.AreEqual(1, Count(kind), $"Expected exactly one {kind}.");
-                return First(kind);
-            }
-        }
-
-        /// <summary>
-        /// One recorded request.
-        /// </summary>
-        private sealed class Request
-        {
-            /// <summary>Creates the record.</summary>
-            /// <param name="kind">The effect.</param>
-            /// <param name="position">Where it was requested.</param>
-            /// <param name="color">The colour.</param>
-            /// <param name="count">The requested count.</param>
-            public Request(FxKind kind, Vector2 position, Color color, int count)
-            {
-                Kind = kind;
-                Position = position;
-                Color = color;
-                Count = count;
-            }
-
-            /// <summary>The effect.</summary>
-            public FxKind Kind { get; }
-
-            /// <summary>Where it was requested.</summary>
-            public Vector2 Position { get; }
-
-            /// <summary>The colour.</summary>
-            public Color Color { get; }
-
-            /// <summary>The requested count.</summary>
-            public int Count { get; }
         }
     }
 }

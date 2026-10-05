@@ -63,6 +63,12 @@ namespace Coika.Gameplay
         /// <summary>Raised after a piece is released, with its tier index, for the drop points of the score system.</summary>
         public event Action<int> PieceDropped;
 
+        /// <summary>
+        /// Raised with the tier index of the next piece, after it is held in place of a dropped one. It is not raised
+        /// when a run starts or the controller resumes, so a listener hears only the pieces that appear after a drop.
+        /// </summary>
+        public event Action<int> PieceSpawned;
+
         /// <summary>The current substate. It is <see cref="DropState.Aiming"/> before the first run.</summary>
         public DropState State => _flow == null ? DropState.Aiming : _flow.State;
 
@@ -372,6 +378,7 @@ namespace Coika.Gameplay
 
             _queue.Advance();
             Attach();
+            var spawnedTier = _held.Tier.Index;
 
             if (_flow.State == DropState.Dropping)
             {
@@ -379,6 +386,7 @@ namespace Coika.Gameplay
             }
 
             PieceDropped?.Invoke(tierIndex);
+            PieceSpawned?.Invoke(spawnedTier);
         }
 
         /// <summary>

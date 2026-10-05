@@ -40,7 +40,7 @@ namespace Coika.Fx
                 throw new InvalidOperationException("The ScreenFlash needs a CanvasGroup.");
             }
 
-            _core = new FlashCore(config.MaxFlashesPerSecond, config.ScreenFlashPeakAlpha);
+            _core = new FlashCore(config.ScreenFx.MaxFlashesPerSecond, config.ScreenFx.ScreenFlashPeakAlpha);
             _group.alpha = 0f;
         }
 
