@@ -35,6 +35,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c5bfdae5a2af5744f84dc6f1006b414d
+    m_Address: Assets/Prefabs/Fx/ScreenFlash.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: fa06196beba3ca74b82e930dbf144c7a
     m_Address: Assets/Prefabs/Fx/GuideLine.prefab
     m_ReadOnly: 0

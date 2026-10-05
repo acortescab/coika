@@ -62,6 +62,12 @@ namespace Coika.UI
         // Optional: without it the game simply shows no particles.
         [SerializeField]
         private AssetReference _fxPrefab;
+        // Optional: without it the game simply shows no screen flash.
+        [SerializeField]
+        private AssetReference _screenFlashPrefab;
+        // Optional: the parent of the camera, so the shake never touches the framing of the camera itself.
+        [SerializeField]
+        private ScreenShake _cameraShake;
 
         private bool _destroyed;
 
@@ -81,6 +87,11 @@ namespace Coika.UI
         private GameObject _fx;
         private ParticleSpawner _particles;
         private FxDirector _fxDirector;
+        private GameObject _loadedFlashPrefab;
+        private GameObject _flashObject;
+        private ScreenFlash _screenFlash;
+        private TimeScaleOwner _timeScale;
+        private ScreenFxDirector _screenFx;
         private HudView _hud;
         private GameOverView _gameOver;
         private TierSpriteCache _sprites;
@@ -201,6 +212,7 @@ namespace Coika.UI
         private void Update()
         {
             _manager?.Tick(Time.unscaledDeltaTime);
+            _timeScale?.Tick();
 
 #if UNITY_EDITOR || DEBUG
             ReadDebugKeys();
@@ -373,6 +385,24 @@ namespace Coika.UI
                 }
             }
 
+            // The flash overlay comes with the load phase, and is reused for every flash (C-01).
+            if (_loadedConfig.Feedback != null && _screenFlashPrefab != null && _screenFlashPrefab.RuntimeKeyIsValid())
+            {
+                var flashPrefab = await _assets.LoadAsset<GameObject>(_screenFlashPrefab);
+                _loadedFlashPrefab = flashPrefab;
+                if (_destroyed)
+                {
+                    return;
+                }
+
+                _flashObject = Instantiate(flashPrefab);
+                _screenFlash = _flashObject.GetComponent<ScreenFlash>();
+                if (_screenFlash == null)
+                {
+                    throw new InvalidOperationException("The ScreenFlash prefab needs a ScreenFlash.");
+                }
+            }
+
             // The clips come with the rest of the load phase, never during play (C-01).
             if (_audio != null)
             {
@@ -420,6 +450,8 @@ namespace Coika.UI
                 _fxDirector.Bind(_mergeSystem, _score, _factory, new Vector2(_jar.transform.position.x, _jar.DangerLineY));
             }
 
+            ComposeScreenFx();
+
             // The Boot installer hands the save over through UseSave; without it (tests) nothing is persisted.
             if (_save != null)
             {
@@ -432,6 +464,41 @@ namespace Coika.UI
             _hudPresenter = new HudPresenter(_hud, _score, _sprites.Get);
             _gameOverPresenter = new GameOverPresenter(_gameOver, _sprites.Get);
             Subscribe();
+        }
+
+        /// <summary>
+        /// Builds the screen effects: the time scale owner, the shake of the camera rig and the flash overlay, all on
+        /// the unscaled clock, and the director that asks for them. The parts without an object here do nothing.
+        /// </summary>
+        private void ComposeScreenFx()
+        {
+            var feedback = _loadedConfig.Feedback;
+            if (feedback == null)
+            {
+                return;
+            }
+
+            Func<double> unscaledClock = () => Time.unscaledTimeAsDouble;
+            _timeScale = new TimeScaleOwner(new UnityTimeScale(), unscaledClock);
+
+            // Explicit checks: a destroyed MonoBehaviour must not be touched, and `?.` does not see it as null.
+            IScreenShake shake = NullScreenEffects.Instance;
+            if (_cameraShake != null)
+            {
+                _cameraShake.Initialize(feedback, unscaledClock);
+                shake = _cameraShake;
+            }
+
+            IScreenFlash flash = NullScreenEffects.Instance;
+            if (_screenFlash != null)
+            {
+                _screenFlash.Initialize(feedback, unscaledClock);
+                flash = _screenFlash;
+            }
+
+            _screenFx = new ScreenFxDirector(shake, _timeScale, flash, feedback);
+            _screenFx.Bind(_mergeSystem);
+            ApplyReduceMotion();
         }
 
         /// <summary>
@@ -473,13 +540,25 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Gives the particle spawner the Reduce Shake setting (off without Boot, as in tests).
+        /// Gives the particle spawner, the screen effects and the Danger Line the Reduce Shake setting (off without
+        /// Boot, as in tests): fewer particles, no shake, no slow-mo and a soft 2 Hz pulse.
         /// </summary>
         private void ApplyReduceMotion()
         {
+            var reduce = _settings != null && _settings.ReduceShake;
             if (_particles != null)
             {
-                _particles.ReduceMotion = _settings != null && _settings.ReduceShake;
+                _particles.ReduceMotion = reduce;
+            }
+
+            if (_screenFx != null)
+            {
+                _screenFx.ReduceShake = reduce;
+            }
+
+            if (_jar != null && _jar.DangerLine != null)
+            {
+                _jar.DangerLine.SetPulseRate(reduce ? DangerLine.PulseRate.Soft : DangerLine.PulseRate.Fast);
             }
         }
 
@@ -553,6 +632,8 @@ namespace Coika.UI
             _gameOver.Hide();
             _ghosts?.ResetAll();
             _particles?.ResetAll();
+            _screenFx?.StopAll();
+            ApplyReduceMotion();
             _hudPresenter.BindQueue(run.Queue);
             _hudPresenter.Refresh();
 
@@ -562,14 +643,26 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Pauses the music with the game and resumes it afterwards.
+        /// Pauses the music and the time with the game and resumes them afterwards, stops the shake and the flash
+        /// on pause, and ends a slow-mo when the game is over.
         /// </summary>
         /// <param name="previous">The state that was left.</param>
         /// <param name="next">The state that was entered.</param>
         private void HandleStateChanged(GameState previous, GameState next)
         {
+            if (_timeScale != null)
+            {
+                _timeScale.Paused = next == GameState.Paused;
+                if (next == GameState.GameOver)
+                {
+                    _timeScale.Cancel();
+                }
+            }
+
             if (next == GameState.Paused)
             {
+                // The shake and the flash run on unscaled time, so they would go on moving a paused game.
+                _screenFx?.StopAll();
                 _audio?.PauseMusic();
             }
             else if (previous == GameState.Paused)
@@ -690,6 +783,37 @@ namespace Coika.UI
             }
 
             _loadedGuideLinePrefab = null;
+
+            _screenFx?.Unbind();
+            _screenFx = null;
+            if (_timeScale != null)
+            {
+                // Leaves the scale at 1 for whatever loads next, even when torn down while paused.
+                _timeScale.Paused = false;
+                _timeScale.Cancel();
+            }
+
+            _timeScale = null;
+            // Explicit checks: a destroyed MonoBehaviour must not be touched, and `?.` does not see it as null.
+            if (_cameraShake != null)
+            {
+                _cameraShake.Clear();
+            }
+
+            if (_flashObject != null)
+            {
+                Destroy(_flashObject);
+            }
+
+            _flashObject = null;
+            _screenFlash = null;
+
+            if (_assets != null && _loadedFlashPrefab != null)
+            {
+                _assets.ReleaseAsset(_loadedFlashPrefab);
+            }
+
+            _loadedFlashPrefab = null;
 
             _fxDirector?.Unbind();
             _fxDirector = null;
