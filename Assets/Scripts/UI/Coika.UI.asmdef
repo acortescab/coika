@@ -4,6 +4,7 @@
 		"Coika.Core",
 		"Coika.Data",
 		"Coika.Gameplay",
+		"Coika.Fx",
 		"Unity.Addressables",
 		"Unity.ugui",
 		"Unity.TextMeshPro",

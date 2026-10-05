@@ -2,6 +2,28 @@
 
 Non-obvious things learned while working on the project. Add a dated section per issue; keep entries short and say why.
 
+## Issue #32: pooled particles (2026-10)
+
+### Design
+- **Two shared systems, not one prefab per effect.** `ParticleSpawner` owns one `ParticleSystem` for pixel particles (merge burst, dust, confetti) and one for rings (flash, supernova flash, shockwave), emitted with `Emit(EmitParams, count)`. `EmitParams` is a struct, so a burst allocates nothing. Rings are single big particles; the prefab's size-over-lifetime and colour-over-lifetime curves make them grow and fade. A ring needs its own texture, hence the second system.
+- **The cap is `maxParticles`.** Unity removes the oldest particles when the cap is reached, which is the "oldest-first recycling" of the issue. `Initialize` sets the caps from `FeedbackConfig` and emits each system full once, then clears it, so buffers exist before play. There is no per-effect pool to grow, so the pool-growth warning cannot fire; the harness base class still fails the tests on any warning.
+- **`IParticleSpawner` is the test seam.** `FxDirector` (plain class) decides what to emit from `MergeSystem.Merged`, `SupernovaTriggered`, `Piece.Landed` and `ScoreSystem.NewBestReached`; tests use a recording spawner for tier colours, counts and positions, and the real spawner for caps and allocations.
+- **Landing is hooked per piece.** `Piece.Landed` is wiped when the factory releases a piece, so `FxDirector` subscribes in `PieceFactory.PieceCreated` (like `MergeSystem.HookPiece`) and to the pieces already active.
+- **`Coika.Fx` is its own assembly** between Gameplay and UI (`UI -> Fx -> Gameplay -> Core`), because it listens to Gameplay events. `GameSceneInstaller` loads the prefab through `IAssetService`, builds the director and releases both in `TearDown`. The prefab reference is optional, like the ghosts.
+- **Particle randomness lives in Unity.** Spread and speed come from the particle system's own random ranges, so there is no `UnityEngine.Random` or `System.Random` in our code (S-63) and nothing the golden simulation could see.
+- **Reduce Shake and quality.** `ParticleSpawner.ReduceMotion` (set from `SettingKey.ReduceShake`) multiplies counts by `ReduceMotionCountFactor` (0.5); rings stay. `CountMultiplier` is the hook #39 can drive for low-end devices. There is no screen shake yet, so nothing else to disable.
+- **Tuning is data.** Counts, sizes, lifetimes and caps are `FeedbackConfig` fields.
+
+### Testing
+- **`SimulationOptions.Particles`** (on by default) adds a real spawner and director to `SimulationWorld`; the golden test therefore runs with particles on and is unchanged. `ParticleSimulationPlayModeTests` proves identical physics and score with particles on and off. `SimulationWorld.TickAnimations` advances the particle systems with `ParticleSystem.Simulate(dt, false, false, false)`, because no frame passes in the harness; without it live counts would only grow. `SimulationOptions.ParticleCap` and `RingCap` lower the caps so a 10-merge chain can reach them (`MergeScenario.MergeTwo` scripts a merge).
+- **Event handlers are measured through their backing delegates.** `FxDirectorPlayModeTests.Handlers_CalledManyTimes_AllocateNothing` reads the field-like events (`Merged`, `Landed`, ...) with `TestReflection.GetField` and invokes them 1000 times, because a test cannot raise another class's event. Unbind the recording director first, or its list allocates.
+- **Cap tests need a reachable cap.** Unity enforces `maxParticles`, so "never above the cap" always passes; assert that the cap is reached too.
+- **`TestParticleSpawner.Create`** builds the two systems in code, so tests need no Addressables.
+
+### Tooling
+- **Setup tool.** `Coika/Setup Particles` (`FxPrefabTool.Run`) writes the textures, materials and prefab, registers them in `FX` and wires `_fxPrefab` in the Game scene. Run it in batch mode with `-executeMethod Coika.Tools.FxPrefabTool.Run`; `Start-Process -Wait` can return before the Editor has finished, so check that the Unity process is gone before running tests.
+- **New asmdefs need a `.meta`.** Unity creates it on the first import; commit it with the asmdef.
+
 ## Issue #31: piece animations (2026-10)
 
 ### Design

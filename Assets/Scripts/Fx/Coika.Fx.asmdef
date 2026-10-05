@@ -1,0 +1,9 @@
+{
+	"name": "Coika.Fx",
+	"references": [
+		"Coika.Core",
+		"Coika.Data",
+		"Coika.Gameplay"
+	],
+	"autoReferenced": false
+}

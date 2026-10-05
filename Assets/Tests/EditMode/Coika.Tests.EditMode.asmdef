@@ -7,6 +7,7 @@
         "Coika.Core",
         "Coika.Data",
         "Coika.Gameplay",
+        "Coika.Fx",
         "Coika.UI",
         "Coika.Tools.Editor",
         "Unity.Addressables",

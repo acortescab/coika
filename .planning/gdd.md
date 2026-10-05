@@ -324,12 +324,13 @@ Assets/
     UI/          HudView, GameOverView, PauseView, MenuView, SettingsView,
                  EvolutionChartView
     Audio/       AudioManager
-    Fx/          ScreenShake, Haptics, ParticleSpawner
-                 (squash and stretch is PieceAnimator, in Gameplay)
+    Fx/          ParticleSpawner, IParticleSpawner, FxDirector, FxKind
+                 (own assembly Coika.Fx; ScreenShake and Haptics are still to do;
+                 squash and stretch is PieceAnimator, in Gameplay)
     Input/       PointerInputReader
   Tests/ (EditMode, PlayMode)
 ```
-Use **assembly definitions** (`Coika.Core`, `Coika.Gameplay`, `Coika.UI`, `Coika.Tests`) so compile times stay low.
+Use **assembly definitions** (`Coika.Core`, `Coika.Gameplay`, `Coika.Fx`, `Coika.UI`, `Coika.Tests`) so compile times stay low.
 
 ### 14.2 Data assets
 

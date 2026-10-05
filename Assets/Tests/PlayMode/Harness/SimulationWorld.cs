@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Coika.Data;
+using Coika.Fx;
 using Coika.Gameplay;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -44,6 +45,8 @@ namespace Coika.Tests.PlayMode
         private long _steps;
         private float _overflowAccumulator;
         private bool _disposed;
+        private FxDirector _fxDirector;
+        private ParticleSystem[] _particleSystems = Array.Empty<ParticleSystem>();
 
         /// <summary>
         /// Builds the world and pre-warms the piece pool. Nothing runs until <see cref="StartRun"/>.
@@ -118,6 +121,15 @@ namespace Coika.Tests.PlayMode
             Systems = new RunSystems(Config, Tiers, Assets, Factory, Merge, Controller, Overflow, Score, () => SimulatedSeconds);
             Manager = new GameManager(Systems, () => _nextSeed);
 
+            if (options.Particles)
+            {
+                Particles = TestParticleSpawner.Create(_created, Config.Feedback);
+                SceneManager.MoveGameObjectToScene(Particles.gameObject, _scene);
+                _particleSystems = Particles.GetComponentsInChildren<ParticleSystem>();
+                _fxDirector = new FxDirector(Particles, Config.Feedback, Tiers);
+                _fxDirector.Bind(Merge, Score, Factory, new Vector2(0f, Jar.DangerLineY));
+            }
+
             Controller.PieceDropped += HandlePieceDropped;
             Overflow.GameOverTriggered += Manager.EndRun;
         }
@@ -166,6 +178,9 @@ namespace Coika.Tests.PlayMode
 
         /// <summary>The ghosts of the merged pieces, or null when the animations are off.</summary>
         public MergeGhostPool Ghosts { get; }
+
+        /// <summary>The pooled particle spawner, or null when the particles are off.</summary>
+        public ParticleSpawner Particles { get; }
 
         /// <summary>Simulated time in seconds: the steps taken times the fixed step. It is the clock of every system.</summary>
         public double SimulatedSeconds => _steps * (double)_fixedDeltaTime;
@@ -263,6 +278,11 @@ namespace Coika.Tests.PlayMode
             {
                 Ghosts.Tick(deltaTime);
             }
+
+            for (var i = 0; i < _particleSystems.Length; i++)
+            {
+                _particleSystems[i].Simulate(deltaTime, false, false, false);
+            }
         }
 
         /// <summary>
@@ -354,6 +374,7 @@ namespace Coika.Tests.PlayMode
             _disposed = true;
             Controller.PieceDropped -= HandlePieceDropped;
             Overflow.GameOverTriggered -= Manager.EndRun;
+            _fxDirector?.Unbind();
             Systems.Dispose();
             Factory.Dispose();
 
@@ -421,10 +442,20 @@ namespace Coika.Tests.PlayMode
                 TestReflection.SetField(config, "_forcedOpeningTiers", options.ForcedOpening);
             }
 
-            if (options.Animations)
+            if (options.Animations || options.Particles)
             {
                 var feedback = ScriptableObject.CreateInstance<FeedbackConfig>();
                 _created.Add(feedback);
+                if (options.ParticleCap.HasValue)
+                {
+                    TestReflection.SetField(feedback, "_maxLiveParticles", options.ParticleCap.Value);
+                }
+
+                if (options.RingCap.HasValue)
+                {
+                    TestReflection.SetField(feedback, "_maxLiveRings", options.RingCap.Value);
+                }
+
                 TestReflection.SetField(config, "_feedback", feedback);
             }
 

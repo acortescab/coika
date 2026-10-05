@@ -50,6 +50,7 @@ Assets/
       Boot/                Composition root (GameInstaller)
     Data/                  ScriptableObject definitions (Coika.Data)
     Gameplay/              Game rules (Coika.Gameplay), including the visual piece animations (PieceAnimator and its effects)
+    Fx/                    Pooled particles (Coika.Fx): ParticleSpawner, FxDirector. Setup: menu Coika/Setup Particles
     UI/                    Views (Coika.UI)
     Tools/Editor/          Editor-only tools (Coika.Tools.Editor)
   Tests/
@@ -58,7 +59,7 @@ Assets/
 .planning/                 Design and engineering documents
 ```
 
-Dependencies flow one way: `UI → Gameplay → Core`. `Data` depends on `Core`.
+Dependencies flow one way: `UI → Fx → Gameplay → Core`. `Data` depends on `Core`.
 
 ## Architecture in short
 

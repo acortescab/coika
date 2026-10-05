@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Coika.Core;
 using Coika.Data;
+using Coika.Fx;
 using Coika.Gameplay;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -58,6 +59,9 @@ namespace Coika.UI
         private AssetReference _canvasPrefab;
         [SerializeField]
         private AssetReference _guideLinePrefab;
+        // Optional: without it the game simply shows no particles.
+        [SerializeField]
+        private AssetReference _fxPrefab;
 
         private bool _destroyed;
 
@@ -73,6 +77,10 @@ namespace Coika.UI
         private GameObject _loadedGuideLinePrefab;
         private GameObject _guideLine;
         private GuideLineView _guideLineView;
+        private GameObject _loadedFxPrefab;
+        private GameObject _fx;
+        private ParticleSpawner _particles;
+        private FxDirector _fxDirector;
         private HudView _hud;
         private GameOverView _gameOver;
         private TierSpriteCache _sprites;
@@ -347,6 +355,24 @@ namespace Coika.UI
                 throw new InvalidOperationException("The GuideLine prefab needs a GuideLineView.");
             }
 
+            // The particle systems come with the load phase and are prewarmed in Compose, never during play (C-01).
+            if (_loadedConfig.Feedback != null && _fxPrefab != null && _fxPrefab.RuntimeKeyIsValid())
+            {
+                var fxPrefab = await _assets.LoadAsset<GameObject>(_fxPrefab);
+                _loadedFxPrefab = fxPrefab;
+                if (_destroyed)
+                {
+                    return;
+                }
+
+                _fx = Instantiate(fxPrefab);
+                _particles = _fx.GetComponent<ParticleSpawner>();
+                if (_particles == null)
+                {
+                    throw new InvalidOperationException("The ParticleSpawner prefab needs a ParticleSpawner.");
+                }
+            }
+
             // The clips come with the rest of the load phase, never during play (C-01).
             if (_audio != null)
             {
@@ -385,6 +411,14 @@ namespace Coika.UI
             }
 
             _score =new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
+
+            if (_particles != null)
+            {
+                _particles.Initialize(_loadedConfig.Feedback);
+                ApplyReduceMotion();
+                _fxDirector = new FxDirector(_particles, _loadedConfig.Feedback, _tiers);
+                _fxDirector.Bind(_mergeSystem, _score, _factory, new Vector2(_jar.transform.position.x, _jar.DangerLineY));
+            }
 
             // The Boot installer hands the save over through UseSave; without it (tests) nothing is persisted.
             if (_save != null)
@@ -439,6 +473,17 @@ namespace Coika.UI
         }
 
         /// <summary>
+        /// Gives the particle spawner the Reduce Shake setting (off without Boot, as in tests).
+        /// </summary>
+        private void ApplyReduceMotion()
+        {
+            if (_particles != null)
+            {
+                _particles.ReduceMotion = _settings != null && _settings.ReduceShake;
+            }
+        }
+
+        /// <summary>
         /// Gives the reader the Finger Offset and Left-handed settings (defaults without Boot, as in tests) and the
         /// distance of <see cref="GameConfig.FingerOffset"/>.
         /// </summary>
@@ -462,6 +507,10 @@ namespace Coika.UI
             else if (change.Key == SettingKey.GuideLine)
             {
                 ApplyGuideLine();
+            }
+            else if (change.Key == SettingKey.ReduceShake)
+            {
+                ApplyReduceMotion();
             }
         }
 
@@ -503,6 +552,7 @@ namespace Coika.UI
         {
             _gameOver.Hide();
             _ghosts?.ResetAll();
+            _particles?.ResetAll();
             _hudPresenter.BindQueue(run.Queue);
             _hudPresenter.Refresh();
 
@@ -640,6 +690,23 @@ namespace Coika.UI
             }
 
             _loadedGuideLinePrefab = null;
+
+            _fxDirector?.Unbind();
+            _fxDirector = null;
+            if (_fx != null)
+            {
+                Destroy(_fx);
+            }
+
+            _fx = null;
+            _particles = null;
+
+            if (_assets != null && _loadedFxPrefab != null)
+            {
+                _assets.ReleaseAsset(_loadedFxPrefab);
+            }
+
+            _loadedFxPrefab = null;
 
             if (_canvas != null)
             {
