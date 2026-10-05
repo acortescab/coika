@@ -32,7 +32,7 @@ namespace Coika.UI
     /// </summary>
     [AddComponentMenu("Coika/UI/Game Scene Installer")]
     [DisallowMultipleComponent]
-    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer, IAudioConsumer
+    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer, IAudioConsumer, IHapticsConsumer
     {
         private const float GAME_OVER_DUCK_DB = -6f; // GDD §11: music ducks 6 dB on game over
         private const float GAME_OVER_DUCK_SECONDS = 0.5f;
@@ -89,6 +89,7 @@ namespace Coika.UI
         private SaveSystem _save;
         private SettingsService _settings;
         private IAudioService _audio;
+        private IHaptics _haptics;
         private SoundBank _soundBank;
         private Action<GameState, GameState> _onStateChanged;
         private Action<SettingsChanged> _onSettingsChanged;
@@ -124,6 +125,16 @@ namespace Coika.UI
         public void UseAudio(IAudioService audio)
         {
             _audio = audio;
+        }
+
+        /// <summary>
+        /// Receives the haptics service from the Boot installer. Without it (tests) the scene has no haptics. The
+        /// mapping of game events to haptics is added by issue #34.
+        /// </summary>
+        /// <param name="haptics">The shared haptics service.</param>
+        public void UseHaptics(IHaptics haptics)
+        {
+            _haptics = haptics;
         }
 
         /// <summary>The loading overlay, for tests.</summary>
