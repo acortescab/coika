@@ -100,7 +100,7 @@ namespace Coika.UI
         private Action _onPauseClicked;
         private Action _onBackPressed;
         private Action _onResumeRequested;
-        private Action _onRestartConfirmed;
+        private Action<ConfirmKind> _onConfirmed;
         private TierSpriteCache _sprites;
         private ScoreSystem _score;
         private RunSystems _systems;
@@ -186,7 +186,7 @@ namespace Coika.UI
             _onPauseClicked = HandlePauseClicked;
             _onBackPressed = HandleBackPressed;
             _onResumeRequested = HandleResumeRequested;
-            _onRestartConfirmed = HandleRestartConfirmed;
+            _onConfirmed = HandleConfirmed;
             _onOverlayRetry = HandleOverlayRetry;
 
             _overlay = new LoadingOverlay();
@@ -472,6 +472,9 @@ namespace Coika.UI
             _systems = new RunSystems(_loadedConfig, _tiers, _assets, _factory, _mergeSystem, _dropController, _overflowDetector, _score);
             _manager = new GameManager(_systems, () => Environment.TickCount);
 
+            // Not part of the optional feedback: the pause must freeze the game even without a feedback config.
+            _timeScale = new TimeScaleOwner(new UnityTimeScale(), () => Time.unscaledTimeAsDouble);
+
             // After the score system, so the combo is already updated when a merge is played.
             ComposeFeedback();
 
@@ -482,7 +485,7 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Builds the feedback: the time scale owner, the shake of the camera rig and the flash overlay, all on the
+        /// Builds the feedback: the shake of the camera rig and the flash overlay, all on the
         /// unscaled clock, and the director that maps every gameplay event to them, to the particles, the sounds
         /// and the haptics. The parts without an object here do nothing.
         /// </summary>
@@ -495,7 +498,6 @@ namespace Coika.UI
             }
 
             Func<double> unscaledClock = () => Time.unscaledTimeAsDouble;
-            _timeScale = new TimeScaleOwner(new UnityTimeScale(), unscaledClock);
 
             // Explicit checks: a destroyed MonoBehaviour must not be touched, and `?.` does not see it as null.
             IScreenShake shake = NullScreenEffects.Instance;
@@ -539,7 +541,7 @@ namespace Coika.UI
             _hud.PauseClicked += _onPauseClicked;
             _input.BackPressed += _onBackPressed;
             _pausePresenter.ResumeRequested += _onResumeRequested;
-            _pausePresenter.RestartConfirmed += _onRestartConfirmed;
+            _pausePresenter.Confirmed += _onConfirmed;
             if (_settings != null)
             {
                 _settings.Changed += _onSettingsChanged;
@@ -635,7 +637,7 @@ namespace Coika.UI
             _hud.PauseClicked -= _onPauseClicked;
             _input.BackPressed -= _onBackPressed;
             _pausePresenter.ResumeRequested -= _onResumeRequested;
-            _pausePresenter.RestartConfirmed -= _onRestartConfirmed;
+            _pausePresenter.Confirmed -= _onConfirmed;
             if (_settings != null)
             {
                 _settings.Changed -= _onSettingsChanged;
@@ -733,11 +735,16 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Starts a fresh run, with the loaded assets, after the Restart confirmation.
+        /// Acts on a confirmed dialog: Restart starts a fresh run with the loaded assets. Menu waits for the Menu
+        /// scene (M3); its button is disabled until then, so it cannot be reached yet.
         /// </summary>
-        private void HandleRestartConfirmed()
+        /// <param name="kind">What the dialog asked.</param>
+        private void HandleConfirmed(ConfirmKind kind)
         {
-            _manager.StartRun();
+            if (kind == ConfirmKind.Restart)
+            {
+                _manager.StartRun();
+            }
         }
 
         /// <summary>

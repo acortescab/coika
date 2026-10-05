@@ -281,10 +281,10 @@ namespace Coika.Tests.PlayMode
             return Count(_manager, "StateChanged")
                 + Count(_manager, "RunStarted")
                 + Count(presenter, "ResumeRequested")
-                + Count(presenter, "RestartConfirmed")
+                + Count(presenter, "Confirmed")
                 + Count(Field<DropController>(_installer, "_dropController"), "PieceDropped")
-                + Count(FindPauseView(), "ResumeClicked")
-                + Count(FindConfirmView(), "Confirmed");
+                + Count(FindPauseView(), "Clicked")
+                + Count(FindConfirmView(), "Answered");
         }
 
         /// <summary>

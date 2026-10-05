@@ -233,8 +233,8 @@ namespace Coika.Tools
             Place(panel, Centered(0f, 0f, 960f, 900f));
             panel.gameObject.AddComponent<Image>().color = PanelColor;
 
-            var title = AddText(panel, "Title", font, UiStrings.ConfirmRestartTitle, Centered(0f, 300f, 880f, 120f), 80f, TextAlignmentOptions.Center, Color.white);
-            var message = AddText(panel, "Message", font, UiStrings.ConfirmRestartMessage, Centered(0f, 60f, 840f, 300f), 56f, TextAlignmentOptions.Center, Color.gray);
+            var title = AddText(panel, "Title", font, UiTextKeys.CONFIRM_RESTART_TITLE, Centered(0f, 300f, 880f, 120f), 80f, TextAlignmentOptions.Center, Color.white);
+            var message = AddText(panel, "Message", font, UiTextKeys.CONFIRM_RESTART_MESSAGE, Centered(0f, 60f, 840f, 300f), 56f, TextAlignmentOptions.Center, Color.gray);
             message.textWrappingMode = TextWrappingModes.Normal;
 
             var confirm = AddButton(panel, "ConfirmButton", font, UiStrings.ConfirmYes, Centered(230f, -280f, 400f, MIN_TOUCH_SIZE), PrimaryButtonColor, 64f);

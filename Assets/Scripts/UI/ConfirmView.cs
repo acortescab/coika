@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Components;
@@ -12,8 +11,7 @@ namespace Coika.UI
     /// Reusable confirmation dialog: a title, a message, and Confirm and Cancel buttons. What it asks is a
     /// <see cref="ConfirmRequest"/> set with <see cref="Configure"/>, so Restart, Menu and Reset progress share it.
     /// Cancel is the default: it is the selected button when the dialog opens. The view only raises
-    /// <see cref="Confirmed"/> and <see cref="Cancelled"/>; the Back button is handled by the presenter.
-    /// Put it on a panel that starts inactive.
+    /// <see cref="Answered"/>; the Back button is handled by the presenter. Put it on a panel that starts inactive.
     /// </summary>
     [AddComponentMenu("Coika/UI/Confirm View")]
     [DisallowMultipleComponent]
@@ -28,22 +26,21 @@ namespace Coika.UI
         [SerializeField]
         private Button _cancelButton;
 
-        private UnityAction _onConfirmClicked;
-        private UnityAction _onCancelClicked;
+        private ButtonRelay<bool>[] _relays;
 
-        /// <summary>Raised once per click on the Confirm button.</summary>
-        public event Action Confirmed;
-
-        /// <summary>Raised once per click on the Cancel button.</summary>
-        public event Action Cancelled;
+        /// <summary>Raised once per click on a button: true for Confirm, false for Cancel.</summary>
+        public event Action<bool> Answered;
 
         /// <summary>
-        /// Caches the click handlers. It runs on the first <see cref="Open"/>, because the panel starts inactive.
+        /// Makes one relay per button. It runs on the first <see cref="Open"/>, because the panel starts inactive.
         /// </summary>
         private void Awake()
         {
-            _onConfirmClicked = HandleConfirmClicked;
-            _onCancelClicked = HandleCancelClicked;
+            _relays = new[]
+            {
+                new ButtonRelay<bool>(_confirmButton, true, RaiseAnswered),
+                new ButtonRelay<bool>(_cancelButton, false, RaiseAnswered),
+            };
         }
 
         /// <summary>
@@ -51,8 +48,10 @@ namespace Coika.UI
         /// </summary>
         private void OnEnable()
         {
-            _confirmButton.onClick.AddListener(_onConfirmClicked);
-            _cancelButton.onClick.AddListener(_onCancelClicked);
+            foreach (var relay in _relays)
+            {
+                relay.Bind();
+            }
         }
 
         /// <summary>
@@ -60,8 +59,10 @@ namespace Coika.UI
         /// </summary>
         private void OnDisable()
         {
-            _confirmButton.onClick.RemoveListener(_onConfirmClicked);
-            _cancelButton.onClick.RemoveListener(_onCancelClicked);
+            foreach (var relay in _relays)
+            {
+                relay.Unbind();
+            }
         }
 
         /// <summary>
@@ -93,19 +94,12 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Raises <see cref="Confirmed"/>.
+        /// Raises <see cref="Answered"/>.
         /// </summary>
-        private void HandleConfirmClicked()
+        /// <param name="confirmed">True for Confirm, false for Cancel.</param>
+        private void RaiseAnswered(bool confirmed)
         {
-            Confirmed?.Invoke();
-        }
-
-        /// <summary>
-        /// Raises <see cref="Cancelled"/>.
-        /// </summary>
-        private void HandleCancelClicked()
-        {
-            Cancelled?.Invoke();
+            Answered?.Invoke(confirmed);
         }
     }
 }

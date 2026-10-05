@@ -5,11 +5,11 @@ namespace Coika.UI
 {
     /// <summary>
     /// Drives the pause flow: it opens the <see cref="PauseView"/> on a <see cref="PanelStack"/>, puts the shared
-    /// <see cref="ConfirmView"/> over it for Restart and Menu, and decides what the Back button does. It changes no
-    /// game state and loads no scene: the owner listens to <see cref="ResumeRequested"/>,
-    /// <see cref="RestartConfirmed"/>, <see cref="MenuConfirmed"/> and <see cref="SettingsRequested"/>, and opens
-    /// and closes the presenter from the game state, so the panels always match it. The UI clicks (<c>UiClick</c>,
-    /// <c>UiBack</c>) are played here, because the views hold no audio.
+    /// <see cref="ConfirmView"/> over it for the actions that need a confirmation, and decides what the Back button
+    /// does. It changes no game state and loads no scene: the owner listens to <see cref="ResumeRequested"/>,
+    /// <see cref="SettingsRequested"/> and <see cref="Confirmed"/>, and opens and closes the presenter from the
+    /// game state, so the panels always match it. The UI clicks (<c>UiClick</c>, <c>UiBack</c>) are played here,
+    /// because the views hold no audio.
     /// </summary>
     public sealed class PausePresenter : IDisposable
     {
@@ -17,16 +17,10 @@ namespace Coika.UI
         private readonly ConfirmView _confirm;
         private readonly IAudioService _audio;
         private readonly PanelStack _stack = new PanelStack();
-        private readonly Action _onResumeClicked;
-        private readonly Action _onRestartClicked;
-        private readonly Action _onSettingsClicked;
-        private readonly Action _onMenuClicked;
-        private readonly Action _onConfirmed;
-        private readonly Action _onCancelled;
-        private readonly Action _raiseRestartConfirmed;
-        private readonly Action _raiseMenuConfirmed;
+        private readonly Action<PauseAction> _onPauseClicked;
+        private readonly Action<bool> _onAnswered;
 
-        private Action _pendingConfirm;
+        private ConfirmRequest? _pending;
 
         /// <summary>
         /// Creates the presenter and subscribes to the views.
@@ -41,34 +35,20 @@ namespace Coika.UI
             _confirm = confirm != null ? confirm : throw new ArgumentNullException(nameof(confirm));
             _audio = audio;
 
-            _onResumeClicked = HandleResumeClicked;
-            _onRestartClicked = HandleRestartClicked;
-            _onSettingsClicked = HandleSettingsClicked;
-            _onMenuClicked = HandleMenuClicked;
-            _onConfirmed = HandleConfirmed;
-            _onCancelled = HandleCancelled;
-            _raiseRestartConfirmed = RaiseRestartConfirmed;
-            _raiseMenuConfirmed = RaiseMenuConfirmed;
-
-            _pause.ResumeClicked += _onResumeClicked;
-            _pause.RestartClicked += _onRestartClicked;
-            _pause.SettingsClicked += _onSettingsClicked;
-            _pause.MenuClicked += _onMenuClicked;
-            _confirm.Confirmed += _onConfirmed;
-            _confirm.Cancelled += _onCancelled;
+            _onPauseClicked = HandlePauseClicked;
+            _onAnswered = HandleAnswered;
+            _pause.Clicked += _onPauseClicked;
+            _confirm.Answered += _onAnswered;
         }
 
         /// <summary>Raised when the player asks to go back to the run.</summary>
         public event Action ResumeRequested;
 
-        /// <summary>Raised when the player confirmed the Restart dialog.</summary>
-        public event Action RestartConfirmed;
-
-        /// <summary>Raised when the player confirmed the Menu dialog.</summary>
-        public event Action MenuConfirmed;
-
         /// <summary>Raised when the player asks for the Settings screen.</summary>
         public event Action SettingsRequested;
+
+        /// <summary>Raised when the player confirmed a dialog, with what it asked.</summary>
+        public event Action<ConfirmKind> Confirmed;
 
         /// <summary>Whether the pause menu, or a panel over it, is open.</summary>
         public bool IsOpen => _stack.Count > 0;
@@ -92,7 +72,7 @@ namespace Coika.UI
         /// </summary>
         public void Close()
         {
-            _pendingConfirm = null;
+            _pending = null;
             _stack.Clear();
         }
 
@@ -111,8 +91,7 @@ namespace Coika.UI
             PlaySfx(SfxId.UiBack);
             if (_stack.Count > 1)
             {
-                _pendingConfirm = null;
-                _stack.Pop();
+                PopTop();
             }
             else
             {
@@ -127,24 +106,31 @@ namespace Coika.UI
         /// </summary>
         public void Dispose()
         {
-            _pause.ResumeClicked -= _onResumeClicked;
-            _pause.RestartClicked -= _onRestartClicked;
-            _pause.SettingsClicked -= _onSettingsClicked;
-            _pause.MenuClicked -= _onMenuClicked;
-            _confirm.Confirmed -= _onConfirmed;
-            _confirm.Cancelled -= _onCancelled;
+            _pause.Clicked -= _onPauseClicked;
+            _confirm.Answered -= _onAnswered;
         }
 
         /// <summary>
-        /// Puts the confirmation dialog over the open panels. What happens on Confirm is the callback.
+        /// Puts the confirmation dialog over the open panels.
         /// </summary>
         /// <param name="request">What the dialog asks.</param>
-        /// <param name="onConfirmed">Runs when the player confirms.</param>
-        private void Confirm(ConfirmRequest request, Action onConfirmed)
+        private void Ask(ConfirmRequest request)
         {
-            _pendingConfirm = onConfirmed;
+            _pending = request;
             _confirm.Configure(request);
             _stack.Push(_confirm);
+        }
+
+        /// <summary>
+        /// Closes the panel on top and forgets the confirmation it was asking.
+        /// </summary>
+        /// <returns>What the closed dialog asked, or null when the top panel was not a dialog.</returns>
+        private ConfirmRequest? PopTop()
+        {
+            var asked = _pending;
+            _pending = null;
+            _stack.Pop();
+            return asked;
         }
 
         /// <summary>
@@ -156,77 +142,41 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Resume button: asks to go back to the run.
+        /// A button of the pause menu: Resume and Settings are passed on, the others ask for confirmation first.
         /// </summary>
-        private void HandleResumeClicked()
+        /// <param name="action">The button that was clicked.</param>
+        private void HandlePauseClicked(PauseAction action)
         {
             PlaySfx(SfxId.UiClick);
-            ResumeRequested?.Invoke();
+            switch (action)
+            {
+                case PauseAction.Resume:
+                    ResumeRequested?.Invoke();
+                    break;
+                case PauseAction.Settings:
+                    SettingsRequested?.Invoke();
+                    break;
+                case PauseAction.Restart:
+                    Ask(ConfirmRequest.Restart);
+                    break;
+                case PauseAction.Menu:
+                    Ask(ConfirmRequest.Menu);
+                    break;
+            }
         }
 
         /// <summary>
-        /// Restart button: asks for confirmation first.
+        /// The answer of the dialog: it closes, and a Confirm announces what was asked.
         /// </summary>
-        private void HandleRestartClicked()
+        /// <param name="confirmed">True for Confirm, false for Cancel.</param>
+        private void HandleAnswered(bool confirmed)
         {
-            PlaySfx(SfxId.UiClick);
-            Confirm(ConfirmRequest.Restart, _raiseRestartConfirmed);
-        }
-
-        /// <summary>
-        /// Settings button: asks for the Settings screen.
-        /// </summary>
-        private void HandleSettingsClicked()
-        {
-            PlaySfx(SfxId.UiClick);
-            SettingsRequested?.Invoke();
-        }
-
-        /// <summary>
-        /// Menu button: asks for confirmation first.
-        /// </summary>
-        private void HandleMenuClicked()
-        {
-            PlaySfx(SfxId.UiClick);
-            Confirm(ConfirmRequest.Menu, _raiseMenuConfirmed);
-        }
-
-        /// <summary>
-        /// Confirm button of the dialog: closes the dialog and runs what it asked.
-        /// </summary>
-        private void HandleConfirmed()
-        {
-            PlaySfx(SfxId.UiClick);
-            var action = _pendingConfirm;
-            _pendingConfirm = null;
-            _stack.Pop();
-            action?.Invoke();
-        }
-
-        /// <summary>
-        /// Cancel button of the dialog: closes it and changes nothing.
-        /// </summary>
-        private void HandleCancelled()
-        {
-            PlaySfx(SfxId.UiBack);
-            _pendingConfirm = null;
-            _stack.Pop();
-        }
-
-        /// <summary>
-        /// Raises <see cref="RestartConfirmed"/>.
-        /// </summary>
-        private void RaiseRestartConfirmed()
-        {
-            RestartConfirmed?.Invoke();
-        }
-
-        /// <summary>
-        /// Raises <see cref="MenuConfirmed"/>.
-        /// </summary>
-        private void RaiseMenuConfirmed()
-        {
-            MenuConfirmed?.Invoke();
+            PlaySfx(confirmed ? SfxId.UiClick : SfxId.UiBack);
+            var asked = PopTop();
+            if (confirmed && asked.HasValue)
+            {
+                Confirmed?.Invoke(asked.Value.Kind);
+            }
         }
     }
 }

@@ -34,8 +34,7 @@ namespace Coika.Tests.PlayMode
             _audio = new FakeAudioService();
             _presenter = new PausePresenter(_views.Pause, _views.Confirm, _audio);
             _presenter.ResumeRequested += () => _resume++;
-            _presenter.RestartConfirmed += () => _restart++;
-            _presenter.MenuConfirmed += () => _menu++;
+            _presenter.Confirmed += CountConfirmed;
             _presenter.SettingsRequested += () => _settings++;
         }
 
@@ -47,6 +46,22 @@ namespace Coika.Tests.PlayMode
         {
             _presenter.Dispose();
             _views.Destroy();
+        }
+
+        /// <summary>
+        /// Counts a confirmed dialog by what it asked.
+        /// </summary>
+        /// <param name="kind">What the dialog asked.</param>
+        private void CountConfirmed(ConfirmKind kind)
+        {
+            if (kind == ConfirmKind.Restart)
+            {
+                _restart++;
+            }
+            else
+            {
+                _menu++;
+            }
         }
 
         /// <summary>
