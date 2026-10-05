@@ -1,3 +1,5 @@
+using Coika.UI;
+
 namespace Coika.Tools
 {
     /// <summary>
@@ -8,7 +10,7 @@ namespace Coika.Tools
     public static class UiStrings
     {
         /// <summary>Name of the string table.</summary>
-        public const string TableName = "UI";
+        public const string TableName = UiTextKeys.TABLE_NAME;
 
         public const string HudBest = "hud.best";
         public const string GameOverTitle = "gameover.title";
@@ -23,6 +25,13 @@ namespace Coika.Tools
         public const string LoadingText = "loading.text";
         public const string LoadingFailed = "loading.failed";
         public const string LoadingRetry = "loading.retry";
+        public const string PauseTitle = "pause.title";
+        public const string PauseResume = "pause.resume";
+        public const string PauseRestart = "pause.restart";
+        public const string PauseSettings = "pause.settings";
+        public const string PauseMenu = "pause.menu";
+        public const string ConfirmYes = "confirm.yes";
+        public const string ConfirmCancel = "confirm.cancel";
 
         /// <summary>Every key with its English text.</summary>
         public static readonly (string Key, string English)[] All =
@@ -40,6 +49,17 @@ namespace Coika.Tools
             (LoadingText, "LOADING..."),
             (LoadingFailed, "COULD NOT LOAD THE GAME"),
             (LoadingRetry, "RETRY"),
+            (PauseTitle, "PAUSED"),
+            (PauseResume, "RESUME"),
+            (PauseRestart, "RESTART"),
+            (PauseSettings, "SETTINGS"),
+            (PauseMenu, "MENU"),
+            (ConfirmYes, "YES"),
+            (ConfirmCancel, "CANCEL"),
+            (UiTextKeys.CONFIRM_RESTART_TITLE, "RESTART?"),
+            (UiTextKeys.CONFIRM_RESTART_MESSAGE, "The current run will be lost."),
+            (UiTextKeys.CONFIRM_MENU_TITLE, "LEAVE THE GAME?"),
+            (UiTextKeys.CONFIRM_MENU_MESSAGE, "The current run will be lost."),
         };
     }
 }

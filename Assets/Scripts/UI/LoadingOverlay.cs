@@ -23,9 +23,6 @@ namespace Coika.UI
     /// </summary>
     public sealed class LoadingOverlay : IDisposable
     {
-        /// <summary>Name of the localization string table of the UI.</summary>
-        public const string TABLE_NAME = "UI";
-
         /// <summary>Key of the text shown while loading.</summary>
         public const string LOADING_KEY = "loading.text";
 
@@ -95,7 +92,7 @@ namespace Coika.UI
             labelText.fontSize = FONT_SIZE;
             labelText.color = Color.black;
             labelText.raycastTarget = false;
-            label.GetComponent<LocalizeStringEvent>().StringReference = new LocalizedString(TABLE_NAME, RETRY_KEY);
+            label.GetComponent<LocalizeStringEvent>().StringReference = new LocalizedString(UiTextKeys.TABLE_NAME, RETRY_KEY);
             labelText.text = string.Empty;
 
             _onRetryClicked = HandleRetryClicked;
@@ -173,7 +170,7 @@ namespace Coika.UI
         /// </summary>
         private void Show(string key, bool withButton)
         {
-            _message.StringReference = new LocalizedString(TABLE_NAME, key);
+            _message.StringReference = new LocalizedString(UiTextKeys.TABLE_NAME, key);
             _retryButton.gameObject.SetActive(withButton);
             _root.SetActive(true);
         }

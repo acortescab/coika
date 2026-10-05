@@ -56,6 +56,7 @@ namespace Coika.Gameplay
         private bool _inputDown;
         private bool _releaseHadPress;
         private float _releaseTargetX;
+        private float _inputBlockedFor;
 
         /// <summary>Raised when the substate changes: after a release (Dropping) and when the cooldown ends (Aiming).</summary>
         public event Action<DropState> StateChanged;
@@ -239,6 +240,25 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
+        /// Forgets the press in progress and ignores all input for the given time, counted by <see cref="Tick"/>. A
+        /// finger that was down when it was called drops nothing when it is lifted. Call it when the game pauses: the
+        /// time only counts once it runs again, so it is a grace period after the resume, and the tap on Resume
+        /// never drops a piece.
+        /// </summary>
+        /// <param name="seconds">Game time to ignore the input for.</param>
+        public void BlockInput(float seconds)
+        {
+            _inputBlockedFor = Mathf.Max(0f, seconds);
+            ClearPress();
+            if (_flow != null)
+            {
+                _flow.CancelPress();
+            }
+
+            _dropPending = false;
+        }
+
+        /// <summary>
         /// The per-frame work: ends the cooldown, grows the next piece and drops on a release. Public so tests can
         /// drive it with an exact time step.
         /// </summary>
@@ -260,6 +280,16 @@ namespace Coika.Gameplay
             if (_flow.Tick(deltaTime))
             {
                 StateChanged?.Invoke(DropState.Aiming);
+            }
+
+            // A blocked input (the grace after a pause) is read and thrown away, so nothing queued reaches the flow.
+            if (_inputBlockedFor > 0f)
+            {
+                _inputBlockedFor -= deltaTime;
+                _flow.CancelPress();
+                _dropPending = false;
+                ClearQueuedInput();
+                return;
             }
 
             // The flags are cleared before anything can throw, so a failure never leaves a press behind.

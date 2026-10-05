@@ -70,6 +70,50 @@ MonoBehaviour:
     m_Localized: RETRY
     m_Metadata:
       m_Items: []
+  - m_Id: 907517721866240
+    m_Localized: PAUSED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358656
+    m_Localized: RESUME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358657
+    m_Localized: RESTART
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358658
+    m_Localized: SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358659
+    m_Localized: MENU
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358660
+    m_Localized: YES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358661
+    m_Localized: CANCEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358662
+    m_Localized: RESTART?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358663
+    m_Localized: The current run will be lost.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358664
+    m_Localized: LEAVE THE GAME?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517952552960
+    m_Localized: The current run will be lost.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -67,6 +67,50 @@ MonoBehaviour:
     m_Key: loading.retry
     m_Metadata:
       m_Items: []
+  - m_Id: 907517721866240
+    m_Key: pause.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358656
+    m_Key: pause.resume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358657
+    m_Key: pause.restart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358658
+    m_Key: pause.settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358659
+    m_Key: pause.menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358660
+    m_Key: confirm.yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358661
+    m_Key: confirm.cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358662
+    m_Key: confirm.restart.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358663
+    m_Key: confirm.restart.message
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517948358664
+    m_Key: confirm.menu.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 907517952552960
+    m_Key: confirm.menu.message
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

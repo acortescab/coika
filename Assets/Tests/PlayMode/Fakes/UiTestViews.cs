@@ -2,6 +2,7 @@ using System.Reflection;
 using Coika.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 namespace Coika.Tests.PlayMode
@@ -27,9 +28,25 @@ namespace Coika.Tests.PlayMode
             _root.AddComponent<Canvas>();
             BuildHud();
             BuildGameOver();
+            BuildPause();
+            BuildConfirm();
             _root.SetActive(true);
             GameOverObject.SetActive(false);
+            PauseObject.SetActive(false);
+            ConfirmObject.SetActive(false);
         }
+
+        public PauseView Pause { get; private set; }
+        public GameObject PauseObject { get; private set; }
+        public Button PauseResume { get; private set; }
+        public Button PauseRestart { get; private set; }
+        public Button PauseSettings { get; private set; }
+        public Button PauseMenu { get; private set; }
+
+        public ConfirmView Confirm { get; private set; }
+        public GameObject ConfirmObject { get; private set; }
+        public Button ConfirmYes { get; private set; }
+        public Button ConfirmCancel { get; private set; }
 
         public HudView Hud { get; private set; }
         public TMP_Text HudScore { get; private set; }
@@ -107,6 +124,34 @@ namespace Coika.Tests.PlayMode
             Set(GameOver, "_timeText", OverTime);
             Set(GameOver, "_retryButton", OverRetry);
             Set(GameOver, "_menuButton", OverMenu);
+        }
+
+        private void BuildPause()
+        {
+            PauseObject = Child("Pause", _root.transform);
+            Pause = PauseObject.AddComponent<PauseView>();
+            PauseResume = Child("Resume", PauseObject.transform).AddComponent<Button>();
+            PauseRestart = Child("Restart", PauseObject.transform).AddComponent<Button>();
+            PauseSettings = Child("Settings", PauseObject.transform).AddComponent<Button>();
+            PauseMenu = Child("Menu", PauseObject.transform).AddComponent<Button>();
+
+            Set(Pause, "_resumeButton", PauseResume);
+            Set(Pause, "_restartButton", PauseRestart);
+            Set(Pause, "_settingsButton", PauseSettings);
+            Set(Pause, "_menuButton", PauseMenu);
+        }
+
+        private void BuildConfirm()
+        {
+            ConfirmObject = Child("Confirm", _root.transform);
+            Confirm = ConfirmObject.AddComponent<ConfirmView>();
+            ConfirmYes = Child("Yes", ConfirmObject.transform).AddComponent<Button>();
+            ConfirmCancel = Child("Cancel", ConfirmObject.transform).AddComponent<Button>();
+
+            Set(Confirm, "_title", Child("Title", ConfirmObject.transform).AddComponent<LocalizeStringEvent>());
+            Set(Confirm, "_message", Child("Message", ConfirmObject.transform).AddComponent<LocalizeStringEvent>());
+            Set(Confirm, "_confirmButton", ConfirmYes);
+            Set(Confirm, "_cancelButton", ConfirmCancel);
         }
 
         private static GameObject Child(string name, Transform parent)

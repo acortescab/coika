@@ -38,6 +38,7 @@ namespace Coika.UI
         private const float GAME_OVER_DUCK_DB = -6f; // GDD §11: music ducks 6 dB on game over
         private const float GAME_OVER_DUCK_SECONDS = 0.5f;
         private const float UNDUCK_SECONDS = 0.3f;
+        private const float RESUME_INPUT_GRACE_SECONDS = 0.15f; // input ignored just after a resume (issue #35)
 
         // Same-scene objects, so direct references are allowed (C-01).
         [SerializeField]
@@ -93,6 +94,13 @@ namespace Coika.UI
         private TimeScaleOwner _timeScale;
         private HudView _hud;
         private GameOverView _gameOver;
+        private PauseView _pauseView;
+        private ConfirmView _confirmView;
+        private PausePresenter _pausePresenter;
+        private Action _onPauseClicked;
+        private Action _onBackPressed;
+        private Action _onResumeRequested;
+        private Action<ConfirmKind> _onConfirmed;
         private TierSpriteCache _sprites;
         private ScoreSystem _score;
         private RunSystems _systems;
@@ -175,6 +183,10 @@ namespace Coika.UI
             _onRunEnded = HandleRunEnded;
             _onStateChanged = HandleStateChanged;
             _onRetryRequested = HandleRetryRequested;
+            _onPauseClicked = HandlePauseClicked;
+            _onBackPressed = HandleBackPressed;
+            _onResumeRequested = HandleResumeRequested;
+            _onConfirmed = HandleConfirmed;
             _onOverlayRetry = HandleOverlayRetry;
 
             _overlay = new LoadingOverlay();
@@ -341,9 +353,11 @@ namespace Coika.UI
             _canvas = Instantiate(prefab);
             _hud = _canvas.GetComponentInChildren<HudView>(true);
             _gameOver = _canvas.GetComponentInChildren<GameOverView>(true);
-            if (_hud == null || _gameOver == null)
+            _pauseView = _canvas.GetComponentInChildren<PauseView>(true);
+            _confirmView = _canvas.GetComponentInChildren<ConfirmView>(true);
+            if (_hud == null || _gameOver == null || _pauseView == null || _confirmView == null)
             {
-                throw new InvalidOperationException("The GameCanvas prefab needs a HudView and a GameOverView.");
+                throw new InvalidOperationException("The GameCanvas prefab needs a HudView, a GameOverView, a PauseView and a ConfirmView.");
             }
 
             _sprites = new TierSpriteCache(_assets);
@@ -458,16 +472,20 @@ namespace Coika.UI
             _systems = new RunSystems(_loadedConfig, _tiers, _assets, _factory, _mergeSystem, _dropController, _overflowDetector, _score);
             _manager = new GameManager(_systems, () => Environment.TickCount);
 
+            // Not part of the optional feedback: the pause must freeze the game even without a feedback config.
+            _timeScale = new TimeScaleOwner(new UnityTimeScale(), () => Time.unscaledTimeAsDouble);
+
             // After the score system, so the combo is already updated when a merge is played.
             ComposeFeedback();
 
             _hudPresenter = new HudPresenter(_hud, _score, _sprites.Get);
             _gameOverPresenter = new GameOverPresenter(_gameOver, _sprites.Get);
+            _pausePresenter = new PausePresenter(_pauseView, _confirmView, _audio);
             Subscribe();
         }
 
         /// <summary>
-        /// Builds the feedback: the time scale owner, the shake of the camera rig and the flash overlay, all on the
+        /// Builds the feedback: the shake of the camera rig and the flash overlay, all on the
         /// unscaled clock, and the director that maps every gameplay event to them, to the particles, the sounds
         /// and the haptics. The parts without an object here do nothing.
         /// </summary>
@@ -480,7 +498,6 @@ namespace Coika.UI
             }
 
             Func<double> unscaledClock = () => Time.unscaledTimeAsDouble;
-            _timeScale = new TimeScaleOwner(new UnityTimeScale(), unscaledClock);
 
             // Explicit checks: a destroyed MonoBehaviour must not be touched, and `?.` does not see it as null.
             IScreenShake shake = NullScreenEffects.Instance;
@@ -521,6 +538,10 @@ namespace Coika.UI
             _manager.RunEnded += _onRunEnded;
             _manager.StateChanged += _onStateChanged;
             _gameOverPresenter.RetryRequested += _onRetryRequested;
+            _hud.PauseClicked += _onPauseClicked;
+            _input.BackPressed += _onBackPressed;
+            _pausePresenter.ResumeRequested += _onResumeRequested;
+            _pausePresenter.Confirmed += _onConfirmed;
             if (_settings != null)
             {
                 _settings.Changed += _onSettingsChanged;
@@ -613,6 +634,10 @@ namespace Coika.UI
             _manager.RunEnded -= _onRunEnded;
             _manager.StateChanged -= _onStateChanged;
             _gameOverPresenter.RetryRequested -= _onRetryRequested;
+            _hud.PauseClicked -= _onPauseClicked;
+            _input.BackPressed -= _onBackPressed;
+            _pausePresenter.ResumeRequested -= _onResumeRequested;
+            _pausePresenter.Confirmed -= _onConfirmed;
             if (_settings != null)
             {
                 _settings.Changed -= _onSettingsChanged;
@@ -663,11 +688,113 @@ namespace Coika.UI
 
             if (next == GameState.Paused)
             {
+                // Forgets the press in progress and ignores input for a moment after the resume, so the tap on
+                // Resume never drops a piece. The grace counts game time, which only runs once resumed.
+                _dropController.BlockInput(RESUME_INPUT_GRACE_SECONDS);
+                _pausePresenter.Open();
                 _audio?.PauseMusic();
             }
             else if (previous == GameState.Paused)
             {
+                _pausePresenter.Close();
                 _audio?.ResumeMusic();
+            }
+        }
+
+        /// <summary>
+        /// Pauses the game when the player taps the pause button.
+        /// </summary>
+        private void HandlePauseClicked()
+        {
+            _audio?.PlaySfx(SfxId.UiClick);
+            PauseIfPlaying();
+        }
+
+        /// <summary>
+        /// The Back button: opens the pause menu while playing, and closes the top panel of the pause flow (or
+        /// resumes) while paused. It does nothing in the other states.
+        /// </summary>
+        private void HandleBackPressed()
+        {
+            if (_manager.State == GameState.Paused)
+            {
+                _pausePresenter.HandleBack();
+            }
+            else
+            {
+                PauseIfPlaying();
+            }
+        }
+
+        /// <summary>
+        /// Continues the run when the player asks to. A resume never happens by itself.
+        /// </summary>
+        private void HandleResumeRequested()
+        {
+            _manager.Resume();
+        }
+
+        /// <summary>
+        /// Acts on a confirmed dialog: Restart starts a fresh run with the loaded assets. Menu waits for the Menu
+        /// scene (M3); its button is disabled until then, so it cannot be reached yet.
+        /// </summary>
+        /// <param name="kind">What the dialog asked.</param>
+        private void HandleConfirmed(ConfirmKind kind)
+        {
+            if (kind == ConfirmKind.Restart)
+            {
+                _manager.StartRun();
+            }
+        }
+
+        /// <summary>
+        /// Pauses the game and writes the save when the app is interrupted (a call, the app switcher, a lost
+        /// window). Does nothing unless a run is in progress, and never resumes by itself. Public so tests can
+        /// raise the interruption without a device.
+        /// </summary>
+        public void PauseForInterruption()
+        {
+            if (_manager == null)
+            {
+                return;
+            }
+
+            PauseIfPlaying();
+            _save?.Save();
+        }
+
+        /// <summary>
+        /// Pauses when a run is being played, and ignores any other state without a warning.
+        /// </summary>
+        private void PauseIfPlaying()
+        {
+            if (_manager != null && _manager.State == GameState.Playing)
+            {
+                _manager.Pause();
+            }
+        }
+
+        /// <summary>
+        /// The app goes to the background (mobile): pauses the run.
+        /// </summary>
+        /// <param name="paused">True when the app is pausing.</param>
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused)
+            {
+                PauseForInterruption();
+            }
+        }
+
+        /// <summary>
+        /// The window loses focus (desktop, split screen): pauses the run.
+        /// </summary>
+        /// <param name="hasFocus">Whether the window has focus now.</param>
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                PauseForInterruption();
             }
         }
 
@@ -736,8 +863,10 @@ namespace Coika.UI
 
             _hudPresenter?.Dispose();
             _gameOverPresenter?.Dispose();
+            _pausePresenter?.Dispose();
             _hudPresenter = null;
             _gameOverPresenter = null;
+            _pausePresenter = null;
 
             _systems?.Dispose();
             _systems = null;
@@ -838,6 +967,8 @@ namespace Coika.UI
             _canvas = null;
             _hud = null;
             _gameOver = null;
+            _pauseView = null;
+            _confirmView = null;
 
             if (_assets != null && _loadedCanvasPrefab != null)
             {

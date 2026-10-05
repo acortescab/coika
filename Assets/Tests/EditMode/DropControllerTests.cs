@@ -350,6 +350,80 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// A click during the blocked time (the grace after a pause) drops nothing and leaves the piece held.
+        /// </summary>
+        [Test]
+        public void Tick_WhileInputIsBlocked_IgnoresAClick()
+        {
+            Start();
+            var held = _controller.HeldPiece;
+            _controller.BlockInput(0.5f);
+
+            _input.Click();
+            _controller.Tick(STEP);
+
+            Assert.AreSame(held, _controller.HeldPiece);
+            Assert.IsTrue(held.IsHeld);
+            Assert.AreEqual(DropState.Aiming, _controller.State);
+        }
+
+        /// <summary>
+        /// A finger that was down when the input was blocked drops nothing when it is lifted after the block ended.
+        /// </summary>
+        [Test]
+        public void BlockInput_WithAFingerDown_DropsNothingWhenItIsLifted()
+        {
+            Start();
+            var held = _controller.HeldPiece;
+            _input.RaisePressed();
+            _controller.Tick(STEP);
+
+            _controller.BlockInput(0.1f);
+            Run(10);
+            _input.RaiseReleased();
+            _controller.Tick(STEP);
+
+            Assert.IsTrue(held.IsHeld, "The release of a press from before the block is not a drop.");
+        }
+
+        /// <summary>
+        /// Once the blocked time has run out the next click drops the piece as usual.
+        /// </summary>
+        [Test]
+        public void Tick_AfterTheBlockedTimeEnds_DropsOnTheNextClick()
+        {
+            Start();
+            var held = _controller.HeldPiece;
+            _controller.BlockInput(0.1f);
+            Run(10);
+
+            _input.Click();
+            _controller.Tick(STEP);
+
+            Assert.IsFalse(held.IsHeld);
+        }
+
+        /// <summary>
+        /// The blocked time only counts game time: while the time is frozen (delta 0) the block holds.
+        /// </summary>
+        [Test]
+        public void Tick_WithFrozenTime_KeepsTheInputBlocked()
+        {
+            Start();
+            var held = _controller.HeldPiece;
+            _controller.BlockInput(0.1f);
+            for (var i = 0; i < 100; i++)
+            {
+                _controller.Tick(0f);
+            }
+
+            _input.Click();
+            _controller.Tick(0f);
+
+            Assert.IsTrue(held.IsHeld);
+        }
+
+        /// <summary>
         /// The controller never scales the held piece: its pop-in is a visual effect of the piece itself (issue #31),
         /// so the root keeps its full size while the drop cools down.
         /// </summary>
