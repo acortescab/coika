@@ -41,7 +41,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 
 ## 4. Data and ScriptableObjects
 
-- **S-30 (MUST)** Tunable values (every `[TUNE]` in the GDD) live in `GameConfig` / `TierDefinition` / `ThemeDefinition` ScriptableObjects, never as magic numbers in code.
+- **S-30 (MUST)** Tunable values (every `[TUNE]` in the GDD) live in `GameConfig` / `FeedbackConfig` / `TierDefinition` / `ThemeDefinition` ScriptableObjects, never as magic numbers in code.
 - **S-31 (MUST)** ScriptableObjects are **immutable data at runtime**. Never write to a ScriptableObject field during play (it persists in the Editor and corrupts data). Runtime state goes in plain C# objects (e.g. the run state).
 - **S-32 (SHOULD)** Provide `[CreateAssetMenu]` for every ScriptableObject type and validate in `OnValidate` (indices, non-null references, ranges).
 - **S-33 (MUST)** Serializable data classes (`SaveData`) are plain classes with `[Serializable]`, version field included (GDD §13). Never serialize `UnityEngine.Object` references into the save file.
@@ -74,6 +74,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 - **S-63 (MUST)** Gameplay results must be **deterministic** for a given seed and input sequence (GDD §19): use the seeded `System.Random` from the run state, never `UnityEngine.Random`, and resolve ordering with a stable key (lowest `InstanceID` wins), never by iteration order of a hash set or dictionary.
 - **S-64 (MUST)** Use `Time.deltaTime` in `Update` and `Time.fixedDeltaTime` in `FixedUpdate`. Anything that must keep running while paused (`timeScale = 0`) uses `Time.unscaledDeltaTime`.
 - **S-65 (MUST)** Use layers and the collision matrix (GDD §5) for filtering, not runtime checks. Cache layer indices and masks.
+- **S-66 (MUST)** Visual-only animations change only the local scale or offset of a visual child, never the root transform, the `Rigidbody2D` or a collider, and they never feed back into gameplay. Each animation is a `PieceEffect` class; add a new one instead of branching in `PieceAnimator`.
 
 ## 8. Input (GDD §6)
 
@@ -85,7 +86,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 ## 9. Addressables and assets (C-01)
 
 - **S-80 (MUST)** Follow every rule in `constraints.md` C-01. In particular: all asset and scene loading goes through `AssetService` and `SceneLoader`; no direct `Addressables.*` calls elsewhere; no `Resources/`; no `SceneManager.LoadScene*` outside the bootstrap and `SceneLoader`.
-- **S-81 (MUST)** Reference assets across groups with `AssetReference*` or labels, not direct serialized references. Every load has a matching release.
+- **S-81 (MUST)** Reference assets across groups with `AssetReference*` or labels, not direct serialized references. A direct reference between two assets of the same group is fine (`GameConfig` to `FeedbackConfig`, both in Core-Data). Every load has a matching release.
 - **S-82 (MUST)** Every async load has error handling and a retry path. Never leave an infinite spinner or an unobserved failed handle.
 - **S-83 (SHOULD)** Prefer `async`/`await` (Unity `Awaitable`) or callbacks over coroutines for load flows. Do not start untracked fire-and-forget tasks; keep a handle or cancellation token and cancel on destroy.
 - **S-84 (MUST)** Sprites follow the import settings in GDD §10 (Point, no compression or no mipmaps, PPU 16, Sprite Atlas). Apply the Android/iOS platform overrides.
@@ -126,6 +127,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 - **S-131 (MUST)** Do not commit generated folders (`Library/`, `Temp/`, `Logs/`, `obj/`, `ServerData/`, `UserSettings/`) or IDE files. Commit `.meta` files and `ProjectSettings/`.
 - **S-132 (MUST)** Use Force Text serialization and Visible Meta Files. Resolve scene/prefab merge conflicts by keeping scenes small and splitting content into prefabs; avoid two people editing the same scene.
 - **S-133 (SHOULD)** Before opening a PR: no compiler warnings, no console errors on entering Play mode, all tests green, grep checks from C-01 pass.
+- **S-134 (MUST)** Before opening a PR, update every document the change touches (`README.md`, `.planning/*.md`) and add the lessons of the issue to `.planning/LEARNINGS.md`.
 
 ---
 

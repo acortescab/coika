@@ -88,7 +88,7 @@ Pixel-art rule: sprite size in pixels **equals the diameter in px** above (PPU 1
 ### 3.5 Drop
 - The held piece is kinematic, follows the pointer's X (clamped so the piece stays fully inside the jar walls).
 - On release (touch up), it becomes dynamic and falls.
-- **Drop cooldown:** 0.5 s [TUNE] after release before the next piece is attached and controllable (prevents spam, shows the previous piece falling). The next piece fades/scales in during this time.
+- **Drop cooldown:** 0.5 s [TUNE] after release before the next piece is attached and controllable (prevents spam, shows the previous piece falling). The next piece pops in during this time (spawn pop, §9).
 - No dropping while the game is paused, in game over, or during the very first frame of a touch (ignore touches that begin on UI).
 
 ### 3.6 Game Over
@@ -229,6 +229,8 @@ Music volume, SFX volume, Haptics on/off, Guide line on/off, Reduce screen shake
 
 Tier colours (for particles/UI), in order: `#8E8E8E, #B39B7A, #7A7A9E, #C8D0DC, #D9A66B, #C4623D, #3D86C4, #D99B3D, #FFD84A, #9AF0FF, #2B1A4D`.
 
+**Piece animations (spawn, drop, land, merge) are purely visual.** They only scale the `Sprite` child of the Piece prefab; the body, collider and root scale never change, so physics, merges and score are identical with animations on or off. Durations, amplitudes and the landing impulse threshold are `[TUNE]` values of `FeedbackConfig`. The two source pieces of a merge are released at once; visual-only ghosts shrink in their place.
+
 **Screen shake** must be disabled by the "Reduce screen shake" setting. Implement with a camera offset *that is snapped to whole pixels* (round to 1/16 unit) to keep the pixel look.
 
 ---
@@ -314,12 +316,16 @@ Assets/
   Scripts/
     Core/        GameManager, GameState, ServiceRegistry, SaveSystem
     Gameplay/    Piece, PieceFactory, MergeSystem, DropController,
-                 SpawnQueue, OverflowDetector, ScoreSystem, ComboTracker
-    Data/        TierDefinition, GameConfig, ThemeDefinition, SaveData
+                 SpawnQueue, OverflowDetector, ScoreSystem, ComboTracker,
+                 PieceAnimator, PieceEffect (+ Spawn/MergePop/DropStretch/
+                 LandSquash), MergeGhostPool
+    Data/        TierDefinition, GameConfig, FeedbackConfig, ThemeDefinition,
+                 SaveData
     UI/          HudView, GameOverView, PauseView, MenuView, SettingsView,
                  EvolutionChartView
     Audio/       AudioManager
-    Fx/          ScreenShake, Haptics, SquashStretch, ParticleSpawner
+    Fx/          ScreenShake, Haptics, ParticleSpawner
+                 (squash and stretch is PieceAnimator, in Gameplay)
     Input/       PointerInputReader
   Tests/ (EditMode, PlayMode)
 ```
@@ -334,6 +340,8 @@ float radius => diameterUnits/2; int mergeScore; Color tierColor;
 AudioClip mergeSfx (optional); string loreLine; (localization key)
 ```
 **`GameConfig`** — all [TUNE] values: gravity, drop cooldown, overflow time, combo window, combo cap, spawn weights, spawnable tier count, jar size, Supernova bonus, physics material references.
+
+**`FeedbackConfig`** — the [TUNE] values of the visual piece animations (§9): spawn, drop-stretch, landing-squash and merge-pop durations and amplitudes, the landing impulse threshold and the merge ghost count. Referenced from `GameConfig` (same Core-Data group).
 
 **`ThemeDefinition`** — an ordered list of 11 `TierDefinition` + background + jar sprites + music.
 

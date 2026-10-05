@@ -120,7 +120,7 @@ namespace Coika.Tests.EditMode
         /// A bank disposed while a load is pending releases what arrives and reports it.
         /// </summary>
         [Test]
-        public async Task LoadAsync_DisposedWhilePending_ReleasesTheArrivingClips()
+        public void LoadAsync_DisposedWhilePending_ReleasesTheArrivingClips()
         {
             var gate = new TaskCompletionSource<bool>();
             _assets.Gate = gate.Task;
