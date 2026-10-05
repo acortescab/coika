@@ -22,6 +22,19 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// Builds a delegate for a private parameterless instance method, such as Unity's <c>LateUpdate</c>. Build it
+        /// once before measuring, because calling it then allocates nothing, unlike <c>MethodInfo.Invoke</c>.
+        /// </summary>
+        /// <param name="target">Object that owns the method.</param>
+        /// <param name="methodName">Name of the private method.</param>
+        /// <returns>An action that calls the method on the target.</returns>
+        public static System.Action GetAction(object target, string methodName)
+        {
+            var method = target.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return (System.Action)System.Delegate.CreateDelegate(typeof(System.Action), target, method);
+        }
+
+        /// <summary>
         /// Sets a private instance field by reflection.
         /// </summary>
         /// <param name="target">Object that owns the field.</param>

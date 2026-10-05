@@ -2,6 +2,25 @@
 
 Non-obvious things learned while working on the project. Add a dated section per issue; keep entries short and say why.
 
+## Issue #33: screen shake, slow-mo and flash (2026-10)
+
+### Design
+- **Plain cores, thin MonoBehaviours.** `ShakeCore` (slots, linear fade, per-axis cap, snap to 1/16, seeded `System.Random`), `FlashCore` (fade and the 3 Hz limit) and `TimeScaleOwner` hold the maths and the state; `ScreenShake` and `ScreenFlash` only apply them in `LateUpdate`. All read an injected unscaled `Func<double>`, so tests drive them with a fake clock and never touch `Time`. `ScreenFxDirector` decides when (merge tier >= `HeavyMergeMinTier`, supernova); like `FxDirector` it uses cached delegates and an idempotent `Bind`.
+- **The shake moves a parent rig, not the camera.** `CameraRig` sits at the origin with the main camera as its child; `JarCameraFramer` still writes the camera's own position once in `Start`, so framing is untouched. `ScreenShake` remembers the rig's rest position in `Initialize` and writes `rest + offset`; with no shake the position is exactly the rest value. Do not call `Frame()` in the middle of a shake.
+- **`TimeScaleOwner` is the only writer of `Time.timeScale`:** 0 when paused, 0.7 during a slow-mo, 1 otherwise. A slow-mo is refused while paused and pausing cancels it, so after Resume the scale is 1. The installer sets `Paused` from `GameState` changes, so #35 only has to enter `GameState.Paused`. The slow-mo ends on unscaled time; the installer's `Update` ticks it.
+- **Pause and run start stop everything.** Shake and flash run on unscaled time, so they would keep moving a paused game; `ScreenFxDirector.StopAll()` clears them (and the slow-mo) on `GameState.Paused` and on every run start. The installer resolves the shake and flash once as interfaces (`NullScreenEffects` when the scene has none), and checks Unity objects with `!= null`, never `?.`.
+- **Slow-mo does stretch gameplay clocks a little.** `ScoreSystem` and the run timer read scaled time, so a 0.1 s slow-mo at 0.7 adds about 0.03 s to the combo window. Accepted: the issue asks for it and the effect is tiny. Physics steps are fixed-size; the harness steps them synchronously with its own simulated clock, so `timeScale` cannot change a simulation result and the golden file is untouched.
+- **Reduce Shake** turns off shake and slow-mo, soft-pulses the Danger Line at 2 Hz (`SetPulseRate(Soft)` from `ApplyReduceMotion`, re-applied on run start) and still halves particles. The supernova flash stays on: it is a single 0.15 s event, always under the 3 Hz limit.
+- **Tier numbers are indices.** `Merged` reports the index of the created tier (0-10), so `tier >= 8` and the amplitude `0.05 x (tier - 7)` are written as `HeavyMergeMinTier` and `MergeShakeAmplitude`. A supernova raises `SupernovaTriggered`, not `Merged`.
+- **Flash limit by ignoring.** A request less than 1/3 s after the previous accepted one is dropped, so two overlapping flashes never add up.
+
+### Testing
+- **Cores are EditMode tests** (`ShakeCoreTests`, `FlashCoreTests`, `TimeScaleOwnerTests`) with a fake clock and a fake `ITimeScale`; none touch the real time scale, because a leaked `timeScale` would slow every later test. The director is tested in PlayMode with a recording fake and real merges (`MergeFresh(createdTier - 1)`).
+- **Pulse frequency** is tested by sampling `DangerLine.EvaluateColor` over a second of fake time and counting peaks (4 fast, 2 soft).
+
+### Tooling
+- **Setup tool.** `Coika/Setup Screen Effects` (`ScreenFxPrefabTool.Run`) builds the `ScreenFlash` prefab (overlay canvas, `CanvasGroup`, one white image that ignores raycasts), registers it in `FX`, adds the `CameraRig`, moves the main camera under it and wires `_cameraShake` and `_screenFlashPrefab` in the Game scene.
+
 ## Issue #32: pooled particles (2026-10)
 
 ### Design
@@ -11,7 +30,7 @@ Non-obvious things learned while working on the project. Add a dated section per
 - **Landing is hooked per piece.** `Piece.Landed` is wiped when the factory releases a piece, so `FxDirector` subscribes in `PieceFactory.PieceCreated` (like `MergeSystem.HookPiece`) and to the pieces already active.
 - **`Coika.Fx` is its own assembly** between Gameplay and UI (`UI -> Fx -> Gameplay -> Core`), because it listens to Gameplay events. `GameSceneInstaller` loads the prefab through `IAssetService`, builds the director and releases both in `TearDown`. The prefab reference is optional, like the ghosts.
 - **Particle randomness lives in Unity.** Spread and speed come from the particle system's own random ranges, so there is no `UnityEngine.Random` or `System.Random` in our code (S-63) and nothing the golden simulation could see.
-- **Reduce Shake and quality.** `ParticleSpawner.ReduceMotion` (set from `SettingKey.ReduceShake`) multiplies counts by `ReduceMotionCountFactor` (0.5); rings stay. `CountMultiplier` is the hook #39 can drive for low-end devices. There is no screen shake yet, so nothing else to disable.
+- **Reduce Shake and quality.** `ParticleSpawner.ReduceMotion` (set from `SettingKey.ReduceShake`) multiplies counts by `ReduceMotionCountFactor` (0.5); rings stay. `CountMultiplier` is the hook #39 can drive for low-end devices. Issue #33 adds the shake and slow-mo, which the same setting disables.
 - **Tuning is data.** Counts, sizes, lifetimes and caps are `FeedbackConfig` fields.
 
 ### Testing

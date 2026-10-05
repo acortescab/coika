@@ -164,6 +164,51 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Sampling the pulse on a fake clock for one second counts 4 peaks at the fast rate and 2 at the soft rate
+        /// (the rate Reduce Shake selects).
+        /// </summary>
+        [Test]
+        public void EvaluateColor_SampledOverOneSecond_CountsPeaksAtTheRate()
+        {
+            var line = _jar.DangerLine;
+
+            Assert.AreEqual(4, CountPeaks(line));
+
+            line.SetPulseRate(DangerLine.PulseRate.Soft);
+            Assert.AreEqual(2, CountPeaks(line));
+        }
+
+        /// <summary>
+        /// Counts the local maxima of the pulse over one second sampled at 240 Hz on a fake clock.
+        /// </summary>
+        /// <param name="line">The line to sample.</param>
+        /// <returns>The number of peaks.</returns>
+        private static int CountPeaks(DangerLine line)
+        {
+            const int SAMPLES = 240;
+            var peaks = 0;
+            var previous = line.EvaluateColor(0f).r;
+            var rising = false;
+            for (var i = 1; i <= SAMPLES; i++)
+            {
+                var value = line.EvaluateColor(i / (float)SAMPLES).r;
+                if (value > previous + 1e-6f)
+                {
+                    rising = true;
+                }
+                else if (value < previous - 1e-6f && rising)
+                {
+                    peaks++;
+                    rising = false;
+                }
+
+                previous = value;
+            }
+
+            return peaks;
+        }
+
+        /// <summary>
         /// Compares two colours channel by channel with a small tolerance.
         /// </summary>
         /// <param name="expected">The expected colour.</param>
