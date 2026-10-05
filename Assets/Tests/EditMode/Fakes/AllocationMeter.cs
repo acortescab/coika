@@ -41,5 +41,26 @@ namespace Coika.Tests.EditMode
                 Profiler.enabled = wasEnabled;
             }
         }
+
+        /// <summary>
+        /// Measures an action several times and returns the lowest count. The counter is global, so another Editor
+        /// thread can add allocations to one attempt, but code that really allocates does so in every attempt. A first,
+        /// discarded run absorbs the one-time cost of the Profiler and of the first call. Use it only for actions that
+        /// can run repeatedly.
+        /// </summary>
+        /// <param name="action">The code to measure. It must give the same result when run again.</param>
+        /// <param name="attempts">Number of times to measure.</param>
+        /// <returns>The smallest number of allocations of any attempt.</returns>
+        public static long MeasureLowest(Action action, int attempts = 5)
+        {
+            Measure(action);
+            var lowest = long.MaxValue;
+            for (var i = 0; i < attempts; i++)
+            {
+                lowest = Math.Min(lowest, Measure(action));
+            }
+
+            return lowest;
+        }
     }
 }
