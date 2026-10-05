@@ -114,6 +114,70 @@ MonoBehaviour:
     m_Localized: The current run will be lost.
     m_Metadata:
       m_Items: []
+  - m_Id: 919888787959808
+    m_Localized: RESET PROGRESS?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817408
+    m_Localized: Your best scores, totals and discovered tiers will be erased. Settings are kept.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817409
+    m_Localized: ON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817410
+    m_Localized: OFF
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817411
+    m_Localized: SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817412
+    m_Localized: Music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817413
+    m_Localized: Sound effects
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817414
+    m_Localized: Haptics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817415
+    m_Localized: Guide line
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817416
+    m_Localized: Reduce screen shake
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817417
+    m_Localized: Finger offset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817418
+    m_Localized: Left-handed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817419
+    m_Localized: Language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817420
+    m_Localized: English
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817421
+    m_Localized: RESET PROGRESS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 919888892817422
+    m_Localized: BACK
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

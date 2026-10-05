@@ -4,10 +4,10 @@ using Coika.Core;
 namespace Coika.UI
 {
     /// <summary>
-    /// Drives the pause flow: it opens the <see cref="PauseView"/> on a <see cref="PanelStack"/>, puts the shared
-    /// <see cref="ConfirmView"/> over it for the actions that need a confirmation, and decides what the Back button
-    /// does. It changes no game state and loads no scene: the owner listens to <see cref="ResumeRequested"/>,
-    /// <see cref="SettingsRequested"/> and <see cref="Confirmed"/>, and opens and closes the presenter from the
+    /// Drives the pause flow: it opens the <see cref="PauseView"/> on a <see cref="PanelStack"/>, puts the
+    /// <see cref="SettingsView"/> or the shared <see cref="ConfirmView"/> over it, and decides what the Back button
+    /// does. It changes no game state and loads no scene: the owner listens to <see cref="ResumeRequested"/>
+    /// and <see cref="Confirmed"/>, and opens and closes the presenter from the
     /// game state, so the panels always match it. The UI clicks (<c>UiClick</c>, <c>UiBack</c>) are played here,
     /// because the views hold no audio.
     /// </summary>
@@ -15,10 +15,12 @@ namespace Coika.UI
     {
         private readonly PauseView _pause;
         private readonly ConfirmView _confirm;
+        private readonly SettingsView _settings;
         private readonly IAudioService _audio;
         private readonly PanelStack _stack = new PanelStack();
         private readonly Action<PauseAction> _onPauseClicked;
         private readonly Action<bool> _onAnswered;
+        private readonly Action<SettingsAction> _onSettingsClicked;
 
         private ConfirmRequest? _pending;
 
@@ -27,25 +29,26 @@ namespace Coika.UI
         /// </summary>
         /// <param name="pause">The pause menu.</param>
         /// <param name="confirm">The confirmation dialog.</param>
+        /// <param name="settings">The Settings screen.</param>
         /// <param name="audio">Plays the UI sounds; null for no sound.</param>
         /// <exception cref="ArgumentNullException">A view is null.</exception>
-        public PausePresenter(PauseView pause, ConfirmView confirm, IAudioService audio)
+        public PausePresenter(PauseView pause, ConfirmView confirm, SettingsView settings, IAudioService audio)
         {
             _pause = pause != null ? pause : throw new ArgumentNullException(nameof(pause));
             _confirm = confirm != null ? confirm : throw new ArgumentNullException(nameof(confirm));
+            _settings = settings != null ? settings : throw new ArgumentNullException(nameof(settings));
             _audio = audio;
 
             _onPauseClicked = HandlePauseClicked;
             _onAnswered = HandleAnswered;
+            _onSettingsClicked = HandleSettingsClicked;
             _pause.Clicked += _onPauseClicked;
             _confirm.Answered += _onAnswered;
+            _settings.Clicked += _onSettingsClicked;
         }
 
         /// <summary>Raised when the player asks to go back to the run.</summary>
         public event Action ResumeRequested;
-
-        /// <summary>Raised when the player asks for the Settings screen.</summary>
-        public event Action SettingsRequested;
 
         /// <summary>Raised when the player confirmed a dialog, with what it asked.</summary>
         public event Action<ConfirmKind> Confirmed;
@@ -55,6 +58,9 @@ namespace Coika.UI
 
         /// <summary>Whether a confirmation dialog is on top.</summary>
         public bool IsConfirming => _stack.Top == (IPanel)_confirm;
+
+        /// <summary>Whether the Settings screen is on top.</summary>
+        public bool IsInSettings => _stack.Top == (IPanel)_settings;
 
         /// <summary>
         /// Opens the pause menu. Does nothing when it is already open.
@@ -108,6 +114,7 @@ namespace Coika.UI
         {
             _pause.Clicked -= _onPauseClicked;
             _confirm.Answered -= _onAnswered;
+            _settings.Clicked -= _onSettingsClicked;
         }
 
         /// <summary>
@@ -142,7 +149,8 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// A button of the pause menu: Resume and Settings are passed on, the others ask for confirmation first.
+        /// A button of the pause menu: Resume is passed on, Settings opens its screen, the others ask for
+        /// confirmation first.
         /// </summary>
         /// <param name="action">The button that was clicked.</param>
         private void HandlePauseClicked(PauseAction action)
@@ -154,13 +162,31 @@ namespace Coika.UI
                     ResumeRequested?.Invoke();
                     break;
                 case PauseAction.Settings:
-                    SettingsRequested?.Invoke();
+                    _stack.Push(_settings);
                     break;
                 case PauseAction.Restart:
                     Ask(ConfirmRequest.Restart);
                     break;
                 case PauseAction.Menu:
                     Ask(ConfirmRequest.Menu);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// A button of the Settings screen: Back closes it, Reset progress asks for confirmation first.
+        /// </summary>
+        /// <param name="action">The button that was clicked.</param>
+        private void HandleSettingsClicked(SettingsAction action)
+        {
+            switch (action)
+            {
+                case SettingsAction.Back:
+                    HandleBack();
+                    break;
+                case SettingsAction.ResetProgress:
+                    PlaySfx(SfxId.UiClick);
+                    Ask(ConfirmRequest.ResetProgress);
                     break;
             }
         }

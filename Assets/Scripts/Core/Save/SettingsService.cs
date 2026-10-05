@@ -98,6 +98,106 @@ namespace Coika.Core
         private SettingsData Data => _save.Data.settings;
 
         /// <summary>
+        /// Reads a volume setting by key, so a screen with a row per setting needs no code per setting.
+        /// </summary>
+        /// <param name="key">Master, Music or Sfx.</param>
+        /// <returns>The volume, 0 to 1.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">The key is not a volume.</exception>
+        public float GetFloat(SettingKey key)
+        {
+            switch (key)
+            {
+                case SettingKey.Master:
+                    return Master;
+                case SettingKey.Music:
+                    return Music;
+                case SettingKey.Sfx:
+                    return Sfx;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(key), key, "Not a volume setting.");
+            }
+        }
+
+        /// <summary>
+        /// Writes a volume setting by key, with the clamping and the event of its property.
+        /// </summary>
+        /// <param name="key">Master, Music or Sfx.</param>
+        /// <param name="value">The volume, clamped to 0 to 1.</param>
+        /// <exception cref="ArgumentOutOfRangeException">The key is not a volume.</exception>
+        public void SetFloat(SettingKey key, float value)
+        {
+            switch (key)
+            {
+                case SettingKey.Master:
+                    Master = value;
+                    break;
+                case SettingKey.Music:
+                    Music = value;
+                    break;
+                case SettingKey.Sfx:
+                    Sfx = value;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(key), key, "Not a volume setting.");
+            }
+        }
+
+        /// <summary>
+        /// Reads a toggle setting by key.
+        /// </summary>
+        /// <param name="key">Haptics, GuideLine, ReduceShake, LeftHanded or FingerOffset.</param>
+        /// <returns>Whether it is on.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">The key is not a toggle.</exception>
+        public bool GetBool(SettingKey key)
+        {
+            switch (key)
+            {
+                case SettingKey.Haptics:
+                    return Haptics;
+                case SettingKey.GuideLine:
+                    return GuideLine;
+                case SettingKey.ReduceShake:
+                    return ReduceShake;
+                case SettingKey.LeftHanded:
+                    return LeftHanded;
+                case SettingKey.FingerOffset:
+                    return FingerOffset;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(key), key, "Not a toggle setting.");
+            }
+        }
+
+        /// <summary>
+        /// Writes a toggle setting by key, with the event of its property.
+        /// </summary>
+        /// <param name="key">Haptics, GuideLine, ReduceShake, LeftHanded or FingerOffset.</param>
+        /// <param name="value">Whether it is on.</param>
+        /// <exception cref="ArgumentOutOfRangeException">The key is not a toggle.</exception>
+        public void SetBool(SettingKey key, bool value)
+        {
+            switch (key)
+            {
+                case SettingKey.Haptics:
+                    Haptics = value;
+                    break;
+                case SettingKey.GuideLine:
+                    GuideLine = value;
+                    break;
+                case SettingKey.ReduceShake:
+                    ReduceShake = value;
+                    break;
+                case SettingKey.LeftHanded:
+                    LeftHanded = value;
+                    break;
+                case SettingKey.FingerOffset:
+                    FingerOffset = value;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(key), key, "Not a toggle setting.");
+            }
+        }
+
+        /// <summary>
         /// Resets scores, totals and discovered tiers and keeps the settings.
         /// </summary>
         public void ResetProgress()

@@ -40,6 +40,7 @@ namespace Coika.Gameplay
         private MergeSystem _mergeSystem;
         private DropController _dropController;
         private bool _bound;
+        private bool _bestWasReset;
 
         /// <summary>
         /// Creates a system for a run: score 0 and no combo. It copies the combo values and the Supernova bonus of the
@@ -82,6 +83,19 @@ namespace Coika.Gameplay
 
         /// <summary>Whether the score went above <see cref="BestScore"/> in this run.</summary>
         public bool IsNewBest { get; private set; }
+
+        /// <summary>
+        /// Erases the best score while a run is in progress (Reset progress): <see cref="BestScore"/> goes back to 0,
+        /// like the saved one. The run is not a new best for it, however much it scores: <see cref="IsNewBest"/>
+        /// stays false and <see cref="NewBestReached"/> is not raised until the next run. The summary at the end of
+        /// the run still reports the score of the run as the best (<see cref="RunSummary.From"/>).
+        /// </summary>
+        public void ResetBest()
+        {
+            BestScore = 0;
+            IsNewBest = false;
+            _bestWasReset = true;
+        }
 
         /// <summary>
         /// Highest tier index of a piece that was dropped or created by a merge in this run: 0 before the first
@@ -201,6 +215,7 @@ namespace Coika.Gameplay
         {
             Score = 0;
             IsNewBest = false;
+            _bestWasReset = false;
             HighestTierReached = 0;
             Merges = 0;
             PiecesDropped = 0;
@@ -269,7 +284,7 @@ namespace Coika.Gameplay
             Score = (int)total;
             ScoreChanged?.Invoke(Score, delta);
 
-            if (!IsNewBest && Score > BestScore)
+            if (!_bestWasReset && !IsNewBest && Score > BestScore)
             {
                 IsNewBest = true;
                 NewBestReached?.Invoke();

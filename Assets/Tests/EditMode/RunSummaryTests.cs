@@ -97,5 +97,22 @@ namespace Coika.Tests.EditMode
             Assert.That(summary.BestScore, Is.EqualTo(summary.Score));
             Assert.That(summary.Score, Is.EqualTo(7));
         }
+
+        /// <summary>
+        /// A run whose best was erased in the middle is not a new best, but its score is the best there is, so
+        /// the Game Over best matches what the save stores.
+        /// </summary>
+        [Test]
+        public void From_AfterResetBestInTheRun_ReportsTheScoreAsBestWithoutNewBest()
+        {
+            _score.BestScore = 100;
+            _score.ResetBest();
+            _score.OnPieceDropped(7);
+
+            var summary = RunSummary.From(_score, DURATION);
+
+            Assert.That(summary.IsNewBest, Is.False);
+            Assert.That(summary.BestScore, Is.EqualTo(7));
+        }
     }
 }

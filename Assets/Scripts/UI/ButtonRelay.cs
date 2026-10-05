@@ -11,7 +11,7 @@ namespace Coika.UI
     /// <c>OnEnable</c> and unbinds them in <c>OnDisable</c> (S-23).
     /// </summary>
     /// <typeparam name="T">The value the button stands for.</typeparam>
-    public sealed class ButtonRelay<T>
+    public sealed class ButtonRelay<T> : IRelay
     {
         private readonly Button _button;
         private readonly T _value;
@@ -33,17 +33,13 @@ namespace Coika.UI
             _onClick = HandleClick;
         }
 
-        /// <summary>
-        /// Starts listening to the button.
-        /// </summary>
+        /// <inheritdoc />
         public void Bind()
         {
             _button.onClick.AddListener(_onClick);
         }
 
-        /// <summary>
-        /// Stops listening to the button.
-        /// </summary>
+        /// <inheritdoc />
         public void Unbind()
         {
             _button.onClick.RemoveListener(_onClick);

@@ -10,6 +10,9 @@ namespace Coika.UI
         Restart,
 
         /// <summary>Leave for the menu.</summary>
-        Menu
+        Menu,
+
+        /// <summary>Erase bests, totals and discovered tiers.</summary>
+        ResetProgress
     }
 }

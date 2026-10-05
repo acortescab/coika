@@ -29,6 +29,50 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// A volume written by key is the one of its property, with the same event.
+        /// </summary>
+        [TestCase(SettingKey.Master)]
+        [TestCase(SettingKey.Music)]
+        [TestCase(SettingKey.Sfx)]
+        public void SetFloat_ByKey_WritesTheMatchingVolume(SettingKey key)
+        {
+            _settings.SetFloat(key, 0.25f);
+
+            Assert.That(_settings.GetFloat(key), Is.EqualTo(0.25f));
+            Assert.That(_events.Count, Is.EqualTo(1));
+            Assert.That(_events[0].Key, Is.EqualTo(key));
+        }
+
+        /// <summary>
+        /// A toggle written by key is the one of its property, with the same event.
+        /// </summary>
+        [TestCase(SettingKey.Haptics)]
+        [TestCase(SettingKey.GuideLine)]
+        [TestCase(SettingKey.ReduceShake)]
+        [TestCase(SettingKey.LeftHanded)]
+        [TestCase(SettingKey.FingerOffset)]
+        public void SetBool_ByKey_WritesTheMatchingToggle(SettingKey key)
+        {
+            var flipped = !_settings.GetBool(key);
+
+            _settings.SetBool(key, flipped);
+
+            Assert.That(_settings.GetBool(key), Is.EqualTo(flipped));
+            Assert.That(_events.Count, Is.EqualTo(1));
+            Assert.That(_events[0].Key, Is.EqualTo(key));
+        }
+
+        /// <summary>
+        /// A key of the wrong kind is rejected instead of ignored.
+        /// </summary>
+        [Test]
+        public void GetFloat_WithAToggleKey_Throws()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => _settings.GetFloat(SettingKey.Haptics));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => _settings.SetBool(SettingKey.Music, true));
+        }
+
+        /// <summary>
         /// A new save carries the GDD defaults.
         /// </summary>
         [Test]

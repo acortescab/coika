@@ -21,5 +21,17 @@ namespace Coika.UI
 
         /// <summary>Message of the Menu confirmation.</summary>
         public const string CONFIRM_MENU_MESSAGE = "confirm.menu.message";
+
+        /// <summary>Title of the Reset progress confirmation.</summary>
+        public const string CONFIRM_RESET_TITLE = "confirm.reset.title";
+
+        /// <summary>Message of the Reset progress confirmation.</summary>
+        public const string CONFIRM_RESET_MESSAGE = "confirm.reset.message";
+
+        /// <summary>Text of a toggle that is on.</summary>
+        public const string SETTINGS_ON = "settings.on";
+
+        /// <summary>Text of a toggle that is off.</summary>
+        public const string SETTINGS_OFF = "settings.off";
     }
 }

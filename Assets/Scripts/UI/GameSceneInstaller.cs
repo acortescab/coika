@@ -60,6 +60,8 @@ namespace Coika.UI
         private AssetReference _canvasPrefab;
         [SerializeField]
         private AssetReference _guideLinePrefab;
+        [SerializeField]
+        private AssetReference _settingsPrefab;
         // Optional: without it the game simply shows no particles.
         [SerializeField]
         private AssetReference _fxPrefab;
@@ -96,6 +98,10 @@ namespace Coika.UI
         private GameOverView _gameOver;
         private PauseView _pauseView;
         private ConfirmView _confirmView;
+        private GameObject _loadedSettingsPrefab;
+        private GameObject _settingsObject;
+        private SettingsView _settingsView;
+        private SettingsPresenter _settingsPresenter;
         private PausePresenter _pausePresenter;
         private Action _onPauseClicked;
         private Action _onBackPressed;
@@ -304,9 +310,10 @@ namespace Coika.UI
             if (_jar == null || _dropController == null || _input == null || _mergeSystem == null || _overflowDetector == null
                 || _config == null || !_config.RuntimeKeyIsValid() || _piecePrefab == null || !_piecePrefab.RuntimeKeyIsValid()
                 || _canvasPrefab == null || !_canvasPrefab.RuntimeKeyIsValid()
-                || _guideLinePrefab == null || !_guideLinePrefab.RuntimeKeyIsValid())
+                || _guideLinePrefab == null || !_guideLinePrefab.RuntimeKeyIsValid()
+                || _settingsPrefab == null || !_settingsPrefab.RuntimeKeyIsValid())
             {
-                throw new InvalidOperationException("The installer needs the Jar, the DropController, the PointerInputReader, the MergeSystem, the OverflowDetector, the GameConfig, the Piece prefab, the GameCanvas prefab and the GuideLine prefab.");
+                throw new InvalidOperationException("The installer needs the Jar, the DropController, the PointerInputReader, the MergeSystem, the OverflowDetector, the GameConfig, the Piece prefab, the GameCanvas prefab, the GuideLine prefab and the Settings prefab.");
             }
 
             _assets ??= new AssetService();
@@ -380,6 +387,23 @@ namespace Coika.UI
             if (_guideLineView == null)
             {
                 throw new InvalidOperationException("The GuideLine prefab needs a GuideLineView.");
+            }
+
+            // The Settings screen is a prefab of its own, so the Menu can push it too. It goes under the safe area,
+            // below the confirmation dialog it can open.
+            var settingsPrefab = await _assets.LoadAsset<GameObject>(_settingsPrefab);
+            _loadedSettingsPrefab = settingsPrefab;
+            if (_destroyed)
+            {
+                return;
+            }
+
+            _settingsObject = Instantiate(settingsPrefab, _confirmView.transform.parent, false);
+            _settingsObject.transform.SetSiblingIndex(_confirmView.transform.GetSiblingIndex());
+            _settingsView = _settingsObject.GetComponent<SettingsView>();
+            if (_settingsView == null)
+            {
+                throw new InvalidOperationException("The Settings prefab needs a SettingsView.");
             }
 
             // The particle systems come with the load phase and are prewarmed in Compose, never during play (C-01).
@@ -480,7 +504,14 @@ namespace Coika.UI
 
             _hudPresenter = new HudPresenter(_hud, _score, _sprites.Get);
             _gameOverPresenter = new GameOverPresenter(_gameOver, _sprites.Get);
-            _pausePresenter = new PausePresenter(_pauseView, _confirmView, _audio);
+            _pausePresenter = new PausePresenter(_pauseView, _confirmView, _settingsView, _audio);
+
+            // The Boot installer hands the settings over through UseSettings; without it (tests) the screen shows nothing.
+            if (_settings != null)
+            {
+                _settingsPresenter = new SettingsPresenter(_settingsView, _settings, _audio);
+            }
+
             Subscribe();
         }
 
@@ -735,16 +766,47 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Acts on a confirmed dialog: Restart starts a fresh run with the loaded assets. Menu waits for the Menu
-        /// scene (M3); its button is disabled until then, so it cannot be reached yet.
+        /// Acts on a confirmed dialog: Restart starts a fresh run with the loaded assets, and Reset progress erases
+        /// the saved progress. Menu waits for the Menu scene (M3); its button is disabled until then, so it cannot
+        /// be reached yet.
         /// </summary>
         /// <param name="kind">What the dialog asked.</param>
         private void HandleConfirmed(ConfirmKind kind)
         {
-            if (kind == ConfirmKind.Restart)
+            switch (kind)
             {
-                _manager.StartRun();
+                case ConfirmKind.Restart:
+                    _manager.StartRun();
+                    break;
+                case ConfirmKind.ResetProgress:
+                    ResetProgress();
+                    break;
             }
+        }
+
+        /// <summary>
+        /// Erases the bests, totals and discovered tiers, keeps the settings, writes the save at once so a crash
+        /// cannot bring the old bests back, and shows the new best score on the HUD. The run in progress does not
+        /// count as a new best (<see cref="ScoreSystem.ResetBest"/>). Does nothing without a save.
+        /// </summary>
+        private void ResetProgress()
+        {
+            if (_settings == null || _save == null)
+            {
+                return;
+            }
+
+            _settings.ResetProgress();
+
+            // Save() clears the dirty flag before it writes, so a failed write is asked for again: the next flush
+            // retries it and the old bests do not come back.
+            if (!_save.Save())
+            {
+                _save.RequestSave();
+            }
+
+            _score.ResetBest();
+            _hudPresenter.Refresh();
         }
 
         /// <summary>
@@ -864,9 +926,11 @@ namespace Coika.UI
             _hudPresenter?.Dispose();
             _gameOverPresenter?.Dispose();
             _pausePresenter?.Dispose();
+            _settingsPresenter?.Dispose();
             _hudPresenter = null;
             _gameOverPresenter = null;
             _pausePresenter = null;
+            _settingsPresenter = null;
 
             _systems?.Dispose();
             _systems = null;
@@ -912,6 +976,21 @@ namespace Coika.UI
             }
 
             _loadedGuideLinePrefab = null;
+
+            if (_settingsObject != null)
+            {
+                Destroy(_settingsObject);
+            }
+
+            _settingsObject = null;
+            _settingsView = null;
+
+            if (_assets != null && _loadedSettingsPrefab != null)
+            {
+                _assets.ReleaseAsset(_loadedSettingsPrefab);
+            }
+
+            _loadedSettingsPrefab = null;
 
             _feedbackDirector?.Unbind();
             _feedbackDirector = null;
