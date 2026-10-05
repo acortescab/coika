@@ -44,5 +44,11 @@ namespace Coika.Tests.PlayMode
         /// turns them off to prove they never change the physics or the score.
         /// </summary>
         public bool Particles { get; set; } = true;
+
+        /// <summary>Overrides the cap of live pixel particles, so a test can reach it. Null keeps the config default.</summary>
+        public int? ParticleCap { get; set; }
+
+        /// <summary>Overrides the cap of live rings, so a test can reach it. Null keeps the config default.</summary>
+        public int? RingCap { get; set; }
     }
 }

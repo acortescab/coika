@@ -17,7 +17,7 @@ namespace Coika.Tests.EditMode
         private const int TIER_COUNT = 11;
 
         /// <summary>
-        /// The merge burst grows from the minimum at tier 0 to the maximum at the last tier, always within 6 to 10.
+        /// The merge burst grows from the minimum at tier 0 to the maximum at the last tier, always within the configured range.
         /// </summary>
         [Test]
         public void MergeBurstCount_AcrossTiers_GrowsWithinTheRange()
@@ -28,8 +28,8 @@ namespace Coika.Tests.EditMode
             for (var tier = 0; tier < TIER_COUNT; tier++)
             {
                 var count = config.MergeBurstCount(tier, TIER_COUNT);
-                Assert.GreaterOrEqual(count, 6);
-                Assert.LessOrEqual(count, 10);
+                Assert.GreaterOrEqual(count, config.MergeBurstMinCount);
+                Assert.LessOrEqual(count, config.MergeBurstMaxCount);
                 Assert.GreaterOrEqual(count, previous, "The burst never shrinks with the tier.");
                 previous = count;
             }
@@ -41,24 +41,39 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// The default merge burst is 6 to 10 particles, as the issue asks.
+        /// </summary>
+        [Test]
+        public void Defaults_Always_AreSixToTenParticles()
+        {
+            var config = ScriptableObject.CreateInstance<FeedbackConfig>();
+
+            Assert.AreEqual(6, config.MergeBurstMinCount);
+            Assert.AreEqual(10, config.MergeBurstMaxCount);
+
+            Object.DestroyImmediate(config);
+        }
+        /// <summary>
         /// The prefab and the two textures are Addressable in the Fx group (C-01).
         /// </summary>
-        [TestCase(FxPrefabTool.PrefabPath)]
-        [TestCase(FxPrefabTool.PixelTexturePath)]
-        [TestCase(FxPrefabTool.RingTexturePath)]
+        /// <param name="path">Asset path of the asset to check.</param>
+        [TestCase(FxPrefabTool.PREFAB_PATH)]
+        [TestCase(FxPrefabTool.PIXEL_TEXTURE_PATH)]
+        [TestCase(FxPrefabTool.RING_TEXTURE_PATH)]
         public void Asset_Shipped_IsInTheFxGroup(string path)
         {
             var entry = AddressableAssetSettingsDefaultObject.Settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(path));
 
             Assert.IsNotNull(entry, $"{path} must be Addressable. Run Coika/Setup Particles.");
-            Assert.AreEqual(FxPrefabTool.FxGroupName, entry.parentGroup.Name);
+            Assert.AreEqual(FxPrefabTool.FX_GROUP_NAME, entry.parentGroup.Name);
         }
 
         /// <summary>
         /// The textures are point-sampled, uncompressed and without mipmaps, so the pixels stay crisp (GDD §10).
         /// </summary>
-        [TestCase(FxPrefabTool.PixelTexturePath)]
-        [TestCase(FxPrefabTool.RingTexturePath)]
+        /// <param name="path">Asset path of the texture to check.</param>
+        [TestCase(FxPrefabTool.PIXEL_TEXTURE_PATH)]
+        [TestCase(FxPrefabTool.RING_TEXTURE_PATH)]
         public void Texture_Shipped_IsPointSampled(string path)
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -76,7 +91,7 @@ namespace Coika.Tests.EditMode
         [Test]
         public void Prefab_Shipped_HasASpawnerWithTwoQuietSystems()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FxPrefabTool.PrefabPath);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FxPrefabTool.PREFAB_PATH);
 
             Assert.IsNotNull(prefab, "The prefab is missing. Run Coika/Setup Particles.");
             Assert.IsNotNull(prefab.GetComponent<ParticleSpawner>());
@@ -86,6 +101,10 @@ namespace Coika.Tests.EditMode
             {
                 Assert.IsFalse(system.emission.enabled, "The spawner emits every particle.");
                 Assert.AreEqual(ParticleSystemSimulationSpace.World, system.main.simulationSpace);
+                var material = system.GetComponent<ParticleSystemRenderer>().sharedMaterial;
+                Assert.IsNotNull(material, "The system has no material.");
+                Assert.IsNotNull(material.mainTexture, "The material has no texture.");
+                Assert.AreEqual(FilterMode.Point, material.mainTexture.filterMode, "The particles must be point-sampled.");
             }
         }
     }

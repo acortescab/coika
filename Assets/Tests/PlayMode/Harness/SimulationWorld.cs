@@ -46,6 +46,7 @@ namespace Coika.Tests.PlayMode
         private float _overflowAccumulator;
         private bool _disposed;
         private FxDirector _fxDirector;
+        private ParticleSystem[] _particleSystems = Array.Empty<ParticleSystem>();
 
         /// <summary>
         /// Builds the world and pre-warms the piece pool. Nothing runs until <see cref="StartRun"/>.
@@ -124,6 +125,7 @@ namespace Coika.Tests.PlayMode
             {
                 Particles = TestParticleSpawner.Create(_created, Config.Feedback);
                 SceneManager.MoveGameObjectToScene(Particles.gameObject, _scene);
+                _particleSystems = Particles.GetComponentsInChildren<ParticleSystem>();
                 _fxDirector = new FxDirector(Particles, Config.Feedback, Tiers);
                 _fxDirector.Bind(Merge, Score, Factory, new Vector2(0f, Jar.DangerLineY));
             }
@@ -275,6 +277,11 @@ namespace Coika.Tests.PlayMode
             if (Ghosts != null)
             {
                 Ghosts.Tick(deltaTime);
+            }
+
+            for (var i = 0; i < _particleSystems.Length; i++)
+            {
+                _particleSystems[i].Simulate(deltaTime, false, false, false);
             }
         }
 
@@ -439,6 +446,16 @@ namespace Coika.Tests.PlayMode
             {
                 var feedback = ScriptableObject.CreateInstance<FeedbackConfig>();
                 _created.Add(feedback);
+                if (options.ParticleCap.HasValue)
+                {
+                    TestReflection.SetField(feedback, "_maxLiveParticles", options.ParticleCap.Value);
+                }
+
+                if (options.RingCap.HasValue)
+                {
+                    TestReflection.SetField(feedback, "_maxLiveRings", options.RingCap.Value);
+                }
+
                 TestReflection.SetField(config, "_feedback", feedback);
             }
 

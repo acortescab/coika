@@ -15,6 +15,7 @@ namespace Coika.Fx
         /// <param name="position">World position of the effect.</param>
         /// <param name="color">Tint of the particles; rings and flashes are always white.</param>
         /// <param name="count">Requested particle count before scaling; ignored for single-ring effects.</param>
+        /// <exception cref="System.ArgumentOutOfRangeException">The kind is not a known effect.</exception>
         void Burst(FxKind kind, Vector2 position, Color color, int count);
     }
 }

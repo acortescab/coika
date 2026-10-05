@@ -131,7 +131,7 @@ namespace Coika.Data
         /// <summary>Particles of the merge burst of the highest tier.</summary>
         public int MergeBurstMaxCount => _mergeBurstMaxCount;
 
-        /// <summary>Size in screen pixels of a merge burst particle.</summary>
+        /// <summary>Size in reference pixels (1/16 world unit) of a merge burst particle.</summary>
         public float MergeBurstSize => _mergeBurstSize;
 
         /// <summary>Seconds a merge burst particle lives.</summary>
@@ -146,7 +146,7 @@ namespace Coika.Data
         /// <summary>Particles of a landing dust puff.</summary>
         public int LandDustCount => _landDustCount;
 
-        /// <summary>Size in screen pixels of a dust particle.</summary>
+        /// <summary>Size in reference pixels (1/16 world unit) of a dust particle.</summary>
         public float LandDustSize => _landDustSize;
 
         /// <summary>Seconds a dust particle lives.</summary>
@@ -164,10 +164,10 @@ namespace Coika.Data
         /// <summary>Seconds of the supernova shockwave ring.</summary>
         public float SupernovaRingDuration => _supernovaRingDuration;
 
-        /// <summary>Stars of the new best confetti.</summary>
+        /// <summary>Pixel particles of the new best confetti.</summary>
         public int ConfettiCount => _confettiCount;
 
-        /// <summary>Seconds a confetti star lives.</summary>
+        /// <summary>Seconds a confetti particle lives.</summary>
         public float ConfettiLifetime => _confettiLifetime;
 
         /// <summary>

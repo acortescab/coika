@@ -9,8 +9,8 @@ namespace Coika.Fx
     /// for the rings, both emitted with <see cref="ParticleSystem.Emit(ParticleSystem.EmitParams, int)"/>. Nothing is
     /// instantiated or destroyed during play, and the emit parameters are structs, so a burst allocates nothing. The
     /// systems have a hard cap (<see cref="FeedbackConfig.MaxLiveParticles"/>, <see cref="FeedbackConfig.MaxLiveRings"/>):
-    /// when it is reached Unity removes the oldest particles first. Sizes are set in screen pixels, positions are
-    /// snapped to the pixel grid and the particles are point-sampled, so the look matches the pixel art.
+    /// when it is reached Unity removes the oldest particles first. Sizes are set in reference pixels (1/16 world
+    /// unit), positions are snapped to the pixel grid and the particles are point-sampled, so the look matches the pixel art.
     /// </summary>
     public class ParticleSpawner : MonoBehaviour, IParticleSpawner
     {
@@ -87,7 +87,14 @@ namespace Coika.Fx
             }
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Emits one effect. Does nothing before <see cref="Initialize"/>.
+        /// </summary>
+        /// <param name="kind">The effect.</param>
+        /// <param name="position">World position, snapped to the pixel grid.</param>
+        /// <param name="color">Tint of the particles; rings and flashes are always white.</param>
+        /// <param name="count">Requested particle count before scaling; ignored for single-ring effects.</param>
+        /// <exception cref="ArgumentOutOfRangeException">The kind is not a known effect.</exception>
         public void Burst(FxKind kind, Vector2 position, Color color, int count)
         {
             if (_config == null)
@@ -124,7 +131,7 @@ namespace Coika.Fx
         /// Applies the quality multiplier and the Reduce Shake factor to a requested count.
         /// </summary>
         /// <param name="count">Requested count.</param>
-        /// <returns>0 when the multiplier is 0, otherwise at least 1.</returns>
+        /// <returns>0 when the multiplier is 0 or no particle was requested, otherwise at least 1.</returns>
         private int ScaleCount(int count)
         {
             if (_countMultiplier <= 0f || count <= 0)

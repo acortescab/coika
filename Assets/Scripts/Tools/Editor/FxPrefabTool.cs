@@ -16,17 +16,21 @@ namespace Coika.Tools
     /// </summary>
     public static class FxPrefabTool
     {
-        public const string PrefabPath = "Assets/Prefabs/Fx/ParticleSpawner.prefab";
-        public const string PixelTexturePath = "Assets/Art/Sprites/Fx/FxPixel.png";
-        public const string RingTexturePath = "Assets/Art/Sprites/Fx/FxRing.png";
-        public const string FxGroupName = "FX";
+        /// <summary>Path of the ParticleSpawner prefab.</summary>
+        public const string PREFAB_PATH = "Assets/Prefabs/Fx/ParticleSpawner.prefab";
+        /// <summary>Path of the white square texture of the pixel particles.</summary>
+        public const string PIXEL_TEXTURE_PATH = "Assets/Art/Sprites/Fx/FxPixel.png";
+        /// <summary>Path of the ring texture of the flashes and shockwaves.</summary>
+        public const string RING_TEXTURE_PATH = "Assets/Art/Sprites/Fx/FxRing.png";
+        /// <summary>Name of the Addressables group that holds every particle asset.</summary>
+        public const string FX_GROUP_NAME = "FX";
 
         /// <summary>Sorting order of the particles: above the pieces (2) and the guide line (3), below the Danger Line (10).</summary>
         public const int SORTING_ORDER = 5;
 
-        private const string PixelMaterialPath = "Assets/Prefabs/Fx/FxPixel.mat";
-        private const string RingMaterialPath = "Assets/Prefabs/Fx/FxRing.mat";
-        private const string ScenePath = "Assets/Scenes/GameScene.unity";
+        private const string PIXEL_MATERIAL_PATH = "Assets/Prefabs/Fx/FxPixel.mat";
+        private const string RING_MATERIAL_PATH = "Assets/Prefabs/Fx/FxRing.mat";
+        private const string SCENE_PATH = "Assets/Scenes/GameScene.unity";
         private const int RING_TEXTURE_SIZE = 64;
         private const int RING_THICKNESS = 3;
 
@@ -36,22 +40,22 @@ namespace Coika.Tools
         [MenuItem("Coika/Setup Particles")]
         public static void Run()
         {
-            var pixel = CreateTexture(PixelTexturePath, 2, (_, _) => true);
-            var ring = CreateTexture(RingTexturePath, RING_TEXTURE_SIZE, IsOnRing);
+            var pixel = CreateTexture(PIXEL_TEXTURE_PATH, 2, (_, _) => true);
+            var ring = CreateTexture(RING_TEXTURE_PATH, RING_TEXTURE_SIZE, IsOnRing);
             if (pixel == null || ring == null)
             {
                 Debug.LogError("Setup Particles stopped: a texture was not created.");
                 return;
             }
 
-            var pixelMaterial = CreateMaterial(PixelMaterialPath, pixel);
-            var ringMaterial = CreateMaterial(RingMaterialPath, ring);
+            var pixelMaterial = CreateMaterial(PIXEL_MATERIAL_PATH, pixel);
+            var ringMaterial = CreateMaterial(RING_MATERIAL_PATH, ring);
             BuildPrefab(pixelMaterial, ringMaterial);
-            MakeAddressable(PixelTexturePath);
-            MakeAddressable(RingTexturePath);
-            MakeAddressable(PrefabPath);
+            MakeAddressable(PIXEL_TEXTURE_PATH);
+            MakeAddressable(RING_TEXTURE_PATH);
+            MakeAddressable(PREFAB_PATH);
             WireScene();
-            Debug.Log($"Particles are up to date at {PrefabPath}.");
+            Debug.Log($"Particles are up to date at {PREFAB_PATH}.");
         }
 
         /// <summary>
@@ -100,8 +104,9 @@ namespace Coika.Tools
         }
 
         /// <summary>
-        /// Creates or updates an unlit sprite material with the texture. It uses the same shader as the pieces, so it
-        /// supports the particle colour and alpha.
+        /// Creates or updates an unlit sprite material with the texture. The particles are deliberately unlit
+        /// (<c>Sprites/Default</c>, not the lit shader of the pieces): they stay bright and cost no 2D light pass. The
+        /// shader supports the particle colour and alpha.
         /// </summary>
         private static Material CreateMaterial(string path, Texture2D texture)
         {
@@ -122,7 +127,7 @@ namespace Coika.Tools
         /// </summary>
         private static void BuildPrefab(Material pixelMaterial, Material ringMaterial)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(PREFAB_PATH));
             var root = new GameObject("ParticleSpawner");
             try
             {
@@ -135,7 +140,7 @@ namespace Coika.Tools
                 serialized.FindProperty("_rings").objectReferenceValue = rings;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
-                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(root, PREFAB_PATH);
             }
             finally
             {
@@ -201,10 +206,10 @@ namespace Coika.Tools
         private static void MakeAddressable(string path)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            var group = settings != null ? settings.FindGroup(FxGroupName) : null;
+            var group = settings != null ? settings.FindGroup(FX_GROUP_NAME) : null;
             if (group == null)
             {
-                Debug.LogError($"Addressables group '{FxGroupName}' not found; {path} was not made Addressable.");
+                Debug.LogError($"Addressables group '{FX_GROUP_NAME}' not found; {path} was not made Addressable.");
                 return;
             }
 
@@ -217,7 +222,7 @@ namespace Coika.Tools
         /// </summary>
         private static void WireScene()
         {
-            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var scene = EditorSceneManager.OpenScene(SCENE_PATH, OpenSceneMode.Single);
             GameSceneInstaller installer = null;
             foreach (var root in scene.GetRootGameObjects())
             {
@@ -230,12 +235,12 @@ namespace Coika.Tools
 
             if (installer == null)
             {
-                Debug.LogError($"Setup Particles stopped: no GameSceneInstaller in {ScenePath}.");
+                Debug.LogError($"Setup Particles stopped: no GameSceneInstaller in {SCENE_PATH}.");
                 return;
             }
 
             var serialized = new SerializedObject(installer);
-            serialized.FindProperty("_fxPrefab.m_AssetGUID").stringValue = AssetDatabase.AssetPathToGUID(PrefabPath);
+            serialized.FindProperty("_fxPrefab.m_AssetGUID").stringValue = AssetDatabase.AssetPathToGUID(PREFAB_PATH);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.MarkSceneDirty(scene);

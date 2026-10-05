@@ -20,7 +20,7 @@ namespace Coika.Fx
         /// <summary>The large expanding ring of a supernova.</summary>
         Shockwave,
 
-        /// <summary>Pixel stars that celebrate a new best score.</summary>
+        /// <summary>Pixel particles that celebrate a new best score.</summary>
         Confetti
     }
 }

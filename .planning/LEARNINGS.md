@@ -15,7 +15,9 @@ Non-obvious things learned while working on the project. Add a dated section per
 - **Tuning is data.** Counts, sizes, lifetimes and caps are `FeedbackConfig` fields.
 
 ### Testing
-- **`SimulationOptions.Particles`** (on by default) adds a real spawner and director to `SimulationWorld`; the golden test therefore runs with particles on and is unchanged. `ParticleSimulationPlayModeTests` proves identical physics and score with particles on and off. Harness particles never tick (no frame passes), so live counts only grow until the cap.
+- **`SimulationOptions.Particles`** (on by default) adds a real spawner and director to `SimulationWorld`; the golden test therefore runs with particles on and is unchanged. `ParticleSimulationPlayModeTests` proves identical physics and score with particles on and off. `SimulationWorld.TickAnimations` advances the particle systems with `ParticleSystem.Simulate(dt, false, false, false)`, because no frame passes in the harness; without it live counts would only grow. `SimulationOptions.ParticleCap` and `RingCap` lower the caps so a 10-merge chain can reach them (`MergeScenario.MergeTwo` scripts a merge).
+- **Event handlers are measured through their backing delegates.** `FxDirectorPlayModeTests.Handlers_CalledManyTimes_AllocateNothing` reads the field-like events (`Merged`, `Landed`, ...) with `TestReflection.GetField` and invokes them 1000 times, because a test cannot raise another class's event. Unbind the recording director first, or its list allocates.
+- **Cap tests need a reachable cap.** Unity enforces `maxParticles`, so "never above the cap" always passes; assert that the cap is reached too.
 - **`TestParticleSpawner.Create`** builds the two systems in code, so tests need no Addressables.
 
 ### Tooling

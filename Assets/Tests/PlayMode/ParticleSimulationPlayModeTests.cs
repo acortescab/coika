@@ -17,6 +17,10 @@ namespace Coika.Tests.PlayMode
         private const int DROP_COUNT = 60;
         private const int LONG_DROP_COUNT = 1000;
         private const float SETTLE_SECONDS = 3f;
+        // The last piece needs about a second to fall, and the longest particle (confetti) lives 1.2 s.
+        private const float SETTLE_AFTER_LAST_DROP = 4f;
+        private const int CHAIN_PARTICLE_CAP = 12;
+        private const int CHAIN_RING_CAP = 2;
 
         /// <summary>
         /// The same seed and drops give the same exact positions at every step and the same result with the
@@ -46,14 +50,15 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// A thousand drops with restarts never push the live particles or rings over the caps, and the run ends
-        /// with no warning.
+        /// A thousand drops with restarts never push the live particles or rings over the caps, emit particles, and
+        /// leave nothing alive once the settle time has passed. The run ends with no warning.
         /// </summary>
         [Test]
-        public void Run_WithAThousandDrops_StaysInsideTheCaps()
+        public void Run_WithAThousandDrops_StaysInsideTheCapsAndLeavesNothingAlive()
         {
             var options = NewOptions(true);
             options.RestartOnGameOver = true;
+            options.SettleSeconds = SETTLE_AFTER_LAST_DROP;
             var maxParticles = 0;
             var maxRings = 0;
 
@@ -69,9 +74,37 @@ namespace Coika.Tests.PlayMode
                 Assert.Greater(maxParticles, 0, "No particle was ever emitted, so the check proves nothing.");
                 Assert.LessOrEqual(maxParticles, feedback.MaxLiveParticles);
                 Assert.LessOrEqual(maxRings, feedback.MaxLiveRings);
+                Assert.AreEqual(0, world.Particles.LiveCount, "Every particle ages out once the run settles.");
             }
         }
 
+        /// <summary>
+        /// A chain of ten merges, with the caps set low enough to be reached, fills the particle cap and never goes
+        /// over them, through the real director and spawner.
+        /// </summary>
+        [Test]
+        public void Run_WithAChainOfTenMerges_FillsTheParticleCapAndNeverExceedsTheCaps()
+        {
+            var options = NewOptions(true);
+            options.ParticleCap = CHAIN_PARTICLE_CAP;
+            options.RingCap = CHAIN_RING_CAP;
+
+            using (var world = new SimulationWorld(options))
+            {
+                world.StartRun();
+                var merges = world.Tiers.Count - 1;
+                for (var tier = 0; tier < merges; tier++)
+                {
+                    MergeScenario.MergeTwo(world, tier);
+
+                    Assert.LessOrEqual(world.Particles.LiveParticleCount, CHAIN_PARTICLE_CAP, $"Particles after the merge of tier {tier}.");
+                    Assert.LessOrEqual(world.Particles.LiveRingCount, CHAIN_RING_CAP, $"Rings after the merge of tier {tier}.");
+                }
+
+                Assert.AreEqual(CHAIN_PARTICLE_CAP, world.Particles.LiveParticleCount, "The particle cap is reached.");
+                Assert.Greater(world.Particles.LiveRingCount, 0, "The flash rings of the last merges are still showing.");
+            }
+        }
         /// <summary>
         /// Describes the world after a step: the score, the pieces on the board and the sum of their exact positions
         /// and rotations.

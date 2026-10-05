@@ -86,7 +86,9 @@ namespace Coika.Fx
         /// </summary>
         public void Unbind()
         {
-            if (_merge == null)
+            // Checks the plain-class score, not the merge system: a destroyed MonoBehaviour compares equal to null
+            // and would leave the other handlers attached.
+            if (_score == null)
             {
                 return;
             }
