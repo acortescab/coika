@@ -183,6 +183,18 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// A value outside the enum is ignored: no exception, no native call, and the wrapper stays enabled.
+        /// </summary>
+        [Test]
+        public void Play_UnknownKind_IsIgnored()
+        {
+            Assert.DoesNotThrow(() => _haptics.Play((HapticKind)99));
+
+            Assert.That(_backend.Calls, Is.EqualTo(0));
+            Assert.That(_haptics.IsDisabled, Is.False);
+        }
+
+        /// <summary>
         /// The constructor refuses a missing backend or clock.
         /// </summary>
         [Test]

@@ -42,12 +42,12 @@ namespace Coika.Core
 
         /// <summary>
         /// Plays the effect unless haptics are off, the wrapper is disabled, or a haptic of the same or a higher
-        /// strength played less than <see cref="MIN_INTERVAL"/> ago.
+        /// strength played less than <see cref="MIN_INTERVAL"/> ago. A value outside <see cref="HapticKind"/> is ignored.
         /// </summary>
         /// <param name="kind">The effect to play.</param>
         public void Play(HapticKind kind)
         {
-            if (_disabled || (_settings != null && !_settings.Haptics))
+            if (_disabled || (uint)kind >= (uint)RANKS.Length || (_settings != null && !_settings.Haptics))
             {
                 return;
             }

@@ -51,9 +51,19 @@ namespace Coika.Core
         /// Vibrates with the effect of the kind.
         /// </summary>
         /// <param name="kind">The effect to play.</param>
+        /// <exception cref="AndroidJavaException">The Java call threw, for example a SecurityException.</exception>
         public void Play(HapticKind kind)
         {
             AndroidJNI.CallVoidMethod(_vibrator.GetRawObject(), _vibrateMethod, _args[(int)kind]);
+
+            // Raw JNI leaves a Java exception pending instead of throwing: surface it so the wrapper can disable itself.
+            var pending = AndroidJNI.ExceptionOccurred();
+            if (pending != System.IntPtr.Zero)
+            {
+                AndroidJNI.ExceptionClear();
+                AndroidJNI.DeleteLocalRef(pending);
+                throw new AndroidJavaException("Vibrator.vibrate threw a Java exception");
+            }
         }
     }
 }
