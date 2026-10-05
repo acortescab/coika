@@ -9,8 +9,8 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 ## 1. Project structure
 
 - **S-01 (MUST)** Follow the folder layout in GDD §14.1 (adjusted by C-01: no `Resources/`). Scripts live under `Assets/Scripts/<Module>/`.
-- **S-02 (MUST)** One assembly definition per module: `Coika.Core`, `Coika.Gameplay`, `Coika.UI`, `Coika.Tests`. Add `Coika.Data`, `Coika.Audio`, `Coika.Fx`, `Coika.Input` only if compile times or dependencies justify it.
-- **S-03 (MUST)** Dependencies flow one way: `UI → Gameplay → Core`. `Core` never references `Gameplay` or `UI`. No circular references; no `Auto Referenced` on asmdefs. Test asmdefs reference the module under test and are Editor-only (EditMode) or Editor+Player (PlayMode).
+- **S-02 (MUST)** One assembly definition per module: `Coika.Core`, `Coika.Gameplay`, `Coika.UI`, `Coika.Tests`. `Coika.Data` and `Coika.Fx` exist already. Add `Coika.Audio`, `Coika.Input` only if compile times or dependencies justify it.
+- **S-03 (MUST)** Dependencies flow one way: `UI → Fx → Gameplay → Core`. `Core` never references `Gameplay` or `UI`. No circular references; no `Auto Referenced` on asmdefs. Test asmdefs reference the module under test and are Editor-only (EditMode) or Editor+Player (PlayMode).
 - **S-04 (MUST)** One top-level type per file; the file name equals the type name. Namespace equals the asmdef name plus the folder (`Coika.Gameplay`, `Coika.UI`, ...).
 - **S-05 (MUST)** Never edit `Packages/manifest.json` by hand; use the Package Manager client API (see C-01).
 - **S-06 (MUST)** Never rename or move assets or scripts outside the Unity Editor (or without their `.meta` file), or GUID references break. Commit every `.meta` file.

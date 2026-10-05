@@ -6,6 +6,7 @@
         "Coika.Core",
         "Coika.Data",
         "Coika.Gameplay",
+        "Coika.Fx",
         "Coika.UI",
         "Unity.Addressables",
         "Unity.InputSystem",

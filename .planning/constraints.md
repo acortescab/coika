@@ -37,7 +37,7 @@ Everything else, including the `Menu` and `Game` scenes, tiers, sprites, audio, 
   | `Theme-<Name>` | Tier sprites, background, jar art, theme music | One group per theme/skin so skins are downloaded only when selected (GDD §12, M4). |
   | `Audio-Music` / `Audio-Sfx` | Music tracks, SFX clips | Music is large: keep it out of the initial build. |
   | `UI` | UI prefabs, fonts, TMP assets | |
-  | `Fx` | Particle prefabs, VFX sprites | |
+  | `Fx` | Particle prefabs, VFX sprites | Group name is `FX`. Holds the guide line and the `ParticleSpawner` prefab with its pixel and ring textures. |
 
 - **Local vs Remote:** content shipped inside the store build uses the **Local** build/load path. The architecture must allow switching a group to **Remote** (CDN) later without code changes. Remote hosting itself is out of scope until approved (it also requires the `INTERNET` permission, which conflicts with GDD §17 "no network permission" — decide explicitly before enabling).
 - **Android:** use **Play Asset Delivery** (install-time / fast-follow / on-demand asset packs) for groups that should not count toward the base APK/AAB limit, via the Addressables Android asset-pack support. **iOS:** use **On-Demand Resources** or the Addressables local path as appropriate.

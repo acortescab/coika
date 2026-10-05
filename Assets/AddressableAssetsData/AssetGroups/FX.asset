@@ -15,8 +15,23 @@ MonoBehaviour:
   m_GroupName: FX
   m_GUID: 25049c558e07ee045a5f7ab2b7aba50b
   m_SerializeEntries:
+  - m_GUID: 1fc02fb0da05b554bbff78a70abdf2d8
+    m_Address: Assets/Art/Sprites/Fx/FxRing.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 286a27c864c0d3744ad61ab08974550c
     m_Address: Assets/Art/Sprites/Fx/GuideDot.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5548e3d0c33bf354cbbd369295a85733
+    m_Address: Assets/Prefabs/Fx/ParticleSpawner.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93b2221bb399aa74a8954f72611cad24
+    m_Address: Assets/Art/Sprites/Fx/FxPixel.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

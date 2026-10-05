@@ -38,5 +38,11 @@ namespace Coika.Tests.PlayMode
         /// the shipped game; a test turns them off to prove they never change the physics.
         /// </summary>
         public bool Animations { get; set; } = true;
+
+        /// <summary>
+        /// Whether the pooled particles (issue #32) run. They are on by default, like in the shipped game; a test
+        /// turns them off to prove they never change the physics or the score.
+        /// </summary>
+        public bool Particles { get; set; } = true;
     }
 }
