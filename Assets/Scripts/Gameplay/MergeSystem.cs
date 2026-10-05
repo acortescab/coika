@@ -43,6 +43,12 @@ namespace Coika.Gameplay
         public event Action<int, Vector2, Vector2> Merged;
 
         /// <summary>
+        /// Raised with the two source pieces right before they are released, while they still hold their sprite and
+        /// position. Visual listeners copy what they need synchronously; they must not keep the pieces.
+        /// </summary>
+        public event Action<Piece, Piece> PairMerging;
+
+        /// <summary>
         /// Raised with the position where two Black Holes touched and vanished.
         /// </summary>
         public event Action<Vector2> SupernovaTriggered;
@@ -222,6 +228,7 @@ namespace Coika.Gameplay
 
             if (nextTier >= _tiers.Count)
             {
+                PairMerging?.Invoke(low, high);
                 ReleasePair(low, high);
                 SupernovaTriggered?.Invoke(midpoint);
                 return;
@@ -232,8 +239,10 @@ namespace Coika.Gameplay
                 return;
             }
 
+            PairMerging?.Invoke(low, high);
             ReleasePair(low, high);
             created.StampSpawnGrace(_factory.Now + _config.OverflowGrace);
+            created.PlayMergePop();
             Merged?.Invoke(nextTier, midpoint, velocity);
         }
 

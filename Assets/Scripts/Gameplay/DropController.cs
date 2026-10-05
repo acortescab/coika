@@ -106,7 +106,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Updates the cooldown and the scale-in and acts on the presses of this frame.
+        /// Updates the cooldown and acts on the presses of this frame.
         /// </summary>
         private void Update()
         {
@@ -149,7 +149,7 @@ namespace Coika.Gameplay
         /// <param name="factory">Creates the pieces. It must be pre-warmed with every tier.</param>
         /// <param name="queue">Decides the tier of each piece.</param>
         /// <param name="tiers">Every tier, in tier order, so the queue's tier index finds its definition.</param>
-        /// <param name="config">Source of the cooldown, the follow speed and the scale-in time.</param>
+        /// <param name="config">Source of the cooldown and the follow speed.</param>
         /// <exception cref="ArgumentNullException">A dependency is null.</exception>
         public void Initialize(IDropInput input, Jar jar, PieceFactory factory, SpawnQueue queue, IReadOnlyList<TierDefinition> tiers, GameConfig config)
         {
@@ -159,7 +159,7 @@ namespace Coika.Gameplay
             _queue = queue ?? throw new ArgumentNullException(nameof(queue));
             _tiers = tiers ?? throw new ArgumentNullException(nameof(tiers));
             _config = config != null ? config : throw new ArgumentNullException(nameof(config));
-            _flow = new DropFlow(config.DropCooldown, config.ScaleInDuration);
+            _flow = new DropFlow(config.DropCooldown);
             _heldX = (jar.InteriorMin.x + jar.InteriorMax.x) * 0.5f;
         }
 
@@ -255,8 +255,6 @@ namespace Coika.Gameplay
             {
                 StateChanged?.Invoke(DropState.Aiming);
             }
-
-            ApplyScale();
 
             // The flags are cleared before anything can throw, so a failure never leaves a press behind.
             var pressed = _pressQueued;
@@ -369,7 +367,6 @@ namespace Coika.Gameplay
             var dropped = _held;
             var tierIndex = dropped.Tier.Index;
 
-            dropped.transform.localScale = Vector3.one;
             dropped.SetHeld(false);
             _held = null;
 
@@ -385,7 +382,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Creates the piece of the queue's current tier at the Drop Line and holds it, with the scale of the flow.
+        /// Creates the piece of the queue's current tier at the Drop Line and holds it. The piece pops in by itself.
         /// </summary>
         private void Attach()
         {
@@ -401,7 +398,6 @@ namespace Coika.Gameplay
 
             _held = _factory.Create(tier, new Vector2(_heldX, _jar.DropLineY), Vector2.zero);
             _held.SetHeld(true);
-            ApplyScale();
         }
 
         /// <summary>
@@ -436,17 +432,6 @@ namespace Coika.Gameplay
         private float ClampToJar(float x)
         {
             return DropFlow.ClampX(x, _heldRadius, _jar.InteriorMin.x, _jar.InteriorMax.x);
-        }
-
-        /// <summary>
-        /// Sets the scale of the held piece from the flow, which grows it from nothing during the cooldown.
-        /// </summary>
-        private void ApplyScale()
-        {
-            if (_held != null)
-            {
-                _held.transform.localScale = Vector3.one * _flow.ScaleFactor;
-            }
         }
 
         /// <summary>

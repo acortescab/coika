@@ -43,14 +43,13 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// Checks the follow speed, the cooldown and the scale-in time.
+        /// Checks the follow speed, the cooldown and the finger offset.
         /// </summary>
         /// <param name="config">The config to check.</param>
         private static void AssertGddValues(GameConfig config)
         {
             Assert.AreEqual(40f, config.MaxFollowSpeed);
             Assert.AreEqual(0.5f, config.DropCooldown);
-            Assert.AreEqual(0.15f, config.ScaleInDuration);
             Assert.AreEqual(2f, config.FingerOffset);
         }
     }

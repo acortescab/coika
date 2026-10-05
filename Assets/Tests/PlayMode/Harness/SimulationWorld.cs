@@ -70,6 +70,7 @@ namespace Coika.Tests.PlayMode
 
             Config = BuildConfig(options, pieceMaterial, wallMaterial);
             Tiers = BuildTiers();
+            Animations = options.Animations;
 
             var jarObject = new GameObject("Jar");
             SceneManager.MoveGameObjectToScene(jarObject, _scene);
@@ -80,7 +81,8 @@ namespace Coika.Tests.PlayMode
             var container = new GameObject("PieceContainer");
             SceneManager.MoveGameObjectToScene(container, _scene);
             _created.Add(container);
-            Assets = new TestAssetService(_created, pieceMaterial);
+            Container = container.transform;
+            Assets =new TestAssetService(_created, pieceMaterial);
             Factory = new PieceFactory(Assets, new AssetReference(), Config, container.transform, PREWARM_COUNT, () => Now);
 
             var prewarm = Factory.PrewarmAsync(Tiers);
@@ -95,6 +97,12 @@ namespace Coika.Tests.PlayMode
             _created.Add(mergeObject);
             Merge = mergeObject.AddComponent<MergeSystem>();
             Merge.Initialize(Factory, Tiers, Config);
+
+            if (options.Animations)
+            {
+                Ghosts = container.AddComponent<MergeGhostPool>();
+                Ghosts.Initialize(Merge, Config.Feedback);
+            }
 
             var overflowObject = new GameObject("OverflowDetector");
             _created.Add(overflowObject);
@@ -123,6 +131,9 @@ namespace Coika.Tests.PlayMode
         /// <summary>The jar the pieces fall in.</summary>
         public Jar Jar { get; }
 
+        /// <summary>The object that holds every pooled piece, active or not.</summary>
+        public Transform Container { get; }
+
         /// <summary>The asset service double.</summary>
         public TestAssetService Assets { get; }
 
@@ -149,6 +160,12 @@ namespace Coika.Tests.PlayMode
 
         /// <summary>The state machine of the game.</summary>
         public GameManager Manager { get; }
+
+        /// <summary>Whether the visual animations run in this world.</summary>
+        public bool Animations { get; }
+
+        /// <summary>The ghosts of the merged pieces, or null when the animations are off.</summary>
+        public MergeGhostPool Ghosts { get; }
 
         /// <summary>Simulated time in seconds: the steps taken times the fixed step. It is the clock of every system.</summary>
         public double SimulatedSeconds => _steps * (double)_fixedDeltaTime;
@@ -222,6 +239,50 @@ namespace Coika.Tests.PlayMode
             Controller.Tick(dt);
             Manager.Tick(dt);
             SecondsSinceLastDrop += dt;
+            TickAnimations(dt);
+        }
+
+        /// <summary>
+        /// Advances the visual animations of every active piece and of the merge ghosts. They never run by
+        /// themselves here, because the harness steps synchronously and no frame passes.
+        /// </summary>
+        /// <param name="deltaTime">Seconds of the step.</param>
+        private void TickAnimations(float deltaTime)
+        {
+            var pieces = Factory.ActivePieces;
+            for (var i = 0; i < pieces.Count; i++)
+            {
+                var animator = pieces[i].Animator;
+                if (animator != null)
+                {
+                    animator.Tick(deltaTime);
+                }
+            }
+
+            if (Ghosts != null)
+            {
+                Ghosts.Tick(deltaTime);
+            }
+        }
+
+        /// <summary>
+        /// Counts the active pieces whose animator is still running or whose visual is not at identity scale.
+        /// </summary>
+        /// <returns>The number of pieces with an animation in progress or a stuck scale.</returns>
+        public int CountPiecesAnimating()
+        {
+            var count = 0;
+            var pieces = Factory.ActivePieces;
+            for (var i = 0; i < pieces.Count; i++)
+            {
+                var animator = pieces[i].Animator;
+                if (animator != null && (animator.IsRunning || animator.VisualScale != Vector3.one))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>
@@ -358,6 +419,13 @@ namespace Coika.Tests.PlayMode
             if (options.ForcedOpening != null)
             {
                 TestReflection.SetField(config, "_forcedOpeningTiers", options.ForcedOpening);
+            }
+
+            if (options.Animations)
+            {
+                var feedback = ScriptableObject.CreateInstance<FeedbackConfig>();
+                _created.Add(feedback);
+                TestReflection.SetField(config, "_feedback", feedback);
             }
 
             return config;

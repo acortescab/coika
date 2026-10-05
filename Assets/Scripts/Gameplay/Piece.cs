@@ -13,7 +13,7 @@ namespace Coika.Gameplay
     /// It does not load assets (C-01): the sprite is loaded by the factory through the asset service and passed in.
     /// </para>
     /// </summary>
-    [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D))]
+    [RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
     [DisallowMultipleComponent]
     public class Piece : MonoBehaviour
     {
@@ -24,6 +24,8 @@ namespace Coika.Gameplay
         public const string HELD_LAYER_NAME = "HeldPiece";
 
         private SpriteRenderer _spriteRenderer;
+        private PieceAnimator _animator;
+        private bool _animatorResolved;
         private Rigidbody2D _rigidbody;
         private CircleCollider2D _collider;
         private float _settledVelocitySquared;
@@ -35,6 +37,45 @@ namespace Coika.Gameplay
         /// and while they stay in contact, which chain merges need. Pieces that touch anything else raise nothing.
         /// </summary>
         public event Action<Piece, Piece> Collided;
+
+        /// <summary>
+        /// Raised with (this piece, the total normal impulse) each time a piece in play starts touching anything: the
+        /// floor, a wall or another piece. Listeners decide the impulse above which it counts as a landing. It is
+        /// cleared when the piece goes back to the pool.
+        /// </summary>
+        public event Action<Piece, float> Landed;
+
+        /// <summary>The sprite currently shown, on the root or on the visual child. Null before <see cref="Initialize"/>.</summary>
+        public Sprite Sprite => SpriteRenderer != null ? SpriteRenderer.sprite : null;
+
+        /// <summary>The sprite renderer, on the root or on the visual child of the prefab.</summary>
+        public SpriteRenderer SpriteRenderer
+        {
+            get
+            {
+                if (_spriteRenderer == null)
+                {
+                    _spriteRenderer = GetComponentInChildren<SpriteRenderer>(true);
+                }
+
+                return _spriteRenderer;
+            }
+        }
+
+        /// <summary>The visual animator of the piece, or null when the prefab has none.</summary>
+        public PieceAnimator Animator
+        {
+            get
+            {
+                if (!_animatorResolved)
+                {
+                    _animator = GetComponentInChildren<PieceAnimator>(true);
+                    _animatorResolved = true;
+                }
+
+                return _animator;
+            }
+        }
 
         /// <summary>The tier this piece was initialized with. Null until <see cref="Initialize"/> runs.</summary>
         public TierDefinition Tier { get; private set; }
@@ -150,10 +191,7 @@ namespace Coika.Gameplay
             _settledVelocitySquared = config.SettledVelocity * config.SettledVelocity;
 
             var radius = tier.DiameterUnits * 0.5f;
-            if (_spriteRenderer == null)
-                _spriteRenderer = GetComponent<SpriteRenderer>();
-
-            _spriteRenderer.sprite = sprite;
+            SpriteRenderer.sprite = sprite;
             Collider.radius = radius;
 
             transform.localScale = Vector3.one;
@@ -166,6 +204,24 @@ namespace Coika.Gameplay
             body.angularVelocity = 0f;
 
             SetHeld(false);
+
+            if (Animator != null)
+            {
+                Animator.Begin(this, config.Feedback);
+                Animator.Play(PieceEffectId.Spawn);
+            }
+        }
+
+        /// <summary>
+        /// Starts the merge pop on the visual. The merge system calls it on the piece it creates; it does nothing
+        /// when the prefab has no animator.
+        /// </summary>
+        public void PlayMergePop()
+        {
+            if (Animator != null)
+            {
+                Animator.Play(PieceEffectId.MergePop);
+            }
         }
 
         /// <summary>
@@ -179,7 +235,12 @@ namespace Coika.Gameplay
         {
             ResolveLayers();
 
+            var released = IsHeld && !held;
             IsHeld = held;
+            if (released && Animator != null)
+            {
+                Animator.Play(PieceEffectId.Drop);
+            }
 
             var body = Rigidbody;
             body.linearVelocity = Vector2.zero;
@@ -260,21 +321,49 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Removes every subscriber of <see cref="Collided"/>. The factory calls it when it takes the piece back,
+        /// Removes every subscriber of <see cref="Collided"/> and <see cref="Landed"/>. The factory calls it when it takes the piece back,
         /// so a reused piece never keeps listeners of its previous life.
         /// </summary>
         public void ClearCollidedSubscribers()
         {
             Collided = null;
+            Landed = null;
         }
 
         /// <summary>
-        /// Reports the start of a contact with another piece.
+        /// Reports the start of a contact with another piece, and a landing for any contact of a piece in play.
         /// </summary>
         /// <param name="collision">The contact.</param>
         private void OnCollisionEnter2D(Collision2D collision)
         {
             RaiseCollided(collision);
+            RaiseLanded(collision);
+        }
+
+        /// <summary>
+        /// Raises <see cref="Landed"/> and starts the landing squash with the total normal impulse of the contact.
+        /// A held or already merged piece does not land. Allocation free.
+        /// </summary>
+        /// <param name="collision">The contact.</param>
+        private void RaiseLanded(Collision2D collision)
+        {
+            if (IsHeld || Merged)
+            {
+                return;
+            }
+
+            var impulse = 0f;
+            for (var i = 0; i < collision.contactCount; i++)
+            {
+                impulse += collision.GetContact(i).normalImpulse;
+            }
+
+            if (Animator != null)
+            {
+                Animator.Play(PieceEffectId.Land, impulse);
+            }
+
+            Landed?.Invoke(this, impulse);
         }
 
         /// <summary>

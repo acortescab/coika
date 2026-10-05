@@ -27,6 +27,9 @@ namespace Coika.Tools
         /// <summary>Radius the prefab starts with, in world units. A piece sets its own radius per tier when initialized.</summary>
         public const float DEFAULT_RADIUS = 0.5f;
 
+        /// <summary>Name of the child that holds the sprite renderer and the animator.</summary>
+        public const string VISUAL_NAME = "Sprite";
+
         private const string GameConfigPath = "Assets/Data/GameConfig/GameConfig.asset";
 
         /// <summary>
@@ -82,8 +85,7 @@ namespace Coika.Tools
         {
             root.layer = layer;
 
-            var spriteRenderer = GetOrAdd<SpriteRenderer>(root);
-            spriteRenderer.sortingOrder = SORTING_ORDER;
+            ConfigureVisual(root);
 
             var collider = GetOrAdd<CircleCollider2D>(root);
             collider.radius = DEFAULT_RADIUS;
@@ -99,6 +101,32 @@ namespace Coika.Tools
             body.mass = Mathf.PI * DEFAULT_RADIUS * DEFAULT_RADIUS;
 
             GetOrAdd<Piece>(root);
+        }
+
+        /// <summary>
+        /// Gives the piece a "Sprite" child with the sprite renderer and the <see cref="PieceAnimator"/>, so the
+        /// animations scale only the visual and never the body or the collider on the root. A renderer left on the
+        /// root by an older version of the prefab is removed.
+        /// </summary>
+        /// <param name="root">The piece object.</param>
+        private static void ConfigureVisual(GameObject root)
+        {
+            if (root.TryGetComponent<SpriteRenderer>(out var legacy))
+            {
+                Object.DestroyImmediate(legacy);
+            }
+
+            var child = root.transform.Find(VISUAL_NAME);
+            if (child == null)
+            {
+                child = new GameObject(VISUAL_NAME).transform;
+                child.SetParent(root.transform, false);
+            }
+
+            child.gameObject.layer = root.layer;
+            var spriteRenderer = GetOrAdd<SpriteRenderer>(child.gameObject);
+            spriteRenderer.sortingOrder = SORTING_ORDER;
+            GetOrAdd<PieceAnimator>(child.gameObject);
         }
 
         /// <summary>

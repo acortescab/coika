@@ -32,5 +32,11 @@ namespace Coika.Tests.PlayMode
         /// out of jar. When false the simulation ends at the first game over.
         /// </summary>
         public bool RestartOnGameOver { get; set; }
+
+        /// <summary>
+        /// Whether the visual piece animations (the animators and the merge ghosts) run. They are on by default, like in
+        /// the shipped game; a test turns them off to prove they never change the physics.
+        /// </summary>
+        public bool Animations { get; set; } = true;
     }
 }

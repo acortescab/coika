@@ -30,12 +30,17 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// The prefab has the sprite renderer, the body, the circle collider and the Piece component.
+        /// The prefab has the body, the circle collider and the Piece component on the root, and the sprite renderer
+        /// and the animator on the visual child, never on the root.
         /// </summary>
         [Test]
         public void Prefab_Always_HasTheRequiredComponents()
         {
-            Assert.IsNotNull(_prefab.GetComponent<SpriteRenderer>(), "SpriteRenderer");
+            var visual = _prefab.transform.Find(PiecePrefabTool.VISUAL_NAME);
+            Assert.IsNotNull(visual, "Sprite child");
+            Assert.IsNotNull(visual.GetComponent<SpriteRenderer>(), "SpriteRenderer on the child");
+            Assert.IsNotNull(visual.GetComponent<PieceAnimator>(), "PieceAnimator on the child");
+            Assert.IsNull(_prefab.GetComponent<SpriteRenderer>(), "No SpriteRenderer on the root");
             Assert.IsNotNull(_prefab.GetComponent<Rigidbody2D>(), "Rigidbody2D");
             Assert.IsNotNull(_prefab.GetComponent<CircleCollider2D>(), "CircleCollider2D");
             Assert.IsNotNull(_prefab.GetComponent<Piece>(), "Piece");

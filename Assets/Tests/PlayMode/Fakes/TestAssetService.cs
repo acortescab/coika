@@ -182,7 +182,9 @@ namespace Coika.Tests.PlayMode
         /// <returns>The prefab, inactive so the original never takes part in the physics: only its clones do.</returns>
         private GameObject BuildPiecePrefab()
         {
-            var prefab = new GameObject("PiecePrefab", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(Piece));
+            var prefab = new GameObject("PiecePrefab", typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(Piece));
+            var visual = new GameObject("Sprite", typeof(SpriteRenderer), typeof(PieceAnimator));
+            visual.transform.SetParent(prefab.transform, false);
             prefab.SetActive(false);
 
             if (_pieceMaterial != null)

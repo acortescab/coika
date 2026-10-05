@@ -83,6 +83,7 @@ namespace Coika.UI
         private GameOverPresenter _gameOverPresenter;
         private Action _onGameOverTriggered;
         private Action<RunContext> _onRunStarted;
+        private MergeGhostPool _ghosts;
         private Action<RunSummary> _onGameOverReady;
         private Action _onRetryRequested;
         private Action<RunSummary> _onRunEnded;
@@ -376,7 +377,14 @@ namespace Coika.UI
             ApplyGuideLine();
             _overflowDetector.Initialize(_factory, _jar, _loadedConfig);
 
-            _score = new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
+            // The ghosts are purely visual: without a feedback config the merge simply shows no shrink.
+            if (_loadedConfig.Feedback != null)
+            {
+                _ghosts = _container.gameObject.AddComponent<MergeGhostPool>();
+                _ghosts.Initialize(_mergeSystem, _loadedConfig.Feedback);
+            }
+
+            _score =new ScoreSystem(_loadedConfig, _tiers, () => Time.timeAsDouble);
 
             // The Boot installer hands the save over through UseSave; without it (tests) nothing is persisted.
             if (_save != null)
@@ -494,6 +502,7 @@ namespace Coika.UI
         private void HandleRunStarted(RunContext run)
         {
             _gameOver.Hide();
+            _ghosts?.ResetAll();
             _hudPresenter.BindQueue(run.Queue);
             _hudPresenter.Refresh();
 

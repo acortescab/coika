@@ -1,29 +1,28 @@
-using System;
+﻿using System;
 using Coika.Gameplay;
 using NUnit.Framework;
 
 namespace Coika.Tests.EditMode
 {
     /// <summary>
-    /// Checks the rules of <see cref="DropFlow"/> (issue #6) with exact time steps: the substates, the cooldown, the
-    /// scale-in, which releases count, the clamp and the capped follow.
+    /// Checks the rules of <see cref="DropFlow"/> (issue #6) with exact time steps: the substates, the cooldown,
+    /// which releases count, the clamp and the capped follow.
     /// </summary>
     public class DropFlowTests
     {
         private const float COOLDOWN = 0.5f;
-        private const float SCALE_IN = 0.15f;
         private const float STEP = 0.02f;
         private const float TOLERANCE = 0.0001f;
 
         private DropFlow _flow;
 
         /// <summary>
-        /// Creates a flow with the GDD cooldown and scale-in.
+        /// Creates a flow with the GDD cooldown.
         /// </summary>
         [SetUp]
         public void SetUp()
         {
-            _flow = new DropFlow(COOLDOWN, SCALE_IN);
+            _flow = new DropFlow(COOLDOWN);
         }
 
         /// <summary>
@@ -36,27 +35,25 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// A new flow is aiming with a full-size piece.
+        /// A new flow is aiming.
         /// </summary>
         [Test]
-        public void Constructor_Always_StartsAimingWithFullScale()
+        public void Constructor_Always_StartsAiming()
         {
             Assert.AreEqual(DropState.Aiming, _flow.State);
-            Assert.AreEqual(1f, _flow.ScaleFactor);
         }
 
         /// <summary>
-        /// A negative duration is a programming error.
+        /// A negative cooldown is a programming error.
         /// </summary>
         [Test]
-        public void Constructor_WithANegativeDuration_Throws()
+        public void Constructor_WithANegativeCooldown_Throws()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new DropFlow(-1f, 0.15f), "cooldown");
-            Assert.Throws<ArgumentOutOfRangeException>(() => new DropFlow(0.5f, -1f), "scale-in");
+            Assert.Throws<ArgumentOutOfRangeException>(() => new DropFlow(-1f), "cooldown");
         }
 
         /// <summary>
-        /// A press and its release drop the piece and start the cooldown with the next piece at scale zero.
+        /// A press and its release drop the piece and start the cooldown.
         /// </summary>
         [Test]
         public void TryRelease_AfterAPressWhileAiming_DropsAndStartsTheCooldown()
@@ -64,7 +61,6 @@ namespace Coika.Tests.EditMode
             Drop();
 
             Assert.AreEqual(DropState.Dropping, _flow.State);
-            Assert.AreEqual(0f, _flow.ScaleFactor);
         }
 
         /// <summary>
@@ -126,7 +122,6 @@ namespace Coika.Tests.EditMode
 
             Assert.IsTrue(_flow.Tick(STEP), "step 25 ends the cooldown");
             Assert.AreEqual(DropState.Aiming, _flow.State);
-            Assert.AreEqual(1f, _flow.ScaleFactor);
         }
 
         /// <summary>
@@ -140,49 +135,16 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// The next piece grows from 0 to 1 during the first 0.15 s of the cooldown and stays at 1.
-        /// </summary>
-        [Test]
-        public void Tick_DuringTheCooldown_GrowsTheScaleFromZeroToOneInTheScaleInTime()
-        {
-            Drop();
-
-            _flow.Tick(SCALE_IN * 0.5f);
-            Assert.AreEqual(0.5f, _flow.ScaleFactor, TOLERANCE);
-
-            _flow.Tick(SCALE_IN * 0.5f);
-            Assert.AreEqual(1f, _flow.ScaleFactor, TOLERANCE);
-
-            _flow.Tick(0.1f);
-            Assert.AreEqual(1f, _flow.ScaleFactor, TOLERANCE, "It stays full size for the rest of the cooldown.");
-        }
-
-        /// <summary>
-        /// With no scale-in time the next piece is full size at once.
-        /// </summary>
-        [Test]
-        public void TryRelease_WithNoScaleInTime_KeepsFullScale()
-        {
-            var flow = new DropFlow(COOLDOWN, 0f);
-            flow.Press();
-
-            flow.TryRelease();
-
-            Assert.AreEqual(1f, flow.ScaleFactor);
-        }
-
-        /// <summary>
         /// With no cooldown the state goes straight back to aiming.
         /// </summary>
         [Test]
         public void TryRelease_WithNoCooldown_StaysAiming()
         {
-            var flow = new DropFlow(0f, SCALE_IN);
+            var flow = new DropFlow(0f);
             flow.Press();
 
             Assert.IsTrue(flow.TryRelease());
             Assert.AreEqual(DropState.Aiming, flow.State);
-            Assert.AreEqual(1f, flow.ScaleFactor);
         }
 
         /// <summary>
@@ -228,7 +190,6 @@ namespace Coika.Tests.EditMode
             _flow.Begin();
 
             Assert.AreEqual(DropState.Aiming, _flow.State);
-            Assert.AreEqual(1f, _flow.ScaleFactor);
             Assert.IsFalse(_flow.TryRelease());
         }
 

@@ -45,6 +45,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 71283f6571ccb194a878fc6a808c7e98
+    m_Address: Assets/Data/Feedback/FeedbackConfig.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7277f3ddcd929f74ea7e4192369c6e3e
     m_Address: audio-mixer
     m_ReadOnly: 0
