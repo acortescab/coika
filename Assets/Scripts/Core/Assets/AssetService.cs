@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -46,6 +47,37 @@ namespace Coika.Core
                 throw new ArgumentException("Label is null or empty.", nameof(label));
 
             return await LoadWithRetry(() => Addressables.LoadAssetAsync<T>(label), label);
+        }
+
+        /// <summary>
+        /// Loads every asset that has the given label, retrying on failure.
+        /// </summary>
+        /// <typeparam name="T">Type of the assets to load.</typeparam>
+        /// <param name="label">Addressable label or key.</param>
+        /// <returns>The loaded assets. The caller must pass the list to <see cref="ReleaseAssets{T}"/> when done.</returns>
+        /// <exception cref="ArgumentException">The label is null or empty.</exception>
+        /// <exception cref="AssetLoadException">The load failed after all attempts.</exception>
+        public async Task<IList<T>> LoadAssets<T>(string label)
+        {
+            if (string.IsNullOrEmpty(label))
+            {
+                throw new ArgumentException("Label is null or empty.", nameof(label));
+            }
+
+            return await LoadWithRetry(() => Addressables.LoadAssetsAsync<T>(label, null), label);
+        }
+
+        /// <summary>
+        /// Releases the list returned by <see cref="LoadAssets{T}"/>, decrementing the ref-count of the whole load.
+        /// </summary>
+        /// <typeparam name="T">Type of the assets.</typeparam>
+        /// <param name="assets">The loaded list. Null is ignored.</param>
+        public void ReleaseAssets<T>(IList<T> assets)
+        {
+            if (assets != null)
+            {
+                Addressables.Release(assets);
+            }
         }
 
         /// <summary>

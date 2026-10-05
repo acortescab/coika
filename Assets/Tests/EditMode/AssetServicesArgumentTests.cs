@@ -41,6 +41,19 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Loading every asset of a label with an empty label throws an <see cref="ArgumentException"/>, and releasing
+        /// a null list does nothing (issue #29).
+        /// </summary>
+        [Test]
+        public void AssetService_LoadAssetsWithAnEmptyLabel_ThrowsAndReleasingNullIsIgnored()
+        {
+            var service = new AssetService();
+
+            Assert.ThrowsAsync<ArgumentException>(async () => await service.LoadAssets<AudioClip>(string.Empty));
+            Assert.DoesNotThrow(() => service.ReleaseAssets<AudioClip>(null));
+        }
+
+        /// <summary>
         /// Releasing a null asset does nothing, so a caller can always release in a cleanup path.
         /// </summary>
         [Test]

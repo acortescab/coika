@@ -36,6 +36,12 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// Builds the prefab handed out for a <see cref="GameObject"/> request, for tests that need another prefab
+        /// than the Piece one (the audio voice). When null the Piece prefab is used.
+        /// </summary>
+        public Func<GameObject> PrefabFactory { get; set; }
+
+        /// <summary>
         /// Hands out a test asset of the requested type, whatever the reference.
         /// </summary>
         /// <param name="assetReference">Ignored.</param>
@@ -55,6 +61,61 @@ namespace Coika.Tests.PlayMode
         public Task<T> LoadAsset<T>(string label)
         {
             return Task.FromResult(Provide<T>());
+        }
+
+        /// <summary>
+        /// Hands out the audio clips of a label: every sound effect (3 variants of Land) for <c>sfx</c>, the
+        /// gameplay track for anything else.
+        /// </summary>
+        /// <param name="label">The label of the clips.</param>
+        /// <typeparam name="T">Must be <see cref="AudioClip"/>.</typeparam>
+        /// <returns>A completed task with the clips.</returns>
+        /// <exception cref="NotSupportedException">Any other type.</exception>
+        public Task<IList<T>> LoadAssets<T>(string label)
+        {
+            if (typeof(T) != typeof(AudioClip))
+            {
+                throw new NotSupportedException(typeof(T).Name);
+            }
+
+            var names = new List<string>();
+            if (label == SoundBank.SFX_LABEL)
+            {
+                foreach (SfxId id in Enum.GetValues(typeof(SfxId)))
+                {
+                    if (id == SfxId.Land)
+                    {
+                        names.AddRange(new[] { "Land1", "Land2", "Land3" });
+                    }
+                    else
+                    {
+                        names.Add(id.ToString());
+                    }
+                }
+            }
+            else
+            {
+                names.Add(MusicId.Gameplay.ToString());
+            }
+
+            IList<T> clips = new List<T>();
+            foreach (var clipName in names)
+            {
+                var clip = AudioClip.Create(clipName, 2205, 1, 22050, false);
+                _created.Add(clip);
+                clips.Add((T)(object)clip);
+            }
+
+            return Task.FromResult(clips);
+        }
+
+        /// <summary>
+        /// Does nothing: the owner destroys the assets it was handed.
+        /// </summary>
+        /// <param name="assets">Ignored.</param>
+        /// <typeparam name="T">Type of the assets.</typeparam>
+        public void ReleaseAssets<T>(IList<T> assets)
+        {
         }
 
         /// <summary>
@@ -98,7 +159,7 @@ namespace Coika.Tests.PlayMode
             UnityEngine.Object asset;
             if (typeof(T) == typeof(GameObject))
             {
-                asset = BuildPiecePrefab();
+                asset = PrefabFactory != null ? PrefabFactory() : BuildPiecePrefab();
             }
             else if (typeof(T) == typeof(Sprite))
             {

@@ -14,7 +14,90 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Audio-SFX
   m_GUID: 284256a1a1cc11f43a788f8437ab79da
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 2de1179fd9d6d7f49b31d50fc9047bb7
+    m_Address: Assets/Audio/Sfx/MergeBig.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4098eb3e1a1619f4b8005dc3d44af3c6
+    m_Address: Assets/Audio/Sfx/DangerTick.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4527f46fc3134bf4094219268f6fdcd8
+    m_Address: Assets/Audio/Sfx/NewBest.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4d242d2dceb72ac4b94d7f63882f1f70
+    m_Address: Assets/Audio/Sfx/Drop.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4dfeea24fd78cbf47a80bbe874e1e313
+    m_Address: Assets/Audio/Sfx/UiBack.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8697d4a36b3728f4da22c34fa720aa9c
+    m_Address: Assets/Audio/Sfx/Spawn.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 95e4f740aeb4b5e4492bf6203aab143e
+    m_Address: Assets/Audio/Sfx/Merge.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a4afd71f0a057fc4c9c1905eafaa464e
+    m_Address: Assets/Audio/Sfx/GameOver.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ab38772a01447e241875fae61078369e
+    m_Address: Assets/Audio/Sfx/Land3.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ad7dddcc41e22454fbae571bd0064716
+    m_Address: Assets/Audio/Sfx/Supernova.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c7475004e8e5b1e48af5a1695d65c37b
+    m_Address: Assets/Audio/Sfx/UiClick.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c7a1733a5efb5264dbfe124dea37a5ad
+    m_Address: Assets/Audio/Sfx/Land1.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e77b852758eff1d4ba656f05831c0267
+    m_Address: Assets/Prefabs/Audio/AudioVoice.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e879b38e64070734d8c60970acbc4abc
+    m_Address: Assets/Audio/Sfx/Land2.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - sfx
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 461287701ca2f3940b9955fcf5c57c47, type: 2}
   m_SchemaSet:
