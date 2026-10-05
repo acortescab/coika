@@ -18,9 +18,7 @@ namespace Coika.Gameplay
 
         private Transform[] _transforms;
         private SpriteRenderer[] _renderers;
-        private float[] _elapsed;
-        private bool[] _active;
-        private Vector3[] _startScale;
+        private TweenTimer[] _timers;
         private FeedbackConfig _config;
         private MergeSystem _merge;
         private Action<Piece, Piece> _onPairMerging;
@@ -32,14 +30,14 @@ namespace Coika.Gameplay
             get
             {
                 var count = 0;
-                if (_active == null)
+                if (_timers == null)
                 {
                     return 0;
                 }
 
-                for (var i = 0; i < _active.Length; i++)
+                for (var i = 0; i < _timers.Length; i++)
                 {
-                    if (_active[i])
+                    if (_timers[i].IsActive)
                     {
                         count++;
                     }
@@ -73,12 +71,12 @@ namespace Coika.Gameplay
         /// </summary>
         public void ResetAll()
         {
-            if (_active == null)
+            if (_timers == null)
             {
                 return;
             }
 
-            for (var i = 0; i < _active.Length; i++)
+            for (var i = 0; i < _timers.Length; i++)
             {
                 Hide(i);
             }
@@ -90,27 +88,27 @@ namespace Coika.Gameplay
         /// <param name="deltaTime">Seconds since the last call.</param>
         public void Tick(float deltaTime)
         {
-            if (_active == null)
+            if (_timers == null)
             {
                 return;
             }
 
-            for (var i = 0; i < _active.Length; i++)
+            for (var i = 0; i < _timers.Length; i++)
             {
-                if (!_active[i])
+                if (!_timers[i].IsActive)
                 {
                     continue;
                 }
 
-                _elapsed[i] += deltaTime;
-                var t = Tween.Progress(_elapsed[i], _config.MergeShrinkDuration);
-                if (t >= 1f)
+                _timers[i].Advance(deltaTime);
+                if (_timers[i].IsActive)
+                {
+                    _transforms[i].localScale = Vector3.one * (1f - Tween.OutQuad(_timers[i].Progress));
+                }
+                else
                 {
                     Hide(i);
-                    continue;
                 }
-
-                _transforms[i].localScale = _startScale[i] * (1f - Tween.OutQuad(t));
             }
         }
 
@@ -139,9 +137,7 @@ namespace Coika.Gameplay
             DestroyGhosts();
             _transforms = new Transform[count];
             _renderers = new SpriteRenderer[count];
-            _elapsed = new float[count];
-            _active = new bool[count];
-            _startScale = new Vector3[count];
+            _timers = new TweenTimer[count];
             _next = 0;
 
             for (var i = 0; i < count; i++)
@@ -197,10 +193,8 @@ namespace Coika.Gameplay
 
             _renderers[i].sprite = piece.Sprite;
             _transforms[i].SetPositionAndRotation(piece.transform.position, piece.transform.rotation);
-            _startScale[i] = Vector3.one;
             _transforms[i].localScale = Vector3.one;
-            _elapsed[i] = 0f;
-            _active[i] = true;
+            _timers[i].Start(_config.MergeShrinkDuration);
             _transforms[i].gameObject.SetActive(true);
         }
 
@@ -210,7 +204,7 @@ namespace Coika.Gameplay
         /// <param name="index">Index of the ghost.</param>
         private void Hide(int index)
         {
-            _active[index] = false;
+            _timers[index].Stop();
             _transforms[index].gameObject.SetActive(false);
         }
 

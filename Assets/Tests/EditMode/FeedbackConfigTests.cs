@@ -15,7 +15,7 @@ namespace Coika.Tests.EditMode
     public class FeedbackConfigTests
     {
         private const float TOLERANCE = 0.0001f;
-        private const string GameConfigPath = "Assets/Data/GameConfig/GameConfig.asset";
+        private const string GAME_CONFIG_PATH = "Assets/Data/GameConfig/GameConfig.asset";
 
         /// <summary>
         /// The defaults are the durations of the GDD §9.
@@ -55,14 +55,14 @@ namespace Coika.Tests.EditMode
         [Test]
         public void FeedbackConfig_Shipped_IsInCoreDataAndWiredIntoTheGameConfig()
         {
-            var gameConfig = AssetDatabase.LoadAssetAtPath<GameConfig>(GameConfigPath);
+            var gameConfig = AssetDatabase.LoadAssetAtPath<GameConfig>(GAME_CONFIG_PATH);
             var entry = AddressableAssetSettingsDefaultObject.Settings.FindAssetEntry(
-                AssetDatabase.AssetPathToGUID(FeedbackConfigSetup.FeedbackConfigPath));
+                AssetDatabase.AssetPathToGUID(FeedbackConfigSetup.FEEDBACK_CONFIG_PATH));
 
             Assert.IsNotNull(entry, "FeedbackConfig must be Addressable. Run Coika/Setup Feedback Config.");
             Assert.AreEqual(TierDataSetup.DataGroupName, entry.parentGroup.Name);
             Assert.IsNotNull(gameConfig.Feedback, "GameConfig.Feedback is not assigned.");
-            Assert.AreEqual(FeedbackConfigSetup.FeedbackConfigPath, AssetDatabase.GetAssetPath(gameConfig.Feedback));
+            Assert.AreEqual(FeedbackConfigSetup.FEEDBACK_CONFIG_PATH, AssetDatabase.GetAssetPath(gameConfig.Feedback));
         }
     }
 }

@@ -25,6 +25,8 @@ namespace Coika.Data
         private float _landAmplitudePerImpulse = 0.02f;
         [SerializeField, Range(0f, 0.5f)]
         private float _landAmplitudeMax = 0.25f;
+        [SerializeField, Range(0f, 1f)]
+        private float _landReboundRatio = 0.5f;
         [SerializeField, Min(0f)]
         private float _mergePopDuration = 0.2f;
         [SerializeField, Min(1f)]
@@ -59,6 +61,9 @@ namespace Coika.Data
 
         /// <summary>Largest landing squash amplitude, as a fraction of the piece size.</summary>
         public float LandAmplitudeMax => _landAmplitudeMax;
+
+        /// <summary>Size of the stretch after a landing squash, as a fraction of the squash amplitude.</summary>
+        public float LandReboundRatio => _landReboundRatio;
 
         /// <summary>Seconds of the pop of a piece created by a merge.</summary>
         public float MergePopDuration => _mergePopDuration;

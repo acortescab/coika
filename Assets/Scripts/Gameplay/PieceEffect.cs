@@ -12,13 +12,13 @@ namespace Coika.Gameplay
     public abstract class PieceEffect
     {
         /// <summary>The clock of the effect, for effects that last a fixed time.</summary>
-        protected TweenTimer Timer;
+        protected TweenTimer _timer;
 
         /// <summary>The group of effects this one excludes when it starts.</summary>
         public abstract PieceEffectGroup Group { get; }
 
         /// <summary>Whether the effect is running and contributes to the scale.</summary>
-        public virtual bool IsActive => Timer.IsActive;
+        public virtual bool IsActive => _timer.IsActive;
 
         /// <summary>
         /// Starts the effect from its beginning.
@@ -27,7 +27,7 @@ namespace Coika.Gameplay
         /// <param name="parameter">Effect-specific input, such as the impulse of a landing. Ignored by most.</param>
         public virtual void Start(FeedbackConfig config, float parameter)
         {
-            Timer.Start(Duration(config));
+            _timer.Start(Duration(config));
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Coika.Gameplay
         /// </summary>
         public virtual void Stop()
         {
-            Timer.Stop();
+            _timer.Stop();
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Coika.Gameplay
         /// <param name="deltaTime">Seconds since the last call.</param>
         public virtual void Advance(float deltaTime)
         {
-            Timer.Advance(deltaTime);
+            _timer.Advance(deltaTime);
         }
 
         /// <summary>

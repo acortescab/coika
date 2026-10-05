@@ -106,7 +106,7 @@ namespace Coika.Gameplay
         }
 
         /// <summary>
-        /// Updates the cooldown and the scale-in and acts on the presses of this frame.
+        /// Updates the cooldown and acts on the presses of this frame.
         /// </summary>
         private void Update()
         {

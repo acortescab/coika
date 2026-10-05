@@ -15,7 +15,7 @@ namespace Coika.Gameplay
         /// <inheritdoc />
         public override Vector2 Evaluate(FeedbackConfig config, Piece piece)
         {
-            return Vector2.one * Tween.PopThrough(Timer.Progress, config.MergePopPeak, config.MergePopPeakAt);
+            return Vector2.one * Tween.PopThrough(_timer.Progress, config.MergePopPeak, config.MergePopPeakAt);
         }
 
         /// <inheritdoc />

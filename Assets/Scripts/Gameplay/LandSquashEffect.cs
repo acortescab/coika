@@ -11,6 +11,9 @@ namespace Coika.Gameplay
     /// </summary>
     public sealed class LandSquashEffect : PieceEffect
     {
+        /// <summary>Fraction of the effect spent squashing; the rest is the rebound.</summary>
+        private const float SQUASH_PHASE = 0.5f;
+
         private float _amplitude;
 
         /// <inheritdoc />
@@ -29,10 +32,10 @@ namespace Coika.Gameplay
         /// <inheritdoc />
         public override Vector2 Evaluate(FeedbackConfig config, Piece piece)
         {
-            var t = Timer.Progress;
-            var squash = t < 0.5f
-                ? _amplitude * Tween.Bump(t * 2f)
-                : -0.5f * _amplitude * Tween.Bump((t - 0.5f) * 2f);
+            var t = _timer.Progress;
+            var squash = t < SQUASH_PHASE
+                ? _amplitude * Tween.Bump(t / SQUASH_PHASE)
+                : -config.LandReboundRatio * _amplitude * Tween.Bump((t - SQUASH_PHASE) / (1f - SQUASH_PHASE));
             return new Vector2(1f + squash, 1f - squash);
         }
 

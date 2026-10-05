@@ -15,7 +15,7 @@ namespace Coika.Gameplay
         /// <inheritdoc />
         public override Vector2 Evaluate(FeedbackConfig config, Piece piece)
         {
-            return Vector2.one * Tween.OutBack(Timer.Progress, config.SpawnOvershoot);
+            return Vector2.one * Tween.OutBack(_timer.Progress, config.SpawnOvershoot);
         }
 
         /// <inheritdoc />
