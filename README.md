@@ -50,7 +50,7 @@ Assets/
       Boot/                Composition root (GameInstaller)
     Data/                  ScriptableObject definitions (Coika.Data)
     Gameplay/              Game rules (Coika.Gameplay), including the visual piece animations (PieceAnimator and its effects)
-    Fx/                    Pooled particles and screen effects (Coika.Fx): ParticleSpawner, FxDirector, ScreenShake, ScreenFlash, TimeScaleOwner, ScreenFxDirector. Setup: menus Coika/Setup Particles and Coika/Setup Screen Effects
+    Fx/                    Pooled particles and screen effects (Coika.Fx): ParticleSpawner, ScreenShake, ScreenFlash, TimeScaleOwner, FeedbackDirector (the single event-to-feedback table: particles, screen effects, sound, haptics). Setup: menus Coika/Setup Particles and Coika/Setup Screen Effects
     UI/                    Views (Coika.UI)
     Tools/Editor/          Editor-only tools (Coika.Tools.Editor)
   Tests/

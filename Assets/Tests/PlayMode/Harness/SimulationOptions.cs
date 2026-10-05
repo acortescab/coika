@@ -45,6 +45,13 @@ namespace Coika.Tests.PlayMode
         /// </summary>
         public bool Particles { get; set; } = true;
 
+        /// <summary>
+        /// Whether the <see cref="Coika.Fx.FeedbackDirector"/> (issue #34) is bound, with fake audio, haptics and screen
+        /// effects. It is on by default, like in the shipped game; a test turns it off to prove it never changes the
+        /// simulation.
+        /// </summary>
+        public bool Feedback { get; set; } = true;
+
         /// <summary>Overrides the cap of live pixel particles, so a test can reach it. Null keeps the config default.</summary>
         public int? ParticleCap { get; set; }
 

@@ -10,5 +10,8 @@ namespace Coika.Gameplay
 
         /// <summary>Squash and stretch caused by the movement of the piece: the fall stretch and the landing squash.</summary>
         Contact,
+
+        /// <summary>Tint flashes, which only change the colour and so do not exclude any other effect.</summary>
+        Flash,
     }
 }

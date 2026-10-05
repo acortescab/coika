@@ -27,15 +27,15 @@ namespace Coika.Tests.EditMode
 
             for (var tier = 0; tier < TIER_COUNT; tier++)
             {
-                var count = config.MergeBurstCount(tier, TIER_COUNT);
-                Assert.GreaterOrEqual(count, config.MergeBurstMinCount);
-                Assert.LessOrEqual(count, config.MergeBurstMaxCount);
+                var count = config.Particles.MergeBurstCount(tier, TIER_COUNT);
+                Assert.GreaterOrEqual(count, config.Particles.MergeBurstMinCount);
+                Assert.LessOrEqual(count, config.Particles.MergeBurstMaxCount);
                 Assert.GreaterOrEqual(count, previous, "The burst never shrinks with the tier.");
                 previous = count;
             }
 
-            Assert.AreEqual(config.MergeBurstMinCount, config.MergeBurstCount(0, TIER_COUNT));
-            Assert.AreEqual(config.MergeBurstMaxCount, config.MergeBurstCount(TIER_COUNT - 1, TIER_COUNT));
+            Assert.AreEqual(config.Particles.MergeBurstMinCount, config.Particles.MergeBurstCount(0, TIER_COUNT));
+            Assert.AreEqual(config.Particles.MergeBurstMaxCount, config.Particles.MergeBurstCount(TIER_COUNT - 1, TIER_COUNT));
 
             Object.DestroyImmediate(config);
         }
@@ -48,8 +48,8 @@ namespace Coika.Tests.EditMode
         {
             var config = ScriptableObject.CreateInstance<FeedbackConfig>();
 
-            Assert.AreEqual(6, config.MergeBurstMinCount);
-            Assert.AreEqual(10, config.MergeBurstMaxCount);
+            Assert.AreEqual(6, config.Particles.MergeBurstMinCount);
+            Assert.AreEqual(10, config.Particles.MergeBurstMaxCount);
 
             Object.DestroyImmediate(config);
         }

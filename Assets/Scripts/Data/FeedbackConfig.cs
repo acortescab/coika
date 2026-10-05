@@ -3,269 +3,38 @@ using UnityEngine;
 namespace Coika.Data
 {
     /// <summary>
-    /// Tuning of the purely visual piece animations (GDD §9): durations, amplitudes and thresholds of the spawn pop,
-    /// the drop stretch, the landing squash and the merge pop. Immutable data at runtime (S-31, S-30).
+    /// Tuning of the feedback of the game events (GDD §9), split in one group per domain so each stays small: the
+    /// piece animations, the particles, the screen effects and the sounds with the haptics. Immutable data at
+    /// runtime (S-31, S-30). A new tunable value goes in the group it belongs to, not here.
     /// </summary>
     [CreateAssetMenu(fileName = "FeedbackConfig", menuName = "Scriptable Objects/FeedbackConfig")]
     public class FeedbackConfig : ScriptableObject
     {
-        [SerializeField, Min(0f)]
-        private float _spawnDuration = 0.15f;
-        [SerializeField, Min(0f)]
-        private float _spawnOvershoot = 1.70158f;
-        [SerializeField, Range(0f, 0.5f)]
-        private float _dropStretch = 0.12f;
-        [SerializeField, Min(0.01f)]
-        private float _dropStretchFullSpeed = 12f;
-        [SerializeField, Min(0f)]
-        private float _landImpulseThreshold = 2f;
-        [SerializeField, Min(0f)]
-        private float _landDuration = 0.1f;
-        [SerializeField, Min(0f)]
-        private float _landAmplitudePerImpulse = 0.02f;
-        [SerializeField, Range(0f, 0.5f)]
-        private float _landAmplitudeMax = 0.25f;
-        [SerializeField, Range(0f, 1f)]
-        private float _landReboundRatio = 0.5f;
-        [SerializeField, Min(0f)]
-        private float _mergePopDuration = 0.2f;
-        [SerializeField, Min(1f)]
-        private float _mergePopPeak = 1.2f;
-        [SerializeField, Range(0.05f, 0.95f)]
-        private float _mergePopPeakAt = 0.5f;
-        [SerializeField, Min(0f)]
-        private float _mergeShrinkDuration = 0.2f;
-        [SerializeField, Min(1)]
-        private int _mergeGhostPoolSize = 16;
-        [SerializeField, Min(1)]
-        private int _maxLiveParticles = 160;
-        [SerializeField, Min(1)]
-        private int _maxLiveRings = 8;
-        [SerializeField, Range(0f, 1f)]
-        private float _reduceMotionCountFactor = 0.5f;
-        [SerializeField, Min(1)]
-        private int _mergeBurstMinCount = 6;
-        [SerializeField, Min(1)]
-        private int _mergeBurstMaxCount = 10;
-        [SerializeField, Min(0.01f)]
-        private float _mergeBurstSize = 2f;
-        [SerializeField, Min(0.01f)]
-        private float _mergeBurstLifetime = 0.4f;
-        [SerializeField, Min(0.01f)]
-        private float _mergeRingDiameter = 2f;
-        [SerializeField, Min(0.01f)]
-        private float _mergeRingDuration = 0.1f;
-        [SerializeField, Min(1)]
-        private int _landDustCount = 4;
-        [SerializeField, Min(0.01f)]
-        private float _landDustSize = 3f;
-        [SerializeField, Min(0.01f)]
-        private float _landDustLifetime = 0.3f;
-        [SerializeField, Min(0.01f)]
-        private float _supernovaFlashDiameter = 12f;
-        [SerializeField, Min(0.01f)]
-        private float _supernovaFlashDuration = 0.15f;
-        [SerializeField, Min(0.01f)]
-        private float _supernovaRingDiameter = 10f;
-        [SerializeField, Min(0.01f)]
-        private float _supernovaRingDuration = 0.5f;
-        [SerializeField, Min(1)]
-        private int _confettiCount = 30;
-        [SerializeField, Min(0.01f)]
-        private float _confettiLifetime = 1.2f;
-        [SerializeField, Min(0)]
-        private int _heavyMergeMinTier = 8;
-        [SerializeField, Min(0f)]
-        private float _shakeAmplitudePerTier = 0.05f;
-        [SerializeField, Min(0.01f)]
-        private float _shakeDuration = 0.2f;
-        [SerializeField, Min(0f)]
-        private float _supernovaShakeAmplitude = 0.25f;
-        [SerializeField, Min(0.01f)]
-        private float _supernovaShakeDuration = 0.3f;
-        [SerializeField, Min(0f)]
-        private float _shakeMaxAmplitude = 0.3f;
-        [SerializeField, Range(0.05f, 1f)]
-        private float _slowMoScale = 0.7f;
-        [SerializeField, Min(0.01f)]
-        private float _slowMoDuration = 0.1f;
-        [SerializeField, Min(0.01f)]
-        private float _screenFlashDuration = 0.15f;
-        [SerializeField, Range(0f, 1f)]
-        private float _screenFlashPeakAlpha = 0.9f;
-        [SerializeField, Range(0.5f, 3f)]
-        private float _maxFlashesPerSecond = 3f;
-
         /// <summary>Pixels per world unit that the camera shake is snapped to (the Pixel Perfect Camera reference).</summary>
         public const float SHAKE_SNAP_UNITS_PER_STEP = 1f / 16f;
 
         /// <summary>Capacity of the shake slots: when all are used the one that ends first is replaced.</summary>
         public const int SHAKE_SLOTS = 8;
 
-        /// <summary>Seconds a new piece takes to grow from nothing to full size.</summary>
-        public float SpawnDuration => _spawnDuration;
+        [SerializeField]
+        private PieceAnimationSettings _animations = new();
+        [SerializeField]
+        private ParticleSettings _particles = new();
+        [SerializeField]
+        private ScreenFxSettings _screenFx = new();
+        [SerializeField]
+        private FeedbackSoundSettings _sound = new();
 
-        /// <summary>How far past full size the spawn pop goes (back-ease constant; 1.70158 is about 10 percent).</summary>
-        public float SpawnOvershoot => _spawnOvershoot;
+        /// <summary>The spawn pop, the drop stretch, the landing squash, the merge pop and the game-over flash.</summary>
+        public PieceAnimationSettings Animations => _animations;
 
-        /// <summary>Vertical stretch of a falling piece at full speed, as a fraction of its size.</summary>
-        public float DropStretch => _dropStretch;
+        /// <summary>The pooled particles and rings.</summary>
+        public ParticleSettings Particles => _particles;
 
-        /// <summary>Fall speed in units per second at which the drop stretch reaches its full amount.</summary>
-        public float DropStretchFullSpeed => _dropStretchFullSpeed;
+        /// <summary>The shake, the slow-mo and the screen flash.</summary>
+        public ScreenFxSettings ScreenFx => _screenFx;
 
-        /// <summary>Landing impulse below which a contact does not squash the piece.</summary>
-        public float LandImpulseThreshold => _landImpulseThreshold;
-
-        /// <summary>Seconds of the landing squash and stretch.</summary>
-        public float LandDuration => _landDuration;
-
-        /// <summary>Squash amplitude added per unit of landing impulse, before the clamp.</summary>
-        public float LandAmplitudePerImpulse => _landAmplitudePerImpulse;
-
-        /// <summary>Largest landing squash amplitude, as a fraction of the piece size.</summary>
-        public float LandAmplitudeMax => _landAmplitudeMax;
-
-        /// <summary>Size of the stretch after a landing squash, as a fraction of the squash amplitude.</summary>
-        public float LandReboundRatio => _landReboundRatio;
-
-        /// <summary>Seconds of the pop of a piece created by a merge.</summary>
-        public float MergePopDuration => _mergePopDuration;
-
-        /// <summary>Scale the merge pop reaches before settling at 1.</summary>
-        public float MergePopPeak => _mergePopPeak;
-
-        /// <summary>Fraction of the merge pop at which the peak happens.</summary>
-        public float MergePopPeakAt => _mergePopPeakAt;
-
-        /// <summary>Seconds the source pieces of a merge take to shrink to nothing.</summary>
-        public float MergeShrinkDuration => _mergeShrinkDuration;
-
-        /// <summary>Number of visual-only ghosts prewarmed for the shrinking source pieces of merges.</summary>
-        public int MergeGhostPoolSize => _mergeGhostPoolSize;
-
-        /// <summary>Hard cap of live pixel particles; when it is reached the oldest are recycled first.</summary>
-        public int MaxLiveParticles => _maxLiveParticles;
-
-        /// <summary>Hard cap of live flash and shockwave rings; when it is reached the oldest are recycled first.</summary>
-        public int MaxLiveRings => _maxLiveRings;
-
-        /// <summary>Multiplier of every particle count while Reduce Shake is on.</summary>
-        public float ReduceMotionCountFactor => _reduceMotionCountFactor;
-
-        /// <summary>Particles of the merge burst of the lowest tier.</summary>
-        public int MergeBurstMinCount => _mergeBurstMinCount;
-
-        /// <summary>Particles of the merge burst of the highest tier.</summary>
-        public int MergeBurstMaxCount => _mergeBurstMaxCount;
-
-        /// <summary>Size in reference pixels (1/16 world unit) of a merge burst particle.</summary>
-        public float MergeBurstSize => _mergeBurstSize;
-
-        /// <summary>Seconds a merge burst particle lives.</summary>
-        public float MergeBurstLifetime => _mergeBurstLifetime;
-
-        /// <summary>Largest diameter in world units of the white flash ring of a merge.</summary>
-        public float MergeRingDiameter => _mergeRingDiameter;
-
-        /// <summary>Seconds of the flash ring of a merge.</summary>
-        public float MergeRingDuration => _mergeRingDuration;
-
-        /// <summary>Particles of a landing dust puff.</summary>
-        public int LandDustCount => _landDustCount;
-
-        /// <summary>Size in reference pixels (1/16 world unit) of a dust particle.</summary>
-        public float LandDustSize => _landDustSize;
-
-        /// <summary>Seconds a dust particle lives.</summary>
-        public float LandDustLifetime => _landDustLifetime;
-
-        /// <summary>Diameter in world units of the white flash of a supernova.</summary>
-        public float SupernovaFlashDiameter => _supernovaFlashDiameter;
-
-        /// <summary>Seconds of the supernova flash.</summary>
-        public float SupernovaFlashDuration => _supernovaFlashDuration;
-
-        /// <summary>Largest diameter in world units of the supernova shockwave ring.</summary>
-        public float SupernovaRingDiameter => _supernovaRingDiameter;
-
-        /// <summary>Seconds of the supernova shockwave ring.</summary>
-        public float SupernovaRingDuration => _supernovaRingDuration;
-
-        /// <summary>Pixel particles of the new best confetti.</summary>
-        public int ConfettiCount => _confettiCount;
-
-        /// <summary>Seconds a confetti particle lives.</summary>
-        public float ConfettiLifetime => _confettiLifetime;
-
-        /// <summary>Lowest tier index whose merge shakes the screen and slows time (GDD §9).</summary>
-        public int HeavyMergeMinTier => _heavyMergeMinTier;
-
-        /// <summary>Shake amplitude in world units added per tier above the one below <see cref="HeavyMergeMinTier"/>.</summary>
-        public float ShakeAmplitudePerTier => _shakeAmplitudePerTier;
-
-        /// <summary>Seconds a merge shake lasts.</summary>
-        public float ShakeDuration => _shakeDuration;
-
-        /// <summary>Fixed shake amplitude in world units of a supernova.</summary>
-        public float SupernovaShakeAmplitude => _supernovaShakeAmplitude;
-
-        /// <summary>Seconds the supernova shake lasts.</summary>
-        public float SupernovaShakeDuration => _supernovaShakeDuration;
-
-        /// <summary>Cap in world units of the combined offset of every active shake, per axis.</summary>
-        public float ShakeMaxAmplitude => _shakeMaxAmplitude;
-
-        /// <summary>Time scale during the slow-mo of a heavy merge.</summary>
-        public float SlowMoScale => _slowMoScale;
-
-        /// <summary>Real seconds of the slow-mo of a heavy merge.</summary>
-        public float SlowMoDuration => _slowMoDuration;
-
-        /// <summary>Seconds of the full-screen flash of a supernova.</summary>
-        public float ScreenFlashDuration => _screenFlashDuration;
-
-        /// <summary>Opacity of the full-screen flash at its peak.</summary>
-        public float ScreenFlashPeakAlpha => _screenFlashPeakAlpha;
-
-        /// <summary>Most flashes that may start in one second (GDD §16: no flashing above 3 Hz).</summary>
-        public float MaxFlashesPerSecond => _maxFlashesPerSecond;
-
-        /// <summary>
-        /// Computes the shake amplitude of a merge: 0.05 x (tier - 7) with the defaults, 0 below the heavy tiers.
-        /// </summary>
-        /// <param name="tier">Tier index of the piece the merge created.</param>
-        /// <returns>The amplitude in world units, 0 when the merge is not heavy.</returns>
-        public float MergeShakeAmplitude(int tier)
-        {
-            return tier < _heavyMergeMinTier ? 0f : _shakeAmplitudePerTier * (tier - _heavyMergeMinTier + 1);
-        }
-
-        /// <summary>
-        /// Computes the particle count of a merge burst, growing from the lowest to the highest tier.
-        /// </summary>
-        /// <param name="tier">Tier index of the piece the merge created.</param>
-        /// <param name="tierCount">Number of tiers.</param>
-        /// <returns>A count between <see cref="MergeBurstMinCount"/> and <see cref="MergeBurstMaxCount"/>.</returns>
-        public int MergeBurstCount(int tier, int tierCount)
-        {
-            var t = tierCount > 1 ? Mathf.Clamp01(tier / (float)(tierCount - 1)) : 0f;
-            return Mathf.RoundToInt(Mathf.Lerp(_mergeBurstMinCount, Mathf.Max(_mergeBurstMinCount, _mergeBurstMaxCount), t));
-        }
-
-        /// <summary>
-        /// Computes the squash amplitude of a landing, proportional to the impulse and clamped.
-        /// </summary>
-        /// <param name="impulse">Total normal impulse of the landing contact.</param>
-        /// <returns>0 below the threshold, otherwise the amplitude up to <see cref="LandAmplitudeMax"/>.</returns>
-        public float LandAmplitude(float impulse)
-        {
-            if (impulse < _landImpulseThreshold)
-            {
-                return 0f;
-            }
-
-            return Mathf.Min(impulse * _landAmplitudePerImpulse, _landAmplitudeMax);
-        }
+        /// <summary>The sounds and haptics of the game events.</summary>
+        public FeedbackSoundSettings Sound => _sound;
     }
 }

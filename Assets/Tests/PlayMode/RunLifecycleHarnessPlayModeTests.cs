@@ -73,8 +73,8 @@ namespace Coika.Tests.PlayMode
 
             builder.Append(" input=").Append(EventListeners.Count(world.Input, "DropPressed")).Append('/').Append(EventListeners.Count(world.Input, "DropReleased"));
             builder.Append(" merge=").Append(EventListeners.Count(world.Merge, "Merged")).Append('/').Append(EventListeners.Count(world.Merge, "SupernovaTriggered"));
-            builder.Append(" overflow=").Append(EventListeners.Count(world.Overflow, "GameOverTriggered")).Append('/').Append(EventListeners.Count(world.Overflow, "OverflowProgressChanged"));
-            builder.Append(" controller=").Append(EventListeners.Count(world.Controller, "PieceDropped")).Append('/').Append(EventListeners.Count(world.Controller, "StateChanged"));
+            builder.Append(" overflow=").Append(EventListeners.Count(world.Overflow, "GameOverTriggered")).Append('/').Append(EventListeners.Count(world.Overflow, "OverflowProgressChanged")).Append('/').Append(EventListeners.Count(world.Overflow, "DangerChanged"));
+            builder.Append(" controller=").Append(EventListeners.Count(world.Controller, "PieceDropped")).Append('/').Append(EventListeners.Count(world.Controller, "StateChanged")).Append('/').Append(EventListeners.Count(world.Controller, "PieceSpawned"));
             builder.Append(" score=").Append(EventListeners.Count(world.Score, "ScoreChanged")).Append('/').Append(EventListeners.Count(world.Score, "NewBestReached"));
             builder.Append(" combo=").Append(EventListeners.Count(world.Score.ComboTracker, "ComboChanged"));
             builder.Append(" manager=").Append(EventListeners.Count(world.Manager, "StateChanged"))
@@ -84,12 +84,14 @@ namespace Coika.Tests.PlayMode
             builder.Append(" factory=").Append(EventListeners.Count(world.Factory, "PieceCreated"));
 
             var collided = 0;
+            var landed = 0;
             for (var i = 0; i < world.Factory.ActivePieces.Count; i++)
             {
                 collided += EventListeners.Count(world.Factory.ActivePieces[i], "Collided");
+                landed += EventListeners.Count(world.Factory.ActivePieces[i], "Landed");
             }
 
-            builder.Append(" collided=").Append(collided);
+            builder.Append(" collided=").Append(collided).Append(" landed=").Append(landed);
             return builder.ToString();
         }
     }

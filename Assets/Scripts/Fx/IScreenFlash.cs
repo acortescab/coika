@@ -1,7 +1,7 @@
 namespace Coika.Fx
 {
     /// <summary>
-    /// Flashes the whole screen. The seam between <see cref="ScreenFxDirector"/> and the overlay, so tests can
+    /// Flashes the whole screen. The seam between <see cref="FeedbackDirector"/> and the overlay, so tests can
     /// record the requests.
     /// </summary>
     public interface IScreenFlash

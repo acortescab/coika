@@ -4,7 +4,7 @@ namespace Coika.Fx
 {
     /// <summary>
     /// Emits the pooled visual effects. The seam between the code that decides when an effect happens
-    /// (<see cref="FxDirector"/>) and the one that draws it, so tests can record the requests.
+    /// (<see cref="FeedbackDirector"/>) and the one that draws it, so tests can record the requests.
     /// </summary>
     public interface IParticleSpawner
     {

@@ -56,6 +56,18 @@ namespace Coika.Gameplay
         public abstract Vector2 Evaluate(FeedbackConfig config, Piece piece);
 
         /// <summary>
+        /// The tint the effect contributes right now, multiplied with the tint of the other active effects. Only
+        /// called while active. Most effects only scale, so the default changes nothing.
+        /// </summary>
+        /// <param name="config">Tuning of the effect.</param>
+        /// <param name="piece">The piece being animated.</param>
+        /// <returns>The colour factor; white changes nothing.</returns>
+        public virtual Color Tint(FeedbackConfig config, Piece piece)
+        {
+            return Color.white;
+        }
+
+        /// <summary>
         /// Length of the effect in seconds, for effects that last a fixed time.
         /// </summary>
         /// <param name="config">Tuning of the effect.</param>

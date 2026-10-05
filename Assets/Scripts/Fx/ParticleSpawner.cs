@@ -8,7 +8,7 @@ namespace Coika.Fx
     /// Draws every effect of <see cref="FxKind"/> with two shared particle systems, one for the pixel particles and one
     /// for the rings, both emitted with <see cref="ParticleSystem.Emit(ParticleSystem.EmitParams, int)"/>. Nothing is
     /// instantiated or destroyed during play, and the emit parameters are structs, so a burst allocates nothing. The
-    /// systems have a hard cap (<see cref="FeedbackConfig.MaxLiveParticles"/>, <see cref="FeedbackConfig.MaxLiveRings"/>):
+    /// systems have a hard cap (<see cref="FeedbackConfig.Particles.MaxLiveParticles"/>, <see cref="FeedbackConfig.Particles.MaxLiveRings"/>):
     /// when it is reached Unity removes the oldest particles first. Sizes are set in reference pixels (1/16 world
     /// unit), positions are snapped to the pixel grid and the particles are point-sampled, so the look matches the pixel art.
     /// </summary>
@@ -44,7 +44,7 @@ namespace Coika.Fx
         }
 
         /// <summary>
-        /// Applies the Reduce Shake setting: it scales the particle counts by <see cref="FeedbackConfig.ReduceMotionCountFactor"/>.
+        /// Applies the Reduce Shake setting: it scales the particle counts by <see cref="FeedbackConfig.Particles.ReduceMotionCountFactor"/>.
         /// </summary>
         public bool ReduceMotion
         {
@@ -67,8 +67,8 @@ namespace Coika.Fx
                 throw new InvalidOperationException("The ParticleSpawner needs a particle system for the particles and one for the rings.");
             }
 
-            Prewarm(_particles, config.MaxLiveParticles);
-            Prewarm(_rings, config.MaxLiveRings);
+            Prewarm(_particles, config.Particles.MaxLiveParticles);
+            Prewarm(_rings, config.Particles.MaxLiveRings);
         }
 
         /// <summary>
@@ -105,22 +105,22 @@ namespace Coika.Fx
             switch (kind)
             {
                 case FxKind.MergeBurst:
-                    EmitParticles(position, color, ScaleCount(count), _config.MergeBurstSize, _config.MergeBurstLifetime);
+                    EmitParticles(position, color, ScaleCount(count), _config.Particles.MergeBurstSize, _config.Particles.MergeBurstLifetime);
                     break;
                 case FxKind.LandingDust:
-                    EmitParticles(position, color, ScaleCount(count), _config.LandDustSize, _config.LandDustLifetime);
+                    EmitParticles(position, color, ScaleCount(count), _config.Particles.LandDustSize, _config.Particles.LandDustLifetime);
                     break;
                 case FxKind.Confetti:
-                    EmitParticles(position, color, ScaleCount(count), _config.MergeBurstSize, _config.ConfettiLifetime);
+                    EmitParticles(position, color, ScaleCount(count), _config.Particles.MergeBurstSize, _config.Particles.ConfettiLifetime);
                     break;
                 case FxKind.FlashRing:
-                    EmitRing(position, _config.MergeRingDiameter, _config.MergeRingDuration);
+                    EmitRing(position, _config.Particles.MergeRingDiameter, _config.Particles.MergeRingDuration);
                     break;
                 case FxKind.SupernovaFlash:
-                    EmitRing(position, _config.SupernovaFlashDiameter, _config.SupernovaFlashDuration);
+                    EmitRing(position, _config.Particles.SupernovaFlashDiameter, _config.Particles.SupernovaFlashDuration);
                     break;
                 case FxKind.Shockwave:
-                    EmitRing(position, _config.SupernovaRingDiameter, _config.SupernovaRingDuration);
+                    EmitRing(position, _config.Particles.SupernovaRingDiameter, _config.Particles.SupernovaRingDuration);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown effect.");
@@ -139,7 +139,7 @@ namespace Coika.Fx
                 return 0;
             }
 
-            var factor = _countMultiplier * (_reduceMotion ? _config.ReduceMotionCountFactor : 1f);
+            var factor = _countMultiplier * (_reduceMotion ? _config.Particles.ReduceMotionCountFactor : 1f);
             return Mathf.Max(1, Mathf.RoundToInt(count * factor));
         }
 

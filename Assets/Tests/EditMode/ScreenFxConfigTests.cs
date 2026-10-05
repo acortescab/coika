@@ -22,10 +22,10 @@ namespace Coika.Tests.EditMode
         {
             var config = ScriptableObject.CreateInstance<FeedbackConfig>();
 
-            Assert.AreEqual(0f, config.MergeShakeAmplitude(7));
-            Assert.AreEqual(0.05f, config.MergeShakeAmplitude(8), 0.0001f);
-            Assert.AreEqual(0.10f, config.MergeShakeAmplitude(9), 0.0001f);
-            Assert.AreEqual(0.15f, config.MergeShakeAmplitude(10), 0.0001f);
+            Assert.AreEqual(0f, config.ScreenFx.MergeShakeAmplitude(7));
+            Assert.AreEqual(0.05f, config.ScreenFx.MergeShakeAmplitude(8), 0.0001f);
+            Assert.AreEqual(0.10f, config.ScreenFx.MergeShakeAmplitude(9), 0.0001f);
+            Assert.AreEqual(0.15f, config.ScreenFx.MergeShakeAmplitude(10), 0.0001f);
 
             Object.DestroyImmediate(config);
         }
@@ -38,14 +38,14 @@ namespace Coika.Tests.EditMode
         {
             var config = ScriptableObject.CreateInstance<FeedbackConfig>();
 
-            Assert.AreEqual(8, config.HeavyMergeMinTier);
-            Assert.AreEqual(0.2f, config.ShakeDuration, 0.0001f);
-            Assert.AreEqual(0.7f, config.SlowMoScale, 0.0001f);
-            Assert.AreEqual(0.1f, config.SlowMoDuration, 0.0001f);
-            Assert.AreEqual(0.15f, config.ScreenFlashDuration, 0.0001f);
-            Assert.AreEqual(3f, config.MaxFlashesPerSecond, 0.0001f);
-            Assert.Greater(config.SupernovaShakeAmplitude, config.MergeShakeAmplitude(10));
-            Assert.LessOrEqual(config.SupernovaShakeAmplitude, config.ShakeMaxAmplitude);
+            Assert.AreEqual(8, config.ScreenFx.HeavyMergeMinTier);
+            Assert.AreEqual(0.2f, config.ScreenFx.ShakeDuration, 0.0001f);
+            Assert.AreEqual(0.7f, config.ScreenFx.SlowMoScale, 0.0001f);
+            Assert.AreEqual(0.1f, config.ScreenFx.SlowMoDuration, 0.0001f);
+            Assert.AreEqual(0.15f, config.ScreenFx.ScreenFlashDuration, 0.0001f);
+            Assert.AreEqual(3f, config.ScreenFx.MaxFlashesPerSecond, 0.0001f);
+            Assert.Greater(config.ScreenFx.SupernovaShakeAmplitude, config.ScreenFx.MergeShakeAmplitude(10));
+            Assert.LessOrEqual(config.ScreenFx.SupernovaShakeAmplitude, config.ScreenFx.ShakeMaxAmplitude);
 
             Object.DestroyImmediate(config);
         }

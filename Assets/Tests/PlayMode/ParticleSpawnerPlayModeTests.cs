@@ -34,8 +34,8 @@ namespace Coika.Tests.PlayMode
         {
             _config = ScriptableObject.CreateInstance<FeedbackConfig>();
             _created.Add(_config);
-            TestReflection.SetField(_config, "_maxLiveParticles", CAP);
-            TestReflection.SetField(_config, "_maxLiveRings", RING_CAP);
+            TestReflection.SetField(_config.Particles, "_maxLiveParticles", CAP);
+            TestReflection.SetField(_config.Particles, "_maxLiveRings", RING_CAP);
             _spawner = TestParticleSpawner.Create(_created, _config);
             var systems = _spawner.GetComponentsInChildren<ParticleSystem>();
             _particles = systems[0];
@@ -84,8 +84,8 @@ namespace Coika.Tests.PlayMode
                 Assert.AreEqual(1f, particle.position.x, TOLERANCE, "X snapped to 1/16.");
                 Assert.AreEqual(2f, particle.position.y, TOLERANCE, "Y snapped to 1/16.");
                 Assert.AreEqual((Color32)Color.red, particle.startColor);
-                Assert.AreEqual(_config.MergeBurstSize / PIXELS_PER_UNIT, particle.startSize, TOLERANCE);
-                Assert.AreEqual(_config.MergeBurstLifetime, particle.startLifetime, TOLERANCE);
+                Assert.AreEqual(_config.Particles.MergeBurstSize / PIXELS_PER_UNIT, particle.startSize, TOLERANCE);
+                Assert.AreEqual(_config.Particles.MergeBurstLifetime, particle.startLifetime, TOLERANCE);
             }
         }
 
@@ -95,12 +95,12 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Burst_OfLandingDust_EmitsThreePixelParticles()
         {
-            _spawner.Burst(FxKind.LandingDust, Vector2.zero, Color.white, _config.LandDustCount);
+            _spawner.Burst(FxKind.LandingDust, Vector2.zero, Color.white, _config.Particles.LandDustCount);
 
             var emitted = ReadParticles(_particles);
-            Assert.AreEqual(_config.LandDustCount, emitted.Length);
+            Assert.AreEqual(_config.Particles.LandDustCount, emitted.Length);
             Assert.AreEqual(3f / PIXELS_PER_UNIT, emitted[0].startSize, TOLERANCE);
-            Assert.AreEqual(_config.LandDustLifetime, emitted[0].startLifetime, TOLERANCE);
+            Assert.AreEqual(_config.Particles.LandDustLifetime, emitted[0].startLifetime, TOLERANCE);
         }
 
         /// <summary>
@@ -109,11 +109,11 @@ namespace Coika.Tests.PlayMode
         [Test]
         public void Burst_OfConfetti_EmitsParticlesWithTheConfettiLifetime()
         {
-            _spawner.Burst(FxKind.Confetti, Vector2.zero, Color.cyan, _config.ConfettiCount);
+            _spawner.Burst(FxKind.Confetti, Vector2.zero, Color.cyan, _config.Particles.ConfettiCount);
 
             var emitted = ReadParticles(_particles);
-            Assert.AreEqual(Mathf.Min(_config.ConfettiCount, CAP), emitted.Length);
-            Assert.AreEqual(_config.ConfettiLifetime, emitted[0].startLifetime, TOLERANCE);
+            Assert.AreEqual(Mathf.Min(_config.Particles.ConfettiCount, CAP), emitted.Length);
+            Assert.AreEqual(_config.Particles.ConfettiLifetime, emitted[0].startLifetime, TOLERANCE);
             Assert.AreEqual((Color32)Color.cyan, emitted[0].startColor);
         }
 
@@ -147,7 +147,7 @@ namespace Coika.Tests.PlayMode
             _spawner.Burst(FxKind.MergeBurst, Vector2.zero, Color.red, 10);
             _spawner.Burst(FxKind.FlashRing, Vector2.zero, Color.white, 1);
 
-            Assert.AreEqual(Mathf.RoundToInt(10 * _config.ReduceMotionCountFactor), _spawner.LiveParticleCount);
+            Assert.AreEqual(Mathf.RoundToInt(10 * _config.Particles.ReduceMotionCountFactor), _spawner.LiveParticleCount);
             Assert.AreEqual(1, _spawner.LiveRingCount);
         }
 
@@ -178,7 +178,7 @@ namespace Coika.Tests.PlayMode
         {
             for (var burst = 0; burst < 10; burst++)
             {
-                _spawner.Burst(FxKind.MergeBurst, Vector2.zero, Color.red, _config.MergeBurstMaxCount);
+                _spawner.Burst(FxKind.MergeBurst, Vector2.zero, Color.red, _config.Particles.MergeBurstMaxCount);
                 _spawner.Burst(FxKind.FlashRing, Vector2.zero, Color.white, 1);
 
                 Assert.LessOrEqual(_spawner.LiveParticleCount, CAP);
@@ -275,9 +275,9 @@ namespace Coika.Tests.PlayMode
         {
             return kind switch
             {
-                FxKind.FlashRing => _config.MergeRingDiameter,
-                FxKind.SupernovaFlash => _config.SupernovaFlashDiameter,
-                _ => _config.SupernovaRingDiameter
+                FxKind.FlashRing => _config.Particles.MergeRingDiameter,
+                FxKind.SupernovaFlash => _config.Particles.SupernovaFlashDiameter,
+                _ => _config.Particles.SupernovaRingDiameter
             };
         }
 
@@ -290,9 +290,9 @@ namespace Coika.Tests.PlayMode
         {
             return kind switch
             {
-                FxKind.FlashRing => _config.MergeRingDuration,
-                FxKind.SupernovaFlash => _config.SupernovaFlashDuration,
-                _ => _config.SupernovaRingDuration
+                FxKind.FlashRing => _config.Particles.MergeRingDuration,
+                FxKind.SupernovaFlash => _config.Particles.SupernovaFlashDuration,
+                _ => _config.Particles.SupernovaRingDuration
             };
         }
     }

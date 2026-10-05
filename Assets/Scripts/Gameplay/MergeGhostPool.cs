@@ -61,7 +61,7 @@ namespace Coika.Gameplay
             Unsubscribe();
             _merge = newMerge;
             _config = newConfig;
-            Build(newConfig.MergeGhostPoolSize);
+            Build(newConfig.Animations.MergeGhostPoolSize);
             _onPairMerging ??= OnPairMerging;
             _merge.PairMerging += _onPairMerging;
         }
@@ -194,7 +194,7 @@ namespace Coika.Gameplay
             _renderers[i].sprite = piece.Sprite;
             _transforms[i].SetPositionAndRotation(piece.transform.position, piece.transform.rotation);
             _transforms[i].localScale = Vector3.one;
-            _timers[i].Start(_config.MergeShrinkDuration);
+            _timers[i].Start(_config.Animations.MergeShrinkDuration);
             _transforms[i].gameObject.SetActive(true);
         }
 
