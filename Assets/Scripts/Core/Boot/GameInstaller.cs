@@ -34,6 +34,9 @@ namespace Coika.Core
         /// <summary>The audio engine. Ready once the boot has loaded the mixer.</summary>
         public IAudioService Audio => _audioManager;
 
+        /// <summary>Haptic feedback, driven by the Haptics setting. Available once Start has run.</summary>
+        public IHaptics Haptics { get; private set; }
+
         private AudioManager _audioManager;
         private AudioMixer _mixer;
 
@@ -51,6 +54,7 @@ namespace Coika.Core
             Save = new SaveSystem(new FileSaveStorage(Application.persistentDataPath));
             Save.Load();
             Settings = new SettingsService(Save);
+            Haptics = new Haptics(HapticsBackendFactory.Create(), Settings, () => Time.unscaledTimeAsDouble);
             gameObject.AddComponent<SaveTriggers>().Initialize(Save);
             SceneManager.sceneLoaded += HandleSceneLoaded;
 
@@ -152,6 +156,11 @@ namespace Coika.Core
                     if (behaviour is IAudioConsumer audioConsumer && _audioManager != null)
                     {
                         audioConsumer.UseAudio(Audio);
+                    }
+
+                    if (behaviour is IHapticsConsumer hapticsConsumer)
+                    {
+                        hapticsConsumer.UseHaptics(Haptics);
                     }
                 }
             }

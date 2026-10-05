@@ -1,0 +1,12 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.coika.haptics"
+    compileSdkVersion **APIVERSION**
+    buildToolsVersion '**BUILDTOOLS**'
+
+    defaultConfig {
+        minSdkVersion **MINSDKVERSION**
+        targetSdkVersion **TARGETSDKVERSION**
+    }
+}
