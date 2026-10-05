@@ -158,6 +158,27 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// A game over ducks the music by 6 dB and the retry restores it and plays the gameplay loop (issue #29).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GameOver_WithAudio_DucksTheMusicAndRetryRestoresIt()
+        {
+            var audio = new FakeAudioService();
+            _installer.UseAudio(audio);
+
+            _installer.Manager.EndRun();
+            Assert.AreEqual(1, audio.DuckCalls.Count);
+            Assert.AreEqual(-6f, audio.DuckCalls[0].Db);
+
+            yield return new WaitForSecondsRealtime(GameManager.GAME_OVER_DELAY + DELAY_MARGIN);
+            _installer.Manager.Retry();
+
+            Assert.AreEqual(2, audio.DuckCalls.Count);
+            Assert.AreEqual(0f, audio.DuckCalls[1].Db);
+            CollectionAssert.AreEqual(new[] { MusicId.Gameplay }, audio.MusicCalls);
+        }
+
+        /// <summary>
         /// Unloading the Game scene and loading it again plays a fresh run.
         /// </summary>
         [UnityTest]

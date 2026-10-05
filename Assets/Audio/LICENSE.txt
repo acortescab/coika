@@ -1,0 +1,22 @@
+Coika placeholder audio
+=======================
+
+Every file under Assets/Audio/Sfx and Assets/Audio/Music is placeholder content made for this project by the
+generator Assets/Scripts/Tools/Editor/ToneSynth.cs (menu "Coika/Setup Audio"). The sounds are computed from sine
+waves and a fixed noise seed; no third-party recording, sample or library was used.
+
+License: CC0 1.0 Universal (public domain dedication), https://creativecommons.org/publicdomain/zero/1.0/
+Author: the Coika project.
+
+Sources
+-------
+Sfx/Spawn, Drop, Land1-3, Merge, MergeBig, Supernova, DangerTick, GameOver, NewBest, UiClick, UiBack: ToneSynth
+Music/Gameplay (90 BPM arpeggio loop) and Music/Menu (70 BPM arpeggio loop): ToneSynth
+
+Import settings (GDD §11)
+-------------------------
+Sound effects: Vorbis, 22.05 kHz, mono, Decompress On Load.
+Music: Vorbis, 44.1 kHz, stereo, Streaming.
+The editor validator (menu "Coika/Validate Audio", test AudioValidatorTests) checks them.
+
+These files are replaced by the final music and sounds in milestones M3 and M4; add their sources and licenses here.

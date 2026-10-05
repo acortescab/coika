@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
 namespace Coika.Core
@@ -15,6 +16,8 @@ namespace Coika.Core
     {
         [SerializeField]
         private AssetReference _gameScene; // Reference to the initial game scene to load
+        [SerializeField]
+        private AssetReference _audioVoice; // Prefab of one sound effect voice, pooled by the audio manager
 
         /// <summary>Service used to load and release assets. Available once Start has run.</summary>
         public IAssetService Assets { get; private set; }
@@ -27,6 +30,12 @@ namespace Coika.Core
 
         /// <summary>Observable user settings backed by <see cref="Save"/>.</summary>
         public SettingsService Settings { get; private set; }
+
+        /// <summary>The audio engine. Ready once the boot has loaded the mixer.</summary>
+        public IAudioService Audio => _audioManager;
+
+        private AudioManager _audioManager;
+        private AudioMixer _mixer;
 
         /// <summary>
         /// Keeps this object alive across scenes, creates the services and starts the boot flow.
@@ -57,6 +66,7 @@ namespace Coika.Core
             try
             {
                 await Addressables.InitializeAsync().Task;
+                await InitializeAudio();
                 await Scenes.LoadScene(_gameScene);
             }
             catch (Exception e)
@@ -64,6 +74,48 @@ namespace Coika.Core
                 // TODO: show a recoverable error state with a retry button that calls Boot() again (constraints C-01).
                 Debug.LogError($"Boot failed: {e.Message}");
             }
+        }
+
+        /// <summary>
+        /// Loads the mixer through the asset service and starts the audio engine, once. The mixer stays loaded for
+        /// the life of the app. A missing mixer or voice prefab is logged and the game runs without volume control or
+        /// without sound instead of failing the boot.
+        /// </summary>
+        private async Task InitializeAudio()
+        {
+            if (_audioManager != null)
+            {
+                return;
+            }
+
+            // Kept in a field: a retry of the boot must not load the mixer again and leak the first handle.
+            if (_mixer == null)
+            {
+                try
+                {
+                    _mixer = await Assets.LoadAsset<AudioMixer>(AudioManager.MIXER_ADDRESS);
+                }
+                catch (AssetLoadException e)
+                {
+                    Debug.LogError($"Audio mixer not loaded, volumes will not apply: {e.Message}");
+                }
+            }
+
+            var manager = gameObject.AddComponent<AudioManager>();
+            try
+            {
+                await manager.InitializeAsync(Assets, _audioVoice, _mixer, Settings, () => Time.unscaledTimeAsDouble);
+            }
+            catch (Exception e)
+            {
+                // The game is playable without sound, and a retry of the boot starts from a clean component: the
+                // manager destroys its own children when it goes.
+                Debug.LogError($"Audio not started, the game will be silent: {e.Message}");
+                DestroyImmediate(manager);
+                return;
+            }
+
+            _audioManager = manager;
         }
 
         /// <summary>
@@ -95,6 +147,11 @@ namespace Coika.Core
                     if (behaviour is ISettingsConsumer settingsConsumer)
                     {
                         settingsConsumer.UseSettings(Settings);
+                    }
+
+                    if (behaviour is IAudioConsumer audioConsumer && _audioManager != null)
+                    {
+                        audioConsumer.UseAudio(Audio);
                     }
                 }
             }

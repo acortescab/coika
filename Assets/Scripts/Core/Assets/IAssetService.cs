@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine.AddressableAssets;
 
@@ -29,6 +30,23 @@ namespace Coika.Core
         /// <exception cref="ArgumentException">The label is null or empty.</exception>
         /// <exception cref="AssetLoadException">The load failed after all retries.</exception>
         Task<T> LoadAsset<T>(string label);
+
+        /// <summary>
+        /// Loads every asset that has the given Addressable label.
+        /// </summary>
+        /// <typeparam name="T">Type of the assets to load.</typeparam>
+        /// <param name="label">Addressable label or key.</param>
+        /// <returns>The loaded assets, to be released together with <see cref="ReleaseAssets{T}"/>.</returns>
+        /// <exception cref="ArgumentException">The label is null or empty.</exception>
+        /// <exception cref="AssetLoadException">The load failed after all retries.</exception>
+        Task<IList<T>> LoadAssets<T>(string label);
+
+        /// <summary>
+        /// Releases assets previously returned by <see cref="LoadAssets{T}"/>.
+        /// </summary>
+        /// <typeparam name="T">Type of the assets.</typeparam>
+        /// <param name="assets">The list returned by the load. Null is ignored.</param>
+        void ReleaseAssets<T>(IList<T> assets);
 
         /// <summary>
         /// Releases an asset previously returned by LoadAsset.

@@ -32,8 +32,12 @@ namespace Coika.UI
     /// </summary>
     [AddComponentMenu("Coika/UI/Game Scene Installer")]
     [DisallowMultipleComponent]
-    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer
+    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer, IAudioConsumer
     {
+        private const float GAME_OVER_DUCK_DB = -6f; // GDD §11: music ducks 6 dB on game over
+        private const float GAME_OVER_DUCK_SECONDS = 0.5f;
+        private const float UNDUCK_SECONDS = 0.3f;
+
         // Same-scene objects, so direct references are allowed (C-01).
         [SerializeField]
         private Jar _jar;
@@ -84,6 +88,9 @@ namespace Coika.UI
         private Action<RunSummary> _onRunEnded;
         private SaveSystem _save;
         private SettingsService _settings;
+        private IAudioService _audio;
+        private SoundBank _soundBank;
+        private Action<GameState, GameState> _onStateChanged;
         private Action<SettingsChanged> _onSettingsChanged;
         private Action _onOverlayRetry;
         private bool _subscribed;
@@ -110,6 +117,15 @@ namespace Coika.UI
             _settings = settings;
         }
 
+        /// <summary>
+        /// Receives the audio service from the Boot installer. Without it (tests) the scene is silent.
+        /// </summary>
+        /// <param name="audio">The shared audio service.</param>
+        public void UseAudio(IAudioService audio)
+        {
+            _audio = audio;
+        }
+
         /// <summary>The loading overlay, for tests.</summary>
         public LoadingOverlay Overlay => _overlay;
 
@@ -126,6 +142,7 @@ namespace Coika.UI
             _onRunStarted = HandleRunStarted;
             _onGameOverReady = HandleGameOverReady;
             _onRunEnded = HandleRunEnded;
+            _onStateChanged = HandleStateChanged;
             _onRetryRequested = HandleRetryRequested;
             _onOverlayRetry = HandleOverlayRetry;
 
@@ -318,6 +335,19 @@ namespace Coika.UI
                 throw new InvalidOperationException("The GuideLine prefab needs a GuideLineView.");
             }
 
+            // The clips come with the rest of the load phase, never during play (C-01).
+            if (_audio != null)
+            {
+                _soundBank = new SoundBank(_assets, SoundBank.SFX_LABEL, SoundBank.MUSIC_GAMEPLAY_LABEL);
+                await _soundBank.LoadAsync();
+                if (_destroyed)
+                {
+                    return;
+                }
+
+                _audio.AddBank(_soundBank);
+            }
+
             Compose();
         }
 
@@ -366,6 +396,7 @@ namespace Coika.UI
             _manager.RunStarted += _onRunStarted;
             _manager.GameOverReady += _onGameOverReady;
             _manager.RunEnded += _onRunEnded;
+            _manager.StateChanged += _onStateChanged;
             _gameOverPresenter.RetryRequested += _onRetryRequested;
             if (_settings != null)
             {
@@ -430,6 +461,7 @@ namespace Coika.UI
             _manager.RunStarted -= _onRunStarted;
             _manager.GameOverReady -= _onGameOverReady;
             _manager.RunEnded -= _onRunEnded;
+            _manager.StateChanged -= _onStateChanged;
             _gameOverPresenter.RetryRequested -= _onRetryRequested;
             if (_settings != null)
             {
@@ -453,13 +485,36 @@ namespace Coika.UI
             _gameOver.Hide();
             _hudPresenter.BindQueue(run.Queue);
             _hudPresenter.Refresh();
+
+            // Starts the loop with the first run and brings the music back after a game over (retry).
+            _audio?.DuckMusic(0f, UNDUCK_SECONDS);
+            _audio?.PlayMusic(MusicId.Gameplay);
         }
 
         /// <summary>
-        /// Folds the finished run into the save and requests a write (GDD §13).
+        /// Pauses the music with the game and resumes it afterwards.
+        /// </summary>
+        /// <param name="previous">The state that was left.</param>
+        /// <param name="next">The state that was entered.</param>
+        private void HandleStateChanged(GameState previous, GameState next)
+        {
+            if (next == GameState.Paused)
+            {
+                _audio?.PauseMusic();
+            }
+            else if (previous == GameState.Paused)
+            {
+                _audio?.ResumeMusic();
+            }
+        }
+
+        /// <summary>
+        /// Ducks the music and folds the finished run into the save and requests a write (GDD §13).
         /// </summary>
         private void HandleRunEnded(RunSummary summary)
         {
+            _audio?.DuckMusic(GAME_OVER_DUCK_DB, GAME_OVER_DUCK_SECONDS);
+
             if (_save == null)
             {
                 return;
@@ -539,6 +594,13 @@ namespace Coika.UI
             if (_mergeSystem != null)
             {
                 _mergeSystem.enabled = false;
+            }
+
+            if (_soundBank != null)
+            {
+                _audio?.RemoveBank(_soundBank);
+                _soundBank.Dispose();
+                _soundBank = null;
             }
 
             _sprites?.Dispose();

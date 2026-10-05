@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: 4fd10806a9c39334e8fd506f2eae812e
   m_currentHash:
     serializedVersion: 2
-    Hash: ee681e6ab953e34a7bb4bd6450120fe4
+    Hash: 00000000000000000000000000000000
   m_ExtractTypeTreeData: 0
   m_DisableWriteTypeTree: 0
   m_OptimizeCatalogSize: 0
@@ -115,6 +115,9 @@ MonoBehaviour:
     - default
     - Locale
     - Locale-en
+    - sfx
+    - music-gameplay
+    - music-menu
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: f4ea109116ebf714d9384c19d9158e5b, type: 2}

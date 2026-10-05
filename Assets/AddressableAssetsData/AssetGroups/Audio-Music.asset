@@ -14,7 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Audio-Music
   m_GUID: 496a5a97fa7f67a40bd5ae18245a754d
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 5fe1d864991fe174c858229b3ef4fc7e
+    m_Address: Assets/Audio/Music/Menu.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - music-menu
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a28b95b324a26624c8e6165824119942
+    m_Address: Assets/Audio/Music/Gameplay.wav
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - music-gameplay
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 461287701ca2f3940b9955fcf5c57c47, type: 2}
   m_SchemaSet:

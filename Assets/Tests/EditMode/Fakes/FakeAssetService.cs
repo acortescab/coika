@@ -63,6 +63,30 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
+        /// Loads one new instance of T as the content of the label, counted like a single load.
+        /// </summary>
+        /// <typeparam name="T">Type of the asset to create.</typeparam>
+        /// <param name="label">Key used in the failure.</param>
+        public async Task<IList<T>> LoadAssets<T>(string label)
+        {
+            var asset = await Load<T>(label);
+            return new List<T> { asset };
+        }
+
+        /// <summary>
+        /// Counts one release for every asset of the list.
+        /// </summary>
+        /// <typeparam name="T">Type of the assets.</typeparam>
+        /// <param name="assets">The list returned by the load. Null is ignored.</param>
+        public void ReleaseAssets<T>(IList<T> assets)
+        {
+            if (assets != null)
+            {
+                ReleaseCount += assets.Count;
+            }
+        }
+
+        /// <summary>
         /// Counts a release. A null object is ignored, like the real service does.
         /// </summary>
         /// <param name="objectToRelease">The asset to release.</param>

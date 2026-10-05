@@ -45,6 +45,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7277f3ddcd929f74ea7e4192369c6e3e
+    m_Address: audio-mixer
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 78660cf322464e379e65e4c469ab9791
     m_Address: Assets/Data/Tiers/Tier_07_GasGiant.asset
     m_ReadOnly: 0
