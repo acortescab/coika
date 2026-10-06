@@ -6,5 +6,14 @@
     "claude-md-management@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "PowerShell(./Tools/run-tests.ps1:*)",
+      "PowerShell(Get-Process Unity:*)",
+      "PowerShell(unity status:*)",
+      "PowerShell(unity open:*)",
+      "PowerShell(unity command:*)"
+    ]
   }
 }

@@ -12,7 +12,8 @@ Unity 6000.6.3f1 mobile merge-physics game (2D URP). Overview, structure and set
 ## Commands (PowerShell, repo root)
 
 - `./Tools/run-tests.ps1` runs C-01 grep checks, then EditMode and PlayMode, and exits non-zero on failure. Options: `-Mode`, `-Filter <name>`, `-Repeat N`, `-TimeoutSeconds`.
-- **The Editor must be closed** (`Get-Process Unity`; a `Temp/UnityLockfile` that is held means it is open). Do not close the user's Editor: ask.
+- **The Editor must be closed** (`Get-Process Unity`; a `Temp/UnityLockfile` that is held means it is open). You may close it yourself, gracefully: `$p.CloseMainWindow(); $p.WaitForExit(60000)`. It exits without a prompt when nothing is unsaved. If it is still running after that (a save prompt), stop and ask; never `Stop-Process` or kill it (unsaved work is lost).
+- **Reopen it only when a task needs the live Editor** (`unity open E:\Work\coika`, then poll `unity status` until `ready`; it takes minutes), and close it again when done so the user gets it back as found. A background Editor cannot render or take input (unfocused): use it for `unity command` scene/asset edits, not for Game view screenshots or input tests. Prefer `run-tests.ps1` and batch `-executeMethod` tools, which need no focus.
 - After a run, summarize with `[xml]$x = Get-Content TestResults\PlayMode.junit.xml` and list failed `testcase` nodes.
 - The `unity` CLI is in `%LOCALAPPDATA%\Unity\bin`: refresh `$env:Path` from the Machine and User values if a shell cannot find it.
 
