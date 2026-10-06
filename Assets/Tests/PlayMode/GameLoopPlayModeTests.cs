@@ -151,6 +151,10 @@ namespace Coika.Tests.PlayMode
 
             var retry = Field<Button>(view, "_retryButton");
             retry.onClick.Invoke();
+            Assert.AreEqual(GameState.GameOver, _installer.Manager.State, "Retry was accepted during the lock.");
+
+            yield return new WaitForSecondsRealtime(UiAnimation.RETRY_LOCK_SECONDS + DELAY_MARGIN);
+            retry.onClick.Invoke();
             yield return null;
 
             Assert.AreEqual(GameState.Playing, _installer.Manager.State);

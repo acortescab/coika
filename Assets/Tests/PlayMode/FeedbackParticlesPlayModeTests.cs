@@ -123,6 +123,39 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// When the Game Over view appears for a run that beat the best score, the confetti is emitted again, once,
+        /// and not before the view is ready (issue #37).
+        /// </summary>
+        [Test]
+        public void GameOverReady_AfterANewBest_EmitsConfettiOnce()
+        {
+            MergeFresh(0);
+            _spawner.Requests.Clear();
+
+            _world.Manager.EndRun();
+            Assert.AreEqual(0, _spawner.Count(FxKind.Confetti), "The view is not ready yet.");
+            _world.Manager.Tick(GameManager.GAME_OVER_DELAY + 0.1f);
+
+            Assert.AreEqual(1, _spawner.Count(FxKind.Confetti));
+        }
+
+        /// <summary>
+        /// A run that is not a new best emits no confetti when the Game Over view appears.
+        /// </summary>
+        [Test]
+        public void GameOverReady_WithoutANewBest_EmitsNoConfetti()
+        {
+            _world.Score.BestScore = int.MaxValue;
+            MergeFresh(0);
+            _spawner.Requests.Clear();
+
+            _world.Manager.EndRun();
+            _world.Manager.Tick(GameManager.GAME_OVER_DELAY + 0.1f);
+
+            Assert.AreEqual(0, _spawner.Count(FxKind.Confetti));
+        }
+
+        /// <summary>
         /// For every tier, a landing emits a dust puff at the floor in the tier colour lightened towards white, with
         /// the configured count.
         /// </summary>

@@ -111,6 +111,7 @@ namespace Coika.UI
         private ScoreSystem _score;
         private RunSystems _systems;
         private GameManager _manager;
+        private readonly Func<double> _hudClock = () => Time.unscaledTimeAsDouble;
         private HudPresenter _hudPresenter;
         private GameOverPresenter _gameOverPresenter;
         private Action _onGameOverTriggered;
@@ -232,6 +233,7 @@ namespace Coika.UI
             _manager?.Tick(Time.unscaledDeltaTime);
             _timeScale?.Tick();
             _feedbackDirector?.Tick();
+            _hudPresenter?.Tick();
 
 #if UNITY_EDITOR || DEBUG
             ReadDebugKeys();
@@ -502,7 +504,8 @@ namespace Coika.UI
             // After the score system, so the combo is already updated when a merge is played.
             ComposeFeedback();
 
-            _hudPresenter = new HudPresenter(_hud, _score, _sprites.Get);
+            _hudPresenter = new HudPresenter(_hud, _score, _sprites.Get, _hudClock);
+            _gameOver.Initialize(_hudClock);
             _gameOverPresenter = new GameOverPresenter(_gameOver, _sprites.Get);
             _pausePresenter = new PausePresenter(_pauseView, _confirmView, _settingsView, _audio);
 
@@ -615,6 +618,13 @@ namespace Coika.UI
             {
                 _jar.DangerLine.SetPulseRate(reduce ? DangerLine.PulseRate.Soft : DangerLine.PulseRate.Fast);
             }
+
+            var motionScale = UiAnimation.MotionScale(reduce);
+            _hudPresenter?.SetMotionScale(motionScale);
+            if (_gameOver != null)
+            {
+                _gameOver.SetMotionScale(motionScale);
+            }
         }
 
         /// <summary>
@@ -715,6 +725,11 @@ namespace Coika.UI
                 {
                     _timeScale.Cancel();
                 }
+            }
+
+            if (next == GameState.Paused || next == GameState.GameOver)
+            {
+                _hudPresenter?.SkipAnimations();
             }
 
             if (next == GameState.Paused)
