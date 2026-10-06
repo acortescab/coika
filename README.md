@@ -122,6 +122,13 @@ All groups are shipped with the base package (Local paths). Moving `Audio-Music`
 
 Before a milestone sign-off, also run the game on the device with the Addressables Play Mode Script set to **Use Existing Build** (Tools > Addressables > Build Content first).
 
+## Performance and quality
+
+- **Quality tier.** At boot `QualityTierService` (Core) classifies the device: `Low` below 4 processors or below 3000 MB of memory, otherwise `Normal`. `GameInstaller` hands it to scenes through `IQualityConsumer`; `QualityApplier` (UI) then turns the post-processing Volume off and halves the particle counts on `Low`. It is read-only: there is no Settings option for it.
+- **Render settings.** Android starts at the **Very Low** quality level, and the URP asset has HDR off and MSAA off.
+- **Debug overlay.** In the Editor and in development builds (not in release builds) `DebugOverlay` shows FPS, the longest frame and the most GC allocations per frame of the last half second, the piece count and the tier. Read the allocation figure as a hint: IMGUI itself allocates, so use the Profiler counter "GC Allocation In Frame Count" for the real figure.
+- **Allocation guard.** `FullRunAllocationPlayModeTests` plays a long seeded run with every M2 system on and fails when the median window allocates more than 0.1 per physics step. The Editor makes sporadic allocations of its own, so the strict zero is measured on a device (`.planning/device-checklist-39.md`).
+
 ## Documentation
 
 | Document | Contents |

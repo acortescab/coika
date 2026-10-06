@@ -37,6 +37,9 @@ namespace Coika.Core
         /// <summary>Haptic feedback, driven by the Haptics setting. Available once Start has run.</summary>
         public IHaptics Haptics { get; private set; }
 
+        /// <summary>The performance tier of this device, chosen once. Available once Start has run.</summary>
+        public IQualityTier Quality { get; private set; }
+
         private AudioManager _audioManager;
         private AudioMixer _mixer;
 
@@ -55,6 +58,7 @@ namespace Coika.Core
             Save.Load();
             Settings = new SettingsService(Save);
             Haptics = new Haptics(HapticsBackendFactory.Create(), Settings, () => Time.unscaledTimeAsDouble);
+            Quality = new QualityTierService(new SystemInfoProvider());
             gameObject.AddComponent<SaveTriggers>().Initialize(Save);
             SceneManager.sceneLoaded += HandleSceneLoaded;
 
@@ -161,6 +165,11 @@ namespace Coika.Core
                     if (behaviour is IHapticsConsumer hapticsConsumer)
                     {
                         hapticsConsumer.UseHaptics(Haptics);
+                    }
+
+                    if (behaviour is IQualityConsumer qualityConsumer)
+                    {
+                        qualityConsumer.UseQuality(Quality);
                     }
                 }
             }
