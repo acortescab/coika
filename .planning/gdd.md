@@ -384,7 +384,7 @@ Plain C# `event Action<...>` on the owning class, wired in a composition-root `G
 ### 14.5 Performance budget
 - 60 FPS on a 2019 mid-range Android phone; 30 FPS floor.
 - ≤ 60 active rigidbodies, ≤ 20 draw calls (atlas + SRP Batcher), 0 GC allocations per frame during gameplay (pool pieces, particles; avoid LINQ and string concatenation in `Update`; cache TMP strings with `SetText` and number formatting).
-- Quality tier "Very Low" (already set), AA off, no HDR on camera. Post-processing: keep Bloom/Vignette on mid/high devices; on low-end (`SystemInfo.processorCount < 4` or `systemMemorySize < 3000`) disable the Volume. Expose via the Settings.
+- Quality tier "Very Low" (the Android default, issue #39), AA off, no HDR (camera and URP asset). Post-processing: keep Bloom/Vignette on mid/high devices; on low-end (`SystemInfo.processorCount < 4` or `systemMemorySize < 3000`) a `QualityTier` service picks `Low`, which disables the Volume and halves the particle counts. The tier is read-only: it is not a Settings option (owner decision, issue #39) and shows in the development debug overlay (FPS, frame time, GC allocation count, piece count, tier), which is compiled out of release builds.
 
 ### 14.6 Build settings
 - Android: IL2CPP, ARM64, Min API 26, portrait only, Target API per current Play requirement. iOS: min iOS 15, portrait only.

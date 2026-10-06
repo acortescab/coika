@@ -75,6 +75,20 @@ namespace Coika.Tests.PlayMode
         /// <exception cref="InvalidOperationException">A drop could not be made within the step limit.</exception>
         public SimulationResult Continue(IReadOnlyList<float> dropXs, Action<SimulationWorld> onStep = null)
         {
+            Advance(dropXs, onStep);
+            return _world.Snapshot();
+        }
+
+        /// <summary>
+        /// Plays the drops like <see cref="Continue"/> but returns nothing, because taking the snapshot allocates in
+        /// proportion to the pieces: a test that counts allocations measures this method.
+        /// </summary>
+        /// <param name="dropXs">World X of each drop, in order.</param>
+        /// <param name="onStep">Called after every physics step. Null for none.</param>
+        /// <exception cref="ArgumentNullException">The drops are null.</exception>
+        /// <exception cref="InvalidOperationException">A drop could not be made within the step limit.</exception>
+        public void Advance(IReadOnlyList<float> dropXs, Action<SimulationWorld> onStep = null)
+        {
             if (dropXs == null)
             {
                 throw new ArgumentNullException(nameof(dropXs));
@@ -93,8 +107,6 @@ namespace Coika.Tests.PlayMode
             {
                 Step();
             }
-
-            return _world.Snapshot();
         }
 
         /// <summary>

@@ -93,7 +93,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 
 ## 10. UI (GDD §8)
 
-- **S-90 (MUST)** UI is **uGUI + TextMeshPro**. No `OnGUI`/IMGUI at runtime.
+- **S-90 (MUST)** UI is **uGUI + TextMeshPro**. No `OnGUI`/IMGUI at runtime. Exception (issue #39): the development debug overlay may use IMGUI, because it needs no asset and is compiled out of release builds with `#if UNITY_EDITOR || DEVELOPMENT_BUILD`.
 - **S-91 (MUST)** Views are passive: they render state and raise events (`OnPlayClicked`). They contain no game rules and read no other system directly; a presenter or the installer wires them.
 - **S-92 (MUST)** Respect `Screen.safeArea`. Touch targets are at least 44 px in reference space.
 - **S-93 (SHOULD)** Disable `Raycast Target` on graphics that do not need input. Avoid nested layout groups on hot UI and avoid rebuilding layouts every frame.

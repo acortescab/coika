@@ -132,6 +132,41 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
+        /// The installer hands its device tier to the Game scene before the scene builds: on a Low device the
+        /// post-processing Volume of the scene is off once the run is playing (issue #39).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Boot_OnALowDevice_DisablesThePostProcessingOfTheScene()
+        {
+            var installer = CreateInstaller();
+            typeof(GameInstaller).GetProperty(nameof(GameInstaller.Quality)).GetSetMethod(true)
+                .Invoke(installer, new object[] { new QualityTierService(new FakeSystemInfo(2, 8192)) });
+            _sceneLoaded = (UnityEngine.Events.UnityAction<Scene, LoadSceneMode>)Delegate.CreateDelegate(
+                typeof(UnityEngine.Events.UnityAction<Scene, LoadSceneMode>), installer, "HandleSceneLoaded", false);
+            SceneManager.sceneLoaded += _sceneLoaded;
+
+            var boot = installer.Boot();
+            yield return new WaitUntil(() => boot.IsCompleted);
+            Assert.IsFalse(boot.IsFaulted, boot.Exception?.ToString());
+
+            var sceneInstaller = UnityEngine.Object.FindAnyObjectByType<GameSceneInstaller>();
+            for (var frame = 0; frame < MAX_WAIT_FRAMES; frame++)
+            {
+                if (sceneInstaller.Manager != null && sceneInstaller.Manager.State == GameState.Playing)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            Assert.AreEqual(GameState.Playing, sceneInstaller.Manager.State);
+            var volume = ReadField<UnityEngine.Rendering.Volume>(sceneInstaller, "_postProcessing");
+            Assert.IsNotNull(volume, "The Game scene needs its post-processing Volume wired to the installer.");
+            Assert.IsFalse(volume.enabled, "A Low device should have the post-processing off.");
+        }
+
+        /// <summary>
         /// Reads a private field, for the state of the audio manager that has no public view.
         /// </summary>
         /// <typeparam name="T">Type of the field.</typeparam>

@@ -859,6 +859,7 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   _cameraShake: {fileID: 2038901326}
+  _postProcessing: {fileID: 1889211355}
 --- !u!4 &2063483153
 Transform:
   m_ObjectHideFlags: 0

@@ -7,6 +7,7 @@ using Coika.Fx;
 using Coika.Gameplay;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Rendering;
 #if UNITY_EDITOR || DEBUG
 using UnityEngine.InputSystem;
 #endif
@@ -33,7 +34,7 @@ namespace Coika.UI
     /// </summary>
     [AddComponentMenu("Coika/UI/Game Scene Installer")]
     [DisallowMultipleComponent]
-    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer, IAudioConsumer, IHapticsConsumer
+    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer, IAudioConsumer, IHapticsConsumer, IQualityConsumer
     {
         private const float GAME_OVER_DUCK_DB = -6f; // GDD §11: music ducks 6 dB on game over
         private const float GAME_OVER_DUCK_SECONDS = 0.5f;
@@ -71,6 +72,9 @@ namespace Coika.UI
         // Optional: the parent of the camera, so the shake never touches the framing of the camera itself.
         [SerializeField]
         private ScreenShake _cameraShake;
+        // Optional: the global post-processing Volume, switched off on a Low device (issue #39).
+        [SerializeField]
+        private Volume _postProcessing;
 
         private bool _destroyed;
 
@@ -124,6 +128,10 @@ namespace Coika.UI
         private SettingsService _settings;
         private IAudioService _audio;
         private IHaptics _haptics;
+        private IQualityTier _quality;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private DebugOverlay _debugOverlay;
+#endif
         private SoundBank _soundBank;
         private Action<GameState, GameState> _onStateChanged;
         private Action<SettingsChanged> _onSettingsChanged;
@@ -170,6 +178,15 @@ namespace Coika.UI
         public void UseHaptics(IHaptics haptics)
         {
             _haptics = haptics;
+        }
+
+        /// <summary>
+        /// Receives the device tier from the Boot installer. Without it (tests) the scene runs at full quality.
+        /// </summary>
+        /// <param name="quality">The shared device tier.</param>
+        public void UseQuality(IQualityTier quality)
+        {
+            _quality = quality;
         }
 
         /// <summary>The loading overlay, for tests.</summary>
@@ -352,6 +369,10 @@ namespace Coika.UI
                 return;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ShowDebugOverlay();
+#endif
+
             var prefab = await _assets.LoadAsset<GameObject>(_canvasPrefab);
             _loadedCanvasPrefab = prefab;
             if (_destroyed)
@@ -489,6 +510,8 @@ namespace Coika.UI
                 ApplyReduceMotion();
             }
 
+            QualityApplier.Apply(_quality, _particles, _postProcessing);
+
             // The Boot installer hands the save over through UseSave; without it (tests) nothing is persisted.
             if (_save != null)
             {
@@ -596,6 +619,21 @@ namespace Coika.UI
                 _guideLineView.SetSettingOn(_settings == null || _settings.GuideLine);
             }
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Adds the debug overlay once, and points it at the piece factory of the current build (issue #39).
+        /// </summary>
+        private void ShowDebugOverlay()
+        {
+            if (_debugOverlay == null)
+            {
+                _debugOverlay = gameObject.AddComponent<DebugOverlay>();
+            }
+
+            _debugOverlay.Initialize(_factory, _quality);
+        }
+#endif
 
         /// <summary>
         /// Gives the particle spawner, the screen effects and the Danger Line the Reduce Shake setting (off without
@@ -1073,6 +1111,9 @@ namespace Coika.UI
 
             _factory?.Dispose();
             _factory = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _debugOverlay?.Initialize(null, _quality);
+#endif
 
             if (_assets != null && _theme != null && _tiers != null)
             {
