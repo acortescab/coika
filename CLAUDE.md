@@ -33,6 +33,10 @@ Unity 6000.6.3f1 mobile merge-physics game (2D URP). Overview, structure and set
 - A pool-growth or any other warning fails harness tests (`HarnessTestBase`): size the pool, do not silence the guard.
 - Allocation tests (`AllocatesNothing`) can fail once on a cold Editor start: rerun before investigating.
 
+## OpenSpec
+
+- OpenSpec is set up in `openspec/` (schema `spec-driven`; commands `/opsx:*`, skills `openspec-*`). When running `/feature-dev:feature-dev`, track the feature as an OpenSpec change: `/opsx:propose` for proposal, design and tasks, `/opsx:apply` to implement, `/opsx:archive` when done.
+
 ## Git
 
 - Branch `feature/<issue>-<name>` from `origin/main` (local `main` can be stale: fetch first). Commit only files you changed.
