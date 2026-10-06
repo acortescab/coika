@@ -387,7 +387,7 @@ Plain C# `event Action<...>` on the owning class, wired in a composition-root `G
 - Quality tier "Very Low" (already set), AA off, no HDR on camera. Post-processing: keep Bloom/Vignette on mid/high devices; on low-end (`SystemInfo.processorCount < 4` or `systemMemorySize < 3000`) disable the Volume. Expose via the Settings.
 
 ### 14.6 Build settings
-- Android: IL2CPP, ARM64, Min API 24, portrait only, Target API per current Play requirement. iOS: min iOS 15, portrait only.
+- Android: IL2CPP, ARM64, Min API 26, portrait only, Target API per current Play requirement. iOS: min iOS 15, portrait only.
 - Scripting backend: IL2CPP. Strip: Medium. Enable *Optimized Frame Pacing* (Android), target frame rate 60 (`Application.targetFrameRate = 60`), `QualitySettings.vSyncCount = 0`.
 
 ---

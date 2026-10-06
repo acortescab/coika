@@ -92,6 +92,36 @@ Inside the Editor, open **Window > General > Test Runner**.
 
 The golden file `Assets/Tests/PlayMode/Golden/simulation-seed-1234.txt` pins the result of one simulation. If a deliberate change of the rules, Unity or the physics settings changes it, regenerate it with `COIKA_UPDATE_GOLDEN=1` and commit the new file.
 
+## Building for Android
+
+Needs the Unity **Android Build Support** module (it brings the JDK, SDK and NDK) and the `unity` CLI. Close the Editor, then from the repository root:
+
+```powershell
+./Tools/build-android.ps1
+```
+
+The script runs `Coika.Tools.AndroidBuild.Build`, which applies the committed player settings (IL2CPP, ARM64 only, min API 26, portrait, Medium stripping, Optimized Frame Pacing), builds the Addressables content, then writes `Builds/android/coika.apk` (installable, for testing) and `Builds/android/coika.aab` (store). `Builds/` is git-ignored. It exits non-zero when the content build, a player build or a check fails:
+
+- **Manifest:** the merged manifest of the APK must declare `VIBRATE` and must not declare `INTERNET` (GDD §17).
+- **Size:** each package must be at most 50 MB (C-01 budget). The log prints the package sizes and the size of each Addressables group.
+
+All groups are shipped with the base package (Local paths). Moving `Audio-Music` and `Theme-Cosmic` to Play Asset Delivery asset packs is a follow-up.
+
+**Install on a device** (USB debugging on): `adb install -r Builds/android/coika.apk`.
+
+**Signing.** Builds use the debug keystore. For a release build set these environment variables before running the script; they are never saved in the project:
+
+| Variable | Meaning |
+|---|---|
+| `COIKA_KEYSTORE_PATH` | Path of the keystore file |
+| `COIKA_KEYSTORE_PASS` | Keystore password |
+| `COIKA_KEY_ALIAS` | Key alias |
+| `COIKA_KEY_PASS` | Key password |
+
+**Pixel art.** Sprite textures have an Android override (uncompressed RGBA32, point filter). After adding sprites run **Tools > Android > Apply Sprite Overrides**; an EditMode test fails while a sprite lacks it.
+
+Before a milestone sign-off, also run the game on the device with the Addressables Play Mode Script set to **Use Existing Build** (Tools > Addressables > Build Content first).
+
 ## Documentation
 
 | Document | Contents |

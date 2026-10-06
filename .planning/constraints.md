@@ -71,7 +71,7 @@ These issues must be updated or read with this constraint in mind:
 - [ ] No usage of `SceneManager.LoadScene`/`LoadSceneAsync` outside `Boot` bootstrap/`SceneLoader` (grep check in review).
 - [ ] No `Resources/` folder or `Resources.Load` usage (grep check).
 - [ ] No direct `Addressables.*` calls outside `AssetService`/`SceneLoader` (grep check). Only exception: `Addressables.InitializeAsync()` in `GameInstaller`.
-- [ ] **Initial size budget:** the base Android AAB/APK and iOS install contain only the Boot scene + runtime; record the build size in the PR. Target budget: **base build ≤ 30 MB** for M1–M2 [TUNE: confirm after the first Android build].
+- [ ] **Initial size budget:** the base Android AAB/APK and iOS install contain only the Boot scene + runtime; record the build size in the PR. Target budget: **base build ≤ 50 MB** for M1–M2 [TUNE]. First Android build (issue #38, 2026-10-06): APK 44.28 MB, AAB 44.00 MB, of which the Addressables groups are under 1 MB (ui 0.27, audio-music 0.21, core-data 0.05, fx 0.04, scenes 0.02) and the rest is the Unity runtime (libil2cpp 14.5 MB, libunity 12.3 MB, metadata 3.5 MB); the owner raised the budget from 30 MB. `Tools/build-android.ps1` fails above it.
 - [ ] Addressables **Analyze** rules (Check Duplicate Bundle Dependencies, Check Resources to Addressable Duplicate Dependencies) report no fixable issues.
 - [ ] Group sizes are reviewed in the **Addressables Report**; no single group exceeds the agreed size without justification.
 - [ ] Handle leak check: after returning to `Menu` and starting 10 consecutive runs, the Addressables Event Viewer shows no growing ref-counts.
