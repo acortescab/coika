@@ -49,8 +49,14 @@ namespace Coika.UI
 
         private CanvasGroup _group;
         private UnityAction _onRetryClicked;
+        private Func<double> _clock = UnscaledNow;
+        private CountUp _scoreCount;
+        private float _motionScale = 1f;
+        private double _shownAt;
         private float _fadeElapsed;
         private bool _fading;
+        private bool _retryReady;
+        private bool _retryConsumed;
 
         /// <summary>Raised once per click on the Retry button.</summary>
         public event Action RetryClicked;
@@ -83,18 +89,47 @@ namespace Coika.UI
         }
 
         /// <summary>
-        /// Runs the fade-in on unscaled time, so it plays even when the game is frozen (S-64).
+        /// Gives the view the clock of its animations. Without it the view uses the real unscaled time.
+        /// </summary>
+        /// <param name="clock">Unscaled time source in seconds.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="clock"/> is null.</exception>
+        public void Initialize(Func<double> clock)
+        {
+            _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        }
+
+        /// <summary>
+        /// Scales the count-up and the Retry lock, for reduced motion (<see cref="UiAnimation.MotionScale"/>).
+        /// </summary>
+        /// <param name="scale">1 for normal motion, less to shorten them.</param>
+        public void SetMotionScale(float scale)
+        {
+            _motionScale = scale;
+        }
+
+        /// <summary>
+        /// Runs the fade-in, the score count-up and the Retry lock on unscaled time, so they play even when the
+        /// game is frozen (S-64).
         /// </summary>
         private void Update()
         {
-            if (!_fading)
+            if (_fading)
             {
-                return;
+                _fadeElapsed += Time.unscaledDeltaTime;
+                _group.alpha = Mathf.Clamp01(_fadeElapsed / FADE_SECONDS);
+                _fading = _fadeElapsed < FADE_SECONDS;
             }
 
-            _fadeElapsed += Time.unscaledDeltaTime;
-            _group.alpha = Mathf.Clamp01(_fadeElapsed / FADE_SECONDS);
-            _fading = _fadeElapsed < FADE_SECONDS;
+            if (_scoreCount != null && _scoreCount.Tick())
+            {
+                _scoreText.SetText(NUMBER_FORMAT, _scoreCount.Value);
+            }
+
+            if (!_retryReady && _clock() - _shownAt >= UiAnimation.RETRY_LOCK_SECONDS * _motionScale)
+            {
+                _retryReady = true;
+                _retryButton.interactable = true;
+            }
         }
 
         /// <summary>
@@ -106,7 +141,16 @@ namespace Coika.UI
         {
             gameObject.SetActive(true);
 
-            _scoreText.SetText(NUMBER_FORMAT, summary.Score);
+            // The score rolls up from 0 to the exact final value.
+            _scoreCount = new CountUp(_clock, UiAnimation.COUNT_UP_SECONDS);
+            _scoreCount.SetScale(_motionScale);
+            _scoreText.SetText(NUMBER_FORMAT, 0);
+            _scoreCount.SetTarget(summary.Score);
+            if (!_scoreCount.Running)
+            {
+                _scoreText.SetText(NUMBER_FORMAT, summary.Score);
+            }
+
             _bestText.SetText(NUMBER_FORMAT, summary.BestScore);
             _newBestBanner.SetActive(summary.IsNewBest);
             _piecesText.SetText(NUMBER_FORMAT, summary.PiecesDropped);
@@ -121,6 +165,13 @@ namespace Coika.UI
             _fadeElapsed = 0f;
             _group.alpha = 0f;
             _fading = true;
+
+            // Retry waits until the view has finished appearing, so a tap meant for the game is not taken as Retry,
+            // and it is accepted once only.
+            _shownAt = _clock();
+            _retryReady = false;
+            _retryConsumed = false;
+            _retryButton.interactable = false;
         }
 
         /// <summary>
@@ -147,7 +198,22 @@ namespace Coika.UI
         /// </summary>
         private void HandleRetryClicked()
         {
+            if (!_retryReady || _retryConsumed)
+            {
+                return;
+            }
+
+            _retryConsumed = true;
+            _retryButton.interactable = false;
             RetryClicked?.Invoke();
+        }
+
+        /// <summary>
+        /// Reads the real unscaled time, used until <see cref="Initialize"/> gives another clock.
+        /// </summary>
+        private static double UnscaledNow()
+        {
+            return Time.unscaledTimeAsDouble;
         }
     }
 }

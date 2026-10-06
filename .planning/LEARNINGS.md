@@ -117,3 +117,12 @@ Non-obvious things learned while working on the project. Add a dated section per
 ### Working agreement
 - The user dislikes repeated per-case blocks; ask "would the 101st case need an edit here?" before writing the second copy.
 - Commit and push only when asked; keep the Editor-noise files unstaged; separate unrelated fixes (test flake, compiler warning) into their own commits.
+
+## Issue #37 - HUD and Game Over polish (2026-10-06)
+
+- **Animation logic is plain C#, not views.** `CountUp` and `Punch` take an injected `Func<double>` unscaled clock and have no Unity types, so EditMode tests drive them with a fake clock. Tuning values are `UiAnimation` constants (not a new asset): one less Addressables entry and no prefab regeneration, since the punch and pop scale the existing `RectTransform`s. Revisit if designers need to tune them.
+- **The presenter owns the animations.** `HudPresenter.Tick()` is called from the installer's `Update`; `SkipAnimations()` runs on Paused and GameOver, so the score always shows the exact value. `Refresh()` snaps because `ResetForNewRun` raises no events.
+- **Live best score.** `ScoreSystem.BestScore` only changes at run end, so after `NewBestReached` the best label follows the rolling score (`_bestFollowsScore`, reset in `Refresh` from `IsNewBest`).
+- **Retry lock and one-shot live in `GameOverView`.** The button is disabled on `Show` and enabled by `Update` after 0.5 s on the injected clock; the first accepted click sets `_retryConsumed`. `GameManager.Retry` is untouched, so a double tap no longer reaches it and logs no warning. Tests that click Retry right after the view appears must wait out the lock.
+- **Confetti at game over** is emitted by `FeedbackDirector.OnGameOverReady` (reuses the world-space `FxKind.Confetti`, no new asset). It is not gated by `ReduceShake`: reduced motion only lowers the count in `ParticleSpawner`.
+- **Reduced motion** scales durations with `UiAnimation.MotionScale` (0.5); `ApplyReduceMotion` pushes it to the presenter and the view.

@@ -15,14 +15,26 @@ namespace Coika.Tests.PlayMode
     public class GameOverViewPlayModeTests
     {
         private UiTestViews _views;
+        private double _now;
 
         /// <summary>
-        /// Builds the views; the Game Over object starts inactive, as in the prefab.
+        /// Builds the views; the Game Over object starts inactive, as in the prefab. The view runs on a fake clock.
         /// </summary>
         [SetUp]
         public void SetUp()
         {
+            _now = 0d;
             _views = new UiTestViews();
+            _views.GameOver.Initialize(() => _now);
+        }
+
+        /// <summary>
+        /// Moves the fake clock forward and waits a frame, so the view's Update sees the new time.
+        /// </summary>
+        private IEnumerator Advance(double seconds)
+        {
+            _now += seconds;
+            yield return null;
         }
 
         /// <summary>
@@ -46,10 +58,11 @@ namespace Coika.Tests.PlayMode
         /// <summary>
         /// Show activates the view and writes the score, the best score, the pieces and the time.
         /// </summary>
-        [Test]
-        public void Show_WithASummary_ShowsItsValues()
+        [UnityTest]
+        public IEnumerator Show_WithASummary_ShowsItsValues()
         {
             _views.GameOver.Show(Summary(score: 4321, best: 5000, piecesDropped: 87, duration: 125.5f));
+            yield return Advance(UiAnimation.COUNT_UP_SECONDS);
 
             Assert.That(_views.GameOverObject.activeSelf, Is.True);
             Assert.That(UiTestViews.Shown(_views.OverScore), Is.EqualTo("4321"));
@@ -88,18 +101,90 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// A click on Retry raises the event exactly once and starts nothing else.
+        /// The score rolls from 0 on the fake clock, shows an in-between value half way and ends on the exact score
+        /// after 0.3 s.
         /// </summary>
-        [Test]
-        public void Retry_WhenClicked_RaisesRetryClickedOnce()
+        [UnityTest]
+        public IEnumerator Show_ScoreCountUp_EndsOnTheExactScoreAfterTheDuration()
+        {
+            _views.GameOver.Show(Summary(score: 1000));
+            Assert.That(UiTestViews.Shown(_views.OverScore), Is.EqualTo("0"));
+
+            yield return Advance(UiAnimation.COUNT_UP_SECONDS / 2d);
+            var half = int.Parse(UiTestViews.Shown(_views.OverScore));
+            Assert.That(half, Is.GreaterThan(0).And.LessThan(1000));
+
+            yield return Advance(UiAnimation.COUNT_UP_SECONDS);
+            Assert.That(UiTestViews.Shown(_views.OverScore), Is.EqualTo("1000"));
+        }
+
+        /// <summary>
+        /// A click on Retry after the lock raises the event exactly once and starts nothing else.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Retry_WhenClickedAfterTheLock_RaisesRetryClickedOnce()
         {
             var count = 0;
             _views.GameOver.RetryClicked += () => count++;
             _views.GameOver.Show(Summary());
+            yield return Advance(UiAnimation.RETRY_LOCK_SECONDS);
 
             _views.OverRetry.onClick.Invoke();
 
             Assert.That(count, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// A tap before the Retry lock ends is ignored, and the button is not interactable meanwhile.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Retry_WhenClickedBeforeTheLockEnds_RaisesNothing()
+        {
+            var count = 0;
+            _views.GameOver.RetryClicked += () => count++;
+            _views.GameOver.Show(Summary());
+            yield return Advance(UiAnimation.RETRY_LOCK_SECONDS / 2d);
+
+            _views.OverRetry.onClick.Invoke();
+
+            Assert.That(count, Is.EqualTo(0));
+            Assert.That(_views.OverRetry.interactable, Is.False);
+        }
+
+        /// <summary>
+        /// A double tap raises Retry exactly once.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Retry_WhenTappedTwice_RaisesRetryClickedOnce()
+        {
+            var count = 0;
+            _views.GameOver.RetryClicked += () => count++;
+            _views.GameOver.Show(Summary());
+            yield return Advance(UiAnimation.RETRY_LOCK_SECONDS);
+
+            _views.OverRetry.onClick.Invoke();
+            _views.OverRetry.onClick.Invoke();
+
+            Assert.That(count, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// Showing the view again after a Retry accepts one new Retry.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Retry_AfterShowingAgain_IsAcceptedOnceMore()
+        {
+            var count = 0;
+            _views.GameOver.RetryClicked += () => count++;
+            _views.GameOver.Show(Summary());
+            yield return Advance(UiAnimation.RETRY_LOCK_SECONDS);
+            _views.OverRetry.onClick.Invoke();
+
+            _views.GameOver.Show(Summary());
+            yield return Advance(UiAnimation.RETRY_LOCK_SECONDS);
+            _views.OverRetry.onClick.Invoke();
+
+            Assert.That(count, Is.EqualTo(2));
         }
 
         /// <summary>
@@ -121,13 +206,14 @@ namespace Coika.Tests.PlayMode
         /// <summary>
         /// The presenter forwards the Retry click to its own event.
         /// </summary>
-        [Test]
-        public void Presenter_WhenRetryIsClicked_RaisesRetryRequested()
+        [UnityTest]
+        public IEnumerator Presenter_WhenRetryIsClicked_RaisesRetryRequested()
         {
             var presenter = new GameOverPresenter(_views.GameOver, tier => null);
             var count = 0;
             presenter.RetryRequested += () => count++;
             presenter.Present(Summary());
+            yield return Advance(UiAnimation.RETRY_LOCK_SECONDS);
 
             _views.OverRetry.onClick.Invoke();
             presenter.Dispose();

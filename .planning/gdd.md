@@ -208,7 +208,7 @@ Resume · Restart (confirm) · Settings · Menu (confirm). Physics frozen via `T
 Entered by the HUD pause button, the Back button, or the app losing focus (`OnApplicationPause(true)` / `OnApplicationFocus(false)`, which also saves). Leaving Pause is only ever the player's choice: Resume, Back on the menu, or a confirmed Restart. Back closes the top panel first (a confirmation dialog counts as Cancel). Input is ignored for 0.15 s of game time after the resume, so the tap on Resume never drops a piece. Restart and Menu go through the reusable confirmation dialog, where Cancel is the default.
 
 ### 8.4 Game Over
-Final score (count-up), Best score (+ "NEW BEST!"), highest tier reached (icon), pieces dropped, time played. Buttons: **Retry** (primary), **Menu**. Appears 1.2 s after the jar-full animation.
+Final score (count-up), Best score (+ "NEW BEST!"), highest tier reached (icon), pieces dropped, time played. Buttons: **Retry** (primary), **Menu**. Appears 1.2 s after the jar-full animation. Retry is accepted only after the view has finished appearing (about 0.5 s), and once.
 
 ### 8.5 Settings
 Music volume, SFX volume, Haptics on/off, Guide line on/off, Reduce screen shake on/off, Finger offset on/off, Left-handed (affects the offset side only), Language (EN/ES at launch), Reset progress (confirm).

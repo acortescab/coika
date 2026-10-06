@@ -43,6 +43,7 @@ namespace Coika.Fx
         private readonly Action<GameState, GameState> _onStateChanged;
         private readonly Action<RunContext> _onRunStarted;
         private readonly Action<RunSummary> _onRunEnded;
+        private readonly Action<RunSummary> _onGameOverReady;
 
         private MergeSystem _merge;
         private ScoreSystem _score;
@@ -105,6 +106,7 @@ namespace Coika.Fx
             _onStateChanged = OnStateChanged;
             _onRunStarted = OnRunStarted;
             _onRunEnded = OnRunEnded;
+            _onGameOverReady = OnGameOverReady;
         }
 
         /// <summary>
@@ -174,6 +176,7 @@ namespace Coika.Fx
             _manager.StateChanged += _onStateChanged;
             _manager.RunStarted += _onRunStarted;
             _manager.RunEnded += _onRunEnded;
+            _manager.GameOverReady += _onGameOverReady;
 
             var active = _factory.ActivePieces;
             for (var i = 0; i < active.Count; i++)
@@ -204,6 +207,7 @@ namespace Coika.Fx
             _manager.StateChanged -= _onStateChanged;
             _manager.RunStarted -= _onRunStarted;
             _manager.RunEnded -= _onRunEnded;
+            _manager.GameOverReady -= _onGameOverReady;
 
             var active = _factory.ActivePieces;
             for (var i = 0; i < active.Count; i++)
@@ -456,6 +460,19 @@ namespace Coika.Fx
             _haptics?.Play(HapticKind.Long);
 
             FlashPieces();
+        }
+
+        /// <summary>
+        /// Emits the confetti when the Game Over view appears for a run that beat the best score. Confetti is a
+        /// celebration, not shake, so reduced motion only lowers its count (in the spawner).
+        /// </summary>
+        /// <param name="summary">The summary of the run.</param>
+        private void OnGameOverReady(RunSummary summary)
+        {
+            if (summary.IsNewBest)
+            {
+                _spawner.Burst(FxKind.Confetti, new Vector2(_jar.transform.position.x, _jar.DangerLineY), Color.white, _config.Particles.ConfettiCount);
+            }
         }
 
         /// <summary>

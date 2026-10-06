@@ -126,5 +126,31 @@ namespace Coika.UI
             _nextPreview.sprite = sprite;
             _nextPreview.enabled = sprite != null;
         }
+
+        /// <summary>
+        /// Scales the combo label, for the punch on each increment.
+        /// </summary>
+        /// <param name="scale">Uniform scale; 1 is the resting size.</param>
+        public void SetComboScale(float scale)
+        {
+            Scale(_comboText, scale);
+        }
+
+        /// <summary>
+        /// Scales the next-piece preview, for the pop when the next tier changes.
+        /// </summary>
+        /// <param name="scale">Uniform scale; 1 is the resting size.</param>
+        public void SetNextScale(float scale)
+        {
+            Scale(_nextPreview, scale);
+        }
+
+        /// <summary>
+        /// Sets the uniform scale of a graphic.
+        /// </summary>
+        private static void Scale(Graphic graphic, float scale)
+        {
+            graphic.rectTransform.localScale = new Vector3(scale, scale, 1f);
+        }
     }
 }

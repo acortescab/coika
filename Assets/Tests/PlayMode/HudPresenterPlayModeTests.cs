@@ -20,9 +20,11 @@ namespace Coika.Tests.PlayMode
         private ScoreSystem _score;
         private HudPresenter _presenter;
         private Sprite[] _sprites;
+        private double _now;
 
         /// <summary>
         /// Builds the views, a default config, 11 tiers, a score system with a fixed clock and one sprite per tier.
+        /// The presenter animates on a fake unscaled clock.
         /// </summary>
         [SetUp]
         public void SetUp()
@@ -45,7 +47,17 @@ namespace Coika.Tests.PlayMode
             }
 
             _score = new ScoreSystem(_config, tiers, () => 0d);
-            _presenter = new HudPresenter(_views.Hud, _score, tier => _sprites[tier]);
+            _now = 0d;
+            _presenter = new HudPresenter(_views.Hud, _score, tier => _sprites[tier], () => _now);
+        }
+
+        /// <summary>
+        /// Moves the fake clock forward and ticks the presenter.
+        /// </summary>
+        private void Advance(double seconds)
+        {
+            _now += seconds;
+            _presenter.Tick();
         }
 
         /// <summary>
@@ -77,14 +89,133 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// A drop changes the score and the label follows.
+        /// A drop changes the score and the label rolls to it, ending on the exact value after 0.3 s.
         /// </summary>
         [Test]
-        public void ScoreChanged_AfterADrop_UpdatesTheScoreLabel()
+        public void ScoreChanged_AfterADrop_RollsTheScoreLabelToTheExactValue()
         {
+            _score.OnPieceDropped(1000);
+            Assert.That(UiTestViews.Shown(_views.HudScore), Is.EqualTo("0"));
+
+            Advance(UiAnimation.COUNT_UP_SECONDS / 2d);
+            var half = int.Parse(UiTestViews.Shown(_views.HudScore));
+            Assert.That(half, Is.GreaterThan(0).And.LessThan(1000));
+
+            Advance(UiAnimation.COUNT_UP_SECONDS);
+            Assert.That(UiTestViews.Shown(_views.HudScore), Is.EqualTo("1000"));
+        }
+
+        /// <summary>
+        /// Skipping the animations (pause, game over) jumps the label to the exact score.
+        /// </summary>
+        [Test]
+        public void SkipAnimations_WhileTheScoreRolls_ShowsTheExactScore()
+        {
+            _score.OnPieceDropped(1000);
+
+            _presenter.SkipAnimations();
+
+            Assert.That(UiTestViews.Shown(_views.HudScore), Is.EqualTo("1000"));
+            Advance(UiAnimation.COUNT_UP_SECONDS);
+            Assert.That(UiTestViews.Shown(_views.HudScore), Is.EqualTo("1000"));
+        }
+
+        /// <summary>
+        /// With reduced motion the durations shrink: a zero scale makes the score jump at once.
+        /// </summary>
+        [Test]
+        public void SetMotionScale_WithZero_ShowsTheScoreAtOnce()
+        {
+            _presenter.SetMotionScale(0f);
+
             _score.OnPieceDropped(4);
 
             Assert.That(UiTestViews.Shown(_views.HudScore), Is.EqualTo("4"));
+        }
+
+        /// <summary>
+        /// The best label updates as soon as the run beats the best score, and follows the score after it.
+        /// </summary>
+        [Test]
+        public void NewBestReached_MidRun_UpdatesTheBestLabelAtOnce()
+        {
+            _score.BestScore = 10;
+            _presenter.Refresh();
+            Assert.That(UiTestViews.Shown(_views.HudBest), Is.EqualTo("10"));
+
+            _score.OnPieceDropped(50);
+            Advance(UiAnimation.COUNT_UP_SECONDS);
+
+            Assert.That(UiTestViews.Shown(_views.HudBest), Is.EqualTo("50"));
+        }
+
+        /// <summary>
+        /// A score below the best leaves the best label alone.
+        /// </summary>
+        [Test]
+        public void ScoreChanged_BelowTheBest_KeepsTheBestLabel()
+        {
+            _score.BestScore = 1000;
+            _presenter.Refresh();
+
+            _score.OnPieceDropped(5);
+            Advance(UiAnimation.COUNT_UP_SECONDS);
+
+            Assert.That(UiTestViews.Shown(_views.HudBest), Is.EqualTo("1000"));
+        }
+
+        /// <summary>
+        /// A combo increment punches the label up and it settles back to its resting size.
+        /// </summary>
+        [Test]
+        public void ComboChanged_OnAnIncrement_PunchesTheLabelThenRests()
+        {
+            _score.OnMerged(1);
+            _score.OnMerged(1);
+
+            Advance(UiAnimation.COMBO_PUNCH_SECONDS / 2d);
+            Assert.That(_views.HudCombo.rectTransform.localScale.x, Is.GreaterThan(1f));
+
+            Advance(UiAnimation.COMBO_PUNCH_SECONDS);
+            Assert.That(_views.HudCombo.rectTransform.localScale.x, Is.EqualTo(1f));
+        }
+
+        /// <summary>
+        /// A combo that ends does not punch the label.
+        /// </summary>
+        [Test]
+        public void ComboChanged_WhenTheComboExpires_DoesNotPunch()
+        {
+            _score.OnMerged(1);
+            _score.OnMerged(1);
+            Advance(UiAnimation.COMBO_PUNCH_SECONDS);
+
+            _score.ComboTracker.Tick(100d);
+            Advance(UiAnimation.COMBO_PUNCH_SECONDS / 2d);
+
+            Assert.That(_views.HudCombo.rectTransform.localScale.x, Is.EqualTo(1f));
+        }
+
+        /// <summary>
+        /// The preview pops when the next tier changes and not when the queue is bound.
+        /// </summary>
+        [Test]
+        public void BindQueue_ThenAdvanceToAnotherTier_PopsThePreview()
+        {
+            var queue = new SpawnQueue(_config, 1234);
+            _presenter.BindQueue(queue);
+            Advance(UiAnimation.NEXT_POP_SECONDS / 2d);
+            Assert.That(_views.HudNext.rectTransform.localScale.x, Is.EqualTo(1f));
+
+            var shown = queue.Next;
+            for (var i = 0; i < 50 && queue.Next == shown; i++)
+            {
+                queue.Advance();
+            }
+
+            Assume.That(queue.Next, Is.Not.EqualTo(shown));
+            Advance(UiAnimation.NEXT_POP_SECONDS / 2d);
+            Assert.That(_views.HudNext.rectTransform.localScale.x, Is.GreaterThan(1f));
         }
 
         /// <summary>
@@ -204,10 +335,16 @@ namespace Coika.Tests.PlayMode
             _score.OnMerged(1);
             _score.OnMerged(1);
 
+            Advance(UiAnimation.COUNT_UP_SECONDS);
+
             var allocations = AllocationMeter.Measure(() =>
             {
                 _score.OnPieceDropped(3);
                 _score.ComboTracker.RegisterMerge(0d);
+                _now += UiAnimation.COUNT_UP_SECONDS / 4d;
+                _presenter.Tick();
+                _now += UiAnimation.COUNT_UP_SECONDS;
+                _presenter.Tick();
             });
 
             Assert.That(allocations, Is.LessThanOrEqualTo(AllocationMeter.TOLERANCE_COUNT));
