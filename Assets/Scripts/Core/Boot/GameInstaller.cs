@@ -28,6 +28,9 @@ namespace Coika.Core
         /// <summary>Persisted save data. Loaded before the first scene.</summary>
         public SaveSystem Save { get; private set; }
 
+        /// <summary>The mode of the next run; written by the Menu, read by the Game scene. Available once Start has run.</summary>
+        public RunSetup RunSetup { get; private set; }
+
         /// <summary>Observable user settings backed by <see cref="Save"/>.</summary>
         public SettingsService Settings { get; private set; }
 
@@ -56,6 +59,7 @@ namespace Coika.Core
 
             Save = new SaveSystem(new FileSaveStorage(Application.persistentDataPath));
             Save.Load();
+            RunSetup = new RunSetup();
             Settings = new SettingsService(Save);
             Haptics = new Haptics(HapticsBackendFactory.Create(), Settings, () => Time.unscaledTimeAsDouble);
             Quality = new QualityTierService(new SystemInfoProvider());
@@ -150,6 +154,11 @@ namespace Coika.Core
                     if (behaviour is ISaveConsumer saveConsumer)
                     {
                         saveConsumer.UseSave(Save);
+                    }
+
+                    if (behaviour is IRunSetupConsumer runSetupConsumer)
+                    {
+                        runSetupConsumer.UseRunSetup(RunSetup);
                     }
 
                     if (behaviour is ISettingsConsumer settingsConsumer)

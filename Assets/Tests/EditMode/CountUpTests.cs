@@ -151,7 +151,7 @@ namespace Coika.Tests.EditMode
             _now = DURATION / 4d;
             count.Tick();
 
-            var allocations = AllocationMeter.Measure(() =>
+            var allocations = AllocationMeter.MeasureLowest(() =>
             {
                 _now += 0.01d;
                 count.Tick();

@@ -71,9 +71,23 @@ namespace Coika.Core
         /// <param name="highestTierReached">Highest tier index reached in the run.</param>
         /// <param name="merges">Merges performed in the run.</param>
         /// <param name="playSeconds">Play time of the run in seconds.</param>
-        public void RecordRun(int score, int highestTierReached, int merges, float playSeconds)
+        /// <param name="mode">Mode the run was played in.</param>
+        /// <param name="recordsBest">Whether the mode records its best score; progress is folded in either way.</param>
+        /// <param name="dayKey">UTC day as yyyyMMdd, used by the Daily best.</param>
+        public void RecordRun(
+            int score,
+            int highestTierReached,
+            int merges,
+            float playSeconds,
+            GameMode mode = GameMode.Classic,
+            bool recordsBest = true,
+            int dayKey = 0)
         {
-            bestScore.classic = Math.Max(bestScore.classic, score);
+            if (recordsBest)
+            {
+                SetBest(mode, score, dayKey);
+            }
+
             highestTier = Math.Max(highestTier, highestTierReached);
             totals.games++;
             totals.merges += merges;
@@ -83,6 +97,55 @@ namespace Coika.Core
             for (var i = 0; i <= top; i++)
             {
                 discoveredTiers[i] = true;
+            }
+        }
+
+        /// <summary>
+        /// Reads the best score of a mode.
+        /// </summary>
+        /// <param name="mode">The mode.</param>
+        /// <param name="dayKey">Today in UTC as yyyyMMdd; a Daily best set on another day reads as 0.</param>
+        /// <returns>The best score, 0 when none.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">The mode has no best score field.</exception>
+        public int GetBest(GameMode mode, int dayKey = 0)
+        {
+            switch (mode)
+            {
+                case GameMode.Classic:
+                    return bestScore.classic;
+                case GameMode.Zen:
+                    return bestScore.zen;
+                case GameMode.Daily:
+                    return int.TryParse(bestScore.daily.date, out var day) && day == dayKey ? bestScore.daily.score : 0;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode), mode, "The mode has no best score field.");
+            }
+        }
+
+        /// <summary>
+        /// Raises the best score of a mode; a lower score is ignored. A Daily score of a new day replaces the old one.
+        /// </summary>
+        /// <param name="mode">The mode.</param>
+        /// <param name="score">Score of the run.</param>
+        /// <param name="dayKey">Today in UTC as yyyyMMdd, stored with the Daily best.</param>
+        /// <exception cref="ArgumentOutOfRangeException">The mode has no best score field.</exception>
+        public void SetBest(GameMode mode, int score, int dayKey = 0)
+        {
+            switch (mode)
+            {
+                case GameMode.Classic:
+                    bestScore.classic = Math.Max(bestScore.classic, score);
+                    break;
+                case GameMode.Zen:
+                    bestScore.zen = Math.Max(bestScore.zen, score);
+                    break;
+                case GameMode.Daily:
+                    var best = Math.Max(GetBest(GameMode.Daily, dayKey), score);
+                    bestScore.daily.date = dayKey.ToString();
+                    bestScore.daily.score = best;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode), mode, "The mode has no best score field.");
             }
         }
 

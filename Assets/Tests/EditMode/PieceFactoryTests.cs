@@ -166,19 +166,22 @@ namespace Coika.Tests.EditMode
         [Test]
         public async Task CreateAndRelease_InSteadyState_AllocatesNoManagedMemory()
         {
+            const int CYCLES = 1000;
+
             await _factory.PrewarmAsync(_tiers);
             for (int i = 0; i < 20; i++)
                 _factory.Release(_factory.Create(_tiers[0], Vector2.zero, Vector2.zero));
 
-            var allocated = AllocationMeter.Measure(() =>
+            var allocated = AllocationMeter.MeasureLowest(() =>
             {
-                for (int i = 0; i < 1000; i++)
+                for (int i = 0; i < CYCLES; i++)
                 {
                     _factory.Release(_factory.Create(_tiers[i % _tiers.Count], Vector2.zero, Vector2.zero));
                 }
             });
 
-            Assert.LessOrEqual(allocated, AllocationMeter.TOLERANCE_COUNT, "Managed allocations made by 1,000 create/release cycles.");
+            // Other Editor threads add noise to the global counter (up to about 100 seen), but a cycle that allocates does it every time: at least 1,000.
+            Assert.LessOrEqual(allocated, CYCLES / 5, $"Managed allocations made by {CYCLES} create/release cycles.");
         }
 
         /// <summary>

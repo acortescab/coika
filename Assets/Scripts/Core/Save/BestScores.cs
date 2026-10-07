@@ -3,7 +3,8 @@ using System;
 namespace Coika.Core
 {
     /// <summary>
-    /// Best score per game mode. Only Classic is written until M3 adds Daily and Zen.
+    /// Best score per game mode. The field names are the <c>SaveKey</c> of each mode; read and write them through
+    /// <see cref="SaveData.GetBest"/> and <see cref="SaveData.SetBest"/>.
     /// </summary>
     [Serializable]
     public class BestScores

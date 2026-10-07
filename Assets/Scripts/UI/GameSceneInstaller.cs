@@ -34,7 +34,7 @@ namespace Coika.UI
     /// </summary>
     [AddComponentMenu("Coika/UI/Game Scene Installer")]
     [DisallowMultipleComponent]
-    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, ISettingsConsumer, IAudioConsumer, IHapticsConsumer, IQualityConsumer
+    public class GameSceneInstaller : MonoBehaviour, ISaveConsumer, IRunSetupConsumer, ISettingsConsumer, IAudioConsumer, IHapticsConsumer, IQualityConsumer
     {
         private const float GAME_OVER_DUCK_DB = -6f; // GDD §11: music ducks 6 dB on game over
         private const float GAME_OVER_DUCK_SECONDS = 0.5f;
@@ -125,11 +125,14 @@ namespace Coika.UI
         private Action _onRetryRequested;
         private Action<RunSummary> _onRunEnded;
         private SaveSystem _save;
+        private RunSetup _runSetup;
+        private GameModeRules _modeRules;
+        private IUtcClock _utcClock;
         private SettingsService _settings;
         private IAudioService _audio;
         private IHaptics _haptics;
         private IQualityTier _quality;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
         private DebugOverlay _debugOverlay;
 #endif
         private SoundBank _soundBank;
@@ -149,6 +152,16 @@ namespace Coika.UI
         public void UseSave(SaveSystem save)
         {
             _save = save;
+        }
+
+        /// <summary>
+        /// Receives the run setup from the Boot installer. It must arrive before the objects are built; without it
+        /// (tests, the scene opened directly) the scene plays Classic.
+        /// </summary>
+        /// <param name="setup">The setup shared with the Menu.</param>
+        public void UseRunSetup(RunSetup setup)
+        {
+            _runSetup = setup;
         }
 
         /// <summary>
@@ -369,7 +382,7 @@ namespace Coika.UI
                 return;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
             ShowDebugOverlay();
 #endif
 
@@ -487,7 +500,7 @@ namespace Coika.UI
         private void Compose()
         {
             // The controller needs a queue to be initialized; the run replaces it with its own.
-            var firstQueue = new SpawnQueue(_loadedConfig, Environment.TickCount);
+            var firstQueue = new SpawnQueue(_loadedConfig, 0);
             _mergeSystem.Initialize(_factory, _tiers, _loadedConfig);
             _dropController.Initialize(_input, _jar, _factory, firstQueue, _tiers, _loadedConfig);
             ApplyFingerOffset();
@@ -513,13 +526,17 @@ namespace Coika.UI
             QualityApplier.Apply(_quality, _particles, _postProcessing);
 
             // The Boot installer hands the save over through UseSave; without it (tests) nothing is persisted.
+            // The mode is fixed for the lifetime of the scene: the Menu chooses it before the scene loads.
+            _runSetup ??= new RunSetup();
+            _modeRules = GameModeRules.CreateDefault();
+            _utcClock = new SystemUtcClock();
             if (_save != null)
             {
-                _score.BestScore = _save.Data.bestScore.classic;
+                _score.BestScore = _save.Data.GetBest(_runSetup.Mode, DayKeyNow());
             }
 
             _systems = new RunSystems(_loadedConfig, _tiers, _assets, _factory, _mergeSystem, _dropController, _overflowDetector, _score);
-            _manager = new GameManager(_systems, () => Environment.TickCount);
+            _manager = new GameManager(_systems, _runSetup, _modeRules, new SystemSeedSource(), _utcClock);
 
             // Not part of the optional feedback: the pause must freeze the game even without a feedback config.
             _timeScale = new TimeScaleOwner(new UnityTimeScale(), () => Time.unscaledTimeAsDouble);
@@ -620,7 +637,7 @@ namespace Coika.UI
             }
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
         /// <summary>
         /// Adds the debug overlay once, and points it at the piece factory of the current build (issue #39).
         /// </summary>
@@ -925,8 +942,25 @@ namespace Coika.UI
                 return;
             }
 
-            _save.Data.RecordRun(summary.Score, summary.HighestTier, summary.Merges, summary.DurationSeconds);
+            var mode = _runSetup.Mode;
+            _save.Data.RecordRun(
+                summary.Score,
+                summary.HighestTier,
+                summary.Merges,
+                summary.DurationSeconds,
+                mode,
+                _modeRules.Get(mode).RecordsBestScore,
+                DayKeyNow());
             _save.RequestSave();
+        }
+
+        /// <summary>
+        /// Gives today in UTC as yyyyMMdd, the key of the Daily best score.
+        /// </summary>
+        private int DayKeyNow()
+        {
+            var now = _utcClock.UtcNow;
+            return DailyRules.DayKey(now.Year, now.Month, now.Day);
         }
 
         /// <summary>
@@ -1111,7 +1145,7 @@ namespace Coika.UI
 
             _factory?.Dispose();
             _factory = null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
             _debugOverlay?.Initialize(null, _quality);
 #endif
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Coika.Core;
 using UnityEngine;
 
 namespace Coika.Tests.PlayMode
@@ -12,6 +13,9 @@ namespace Coika.Tests.PlayMode
     {
         /// <summary>Seed of the first run. Each restart after a game over uses the next seed.</summary>
         public int Seed { get; set; } = 1;
+
+        /// <summary>Mode of the runs. Classic, like the shipped game, unless a test bends it.</summary>
+        public GameMode Mode { get; set; } = GameMode.Classic;
 
         /// <summary>Tiers of the first pieces, in order, replacing the default opening 0, 1, 0. Null keeps the default.</summary>
         public int[] ForcedOpening { get; set; }
