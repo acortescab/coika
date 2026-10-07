@@ -42,6 +42,7 @@ Unity 6000.6.3f1 mobile merge-physics game (2D URP). Overview, structure and set
 
 - Branch `feature/<issue>-<name>` from `origin/main` (local `main` can be stale: fetch first). Commit only files you changed.
 - Leave the editor-noise files alone and unstaged: `Assets/Art/Fonts/UiFont SDF.asset`, `ProjectSettings/ProjectSettings.asset`, `ProjectSettings/Packages/com.unity.learn.iet-framework/Settings.json`.
+- **Every PR that implements an issue needs `Closes #<issue>` in its body** (not just `(#66)` in the title): GitHub only closes the issue on merge for a closing keyword or a linked issue. Put it in the first `gh pr create --body`. A docs-only follow-up PR (OpenSpec archive) does not need it.
 - Commit and push only when asked. End commits with the `Co-Authored-By` line the session gives.
 - Unity creates `.meta` files on the first open: commit them with their sources.
 - Files mix LF and CRLF; edit with a tool that preserves each file's endings.
