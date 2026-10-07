@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using Coika.Data;
 using Coika.Tools;
 using NUnit.Framework;
 using UnityEngine;
@@ -31,7 +32,7 @@ namespace Coika.Tests.EditMode
         {
             var tiers = PieceArtRules.FindTiers();
 
-            Assert.AreEqual(11, tiers.Count);
+            Assert.AreEqual(ThemeDefinition.TIER_COUNT, tiers.Count);
             foreach (var tier in tiers)
             {
                 Assert.AreEqual(CoikaPalette.Base(tier.Index), (Color32)tier.TierColor, tier.name);
@@ -45,8 +46,8 @@ namespace Coika.Tests.EditMode
         [Test]
         public void GplFile_Always_ListsThePaletteInCode()
         {
-            Assert.IsTrue(File.Exists(CoikaPalette.GplPath), CoikaPalette.GplPath);
-            Assert.AreEqual(CoikaPalette.ToGpl(), File.ReadAllText(CoikaPalette.GplPath));
+            Assert.IsTrue(File.Exists(CoikaPalette.GPL_PATH), CoikaPalette.GPL_PATH);
+            Assert.AreEqual(CoikaPalette.ToGpl(), File.ReadAllText(CoikaPalette.GPL_PATH));
         }
     }
 }

@@ -29,7 +29,8 @@ namespace Coika.Tools
         }
 
         /// <summary>
-        /// Applies the mobile overrides to every sprite texture that does not have them and reimports those textures.
+        /// Applies the mobile overrides (Android and iOS) to every sprite texture that does not have them and reimports
+        /// those textures. The menu stays under Tools/Android for the existing habit.
         /// </summary>
         [MenuItem("Tools/Android/Apply Sprite Overrides")]
         public static void Apply()

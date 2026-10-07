@@ -14,7 +14,7 @@ namespace Coika.Tools
     public static class CoikaPalette
     {
         public const int MAX_COLORS = 32;
-        public const string GplPath = "Assets/Art/Palette/coika.gpl";
+        public const string GPL_PATH = "Assets/Art/Palette/coika.gpl";
 
         private const int TIER_COUNT = 11;
         private const int SHADE_PERCENT = 70;
@@ -109,19 +109,19 @@ namespace Coika.Tools
         }
 
         /// <summary>
-        /// Writes <see cref="ToGpl"/> to <see cref="GplPath"/> when the file is missing or different.
+        /// Writes <see cref="ToGpl"/> to <see cref="GPL_PATH"/> when the file is missing or different.
         /// </summary>
         /// <returns>True when the file was written.</returns>
         public static bool WriteGpl()
         {
             var text = ToGpl();
-            if (File.Exists(GplPath) && File.ReadAllText(GplPath) == text)
+            if (File.Exists(GPL_PATH) && File.ReadAllText(GPL_PATH) == text)
             {
                 return false;
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(GplPath));
-            File.WriteAllText(GplPath, text);
+            Directory.CreateDirectory(Path.GetDirectoryName(GPL_PATH));
+            File.WriteAllText(GPL_PATH, text);
             return true;
         }
 

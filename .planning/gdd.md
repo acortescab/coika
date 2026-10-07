@@ -250,11 +250,11 @@ Tier colours (for particles/UI), in order: `#8E8E8E, #B39B7A, #7A7A9E, #C8D0DC, 
 - **Jar:** drawn as a glass-like pixel container with a lighter inner rim; the Danger Line is part of the rim.
 - **Palette:** `Assets/Art/Palette/coika.gpl` is generated from `CoikaPalette` (32 colours: the shared outline `#1B1230`, the 11 tier colours of §9, 10 shades and 10 highlights; the black hole's shade is the outline, the Moon and Neutron Star share a white highlight). Bodies and chart icons draw only these colours.
 - **Files:** bodies are `piece_XX_<name>` (`Assets/Art/Sprites/Tiers`, width = round(diameter × 16) px, so no runtime resize), chart icons are `icon_XX_<name>` (`Assets/Art/Sprites/Icons`, 12 × 12 px). Both are produced by `Coika/Generate Piece Art`.
-- **Import settings:** Filter Mode **Point**, Compression **None**, Mip Maps **off**, Sprite Mode Single, Pivot **Center**, Pixels Per Unit **16**. A postprocessor applies them to `piece_*` and `icon_*` and `Coika/Validate Piece Art` (an EditMode test) checks them. Piece bodies pack in the **Sprite Atlas** `Assets/Art/Atlases/Theme-Cosmic.spriteatlasv2` (Padding 4, Tight Packing off).
-- **Android is the main target:** the default Android texture format (ASTC) smears pixel art. Set the **Android platform override** (importer and Sprite Atlas) to an uncompressed format (e.g. RGBA32) with Point filtering, and verify it after switching the build profile. Apply the same to iOS.
+- **Import settings:** Filter Mode **Point**, Compression **None**, Mip Maps **off**, Sprite Mode Single, Pivot **Center**, Pixels Per Unit **16**. A postprocessor applies them to `piece_*` and `icon_*`, and the validator (`Coika/Validate Piece Art`, also run by an EditMode test) checks them. Piece bodies pack in the **Sprite Atlas** `Assets/Art/Atlases/Theme-Cosmic.spriteatlasv2` (Padding 4, Tight Packing off).
+- **Android is the main target:** the default Android texture format (ASTC) smears pixel art. The **Android and iOS platform overrides** (importer and Sprite Atlas) are uncompressed RGBA32 with Point filtering: the import postprocessor and `SpritePlatformOverrides` set them on sprites and `PieceAtlasSetup` on the atlas, and an EditMode test fails without them. Verify them again after switching the build profile.
 - **Sprite sheets per tier:** idle (1 frame), plus separate small face frames: neutral, blink, surprised, happy. Total ≈ 11 body sprites + 4 faces + particles + UI.
 
-Placeholder policy: milestones M1 and M2 used flat-colour circles. M3 (issue #61) replaced them with the final bodies; no placeholder remains in a normal run.
+Placeholder policy: milestones M1 and M2 used flat-colour circles. M3 (issue #61) replaced them with the final bodies: no placeholder tier body remains in a normal run (the jar, background and effect sprites are still own placeholder art until #63).
 
 ---
 
