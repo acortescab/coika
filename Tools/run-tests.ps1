@@ -3,6 +3,10 @@
     Runs the EditMode and PlayMode test suites of the project from the command line.
 
 .DESCRIPTION
+    First greps the sources (C-01 asset loading, `OnGUI` outside DebugOverlay.cs, `UnityEngine.Random` in gameplay,
+    `persistentDataPath` outside FileSaveStorage.cs and GameInstaller.cs, an `INTERNET` permission that is not removed)
+    and exits 1 before starting Unity when a rule is broken.
+
     Calls `unity test <project> --mode <mode> --report-format junit` once per mode and writes one JUnit report per
     mode to TestResults/ (git-ignored). Both modes always run, even when the first one fails, so one run shows every
     failure. The exit code is 0 only when every selected suite ran and passed; any failure, missing report or
@@ -107,13 +111,34 @@ $resourcesFolders = Get-ChildItem -Path (Join-Path $projectRoot 'Assets') -Direc
     Where-Object { $_.FullName -notmatch 'TextMesh Pro' }
 foreach ($folder in $resourcesFolders) { $violations += "Resources folder: $($folder.FullName)" }
 
+# M2 rules (issue #40). IMGUI only in the development overlay, which is compiled out of release builds; the gameplay
+# is deterministic (S-63), so it never touches UnityEngine.Random; the save folder is read in two places only.
+$violations += Find-Violations '\bOnGUI\b' @('Assets/Scripts', 'Assets/Tests') @('DebugOverlay.cs')
+$violations += Find-Violations '\bUnityEngine\.Random\b|\bRandom\.(Range|value|insideUnit|onUnit|rotation|ColorHSV|InitState|state)\b' @('Assets/Scripts/Gameplay') @()
+$violations += Find-Violations '\bpersistentDataPath\b' @('Assets/Scripts') @('FileSaveStorage.cs', 'GameInstaller.cs')
+
+# The game has no network access (GDD 17): no manifest may declare INTERNET unless it removes it, and the player
+# settings must not force it. Whole-file match, because an element can span several lines.
+$manifests = Get-ChildItem -Path (Join-Path $projectRoot 'Assets/Plugins') -Filter '*.xml' -Recurse -File -ErrorAction SilentlyContinue
+foreach ($manifest in $manifests) {
+    $declarations = [regex]::Matches([System.IO.File]::ReadAllText($manifest.FullName), '<uses-permission[^>]*android\.permission\.INTERNET[^>]*>')
+    foreach ($declaration in $declarations) {
+        if ($declaration.Value -notmatch 'tools:node\s*=\s*"remove"') {
+            $violations += "INTERNET permission declared without tools:node=`"remove`": $($manifest.Name)"
+        }
+    }
+}
+if (Select-String -Path (Join-Path $projectRoot 'ProjectSettings/ProjectSettings.asset') -Pattern '^\s*ForceInternetPermission:\s*1\s*$' -Quiet) {
+    $violations += 'INTERNET permission forced in ProjectSettings.asset (ForceInternetPermission: 1)'
+}
+
 if ($violations.Count -gt 0) {
-    Write-Host 'C-01 violations found:' -ForegroundColor Red
+    Write-Host 'Source rule violations found:' -ForegroundColor Red
     $violations | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
     exit 1
 }
 
-Write-Host 'C-01 grep checks passed.' -ForegroundColor Green
+Write-Host 'Source rule checks passed (C-01, OnGUI, UnityEngine.Random, persistentDataPath, INTERNET).' -ForegroundColor Green
 
 $modes = if ($Mode -eq 'All') { @('EditMode', 'PlayMode') } else { @($Mode) }
 $failed = @()

@@ -34,13 +34,13 @@ namespace Coika.Tests.PlayMode
             {
                 on = new SimulationRunner(world, onOptions).Play(drops, w =>
                 {
-                    onTrace.Add(Fingerprint(w));
+                    onTrace.Add(SimulationFingerprint.Of(w));
                     played = w.Audio.SfxCalls.Count;
                     vibrations = w.Haptics.Played.Count;
                 });
             }
 
-            var off = SimulationRunner.Run(NewOptions(false), drops, world => offTrace.Add(Fingerprint(world)));
+            var off = SimulationRunner.Run(NewOptions(false), drops, world => offTrace.Add(SimulationFingerprint.Of(world)));
 
             Assert.AreEqual(offTrace.Count, onTrace.Count, "The runs took a different number of steps.");
             for (var i = 0; i < onTrace.Count; i++)
@@ -75,29 +75,6 @@ namespace Coika.Tests.PlayMode
                 Assert.AreEqual(world.Restarts + (world.IsGameOver ? 1 : 0), gameOvers, "One game-over sound per ended run.");
                 Assert.Greater(world.Audio.SfxCalls.FindAll(call => call.Id == SfxId.Merge).Count, 0);
             }
-        }
-
-        /// <summary>
-        /// Describes the world after a step: the score, the pieces on the board and the sum of their exact positions
-        /// and rotations.
-        /// </summary>
-        /// <param name="world">The world after a step.</param>
-        /// <returns>A text that is equal in two runs exactly when their physics are in the same state.</returns>
-        private static string Fingerprint(SimulationWorld world)
-        {
-            var x = 0f;
-            var y = 0f;
-            var angle = 0f;
-            var pieces = world.Factory.ActivePieces;
-            for (var i = 0; i < pieces.Count; i++)
-            {
-                var body = pieces[i].Rigidbody;
-                x += body.position.x;
-                y += body.position.y;
-                angle += body.rotation;
-            }
-
-            return $"step={world.Steps} score={world.Score.Score} board={world.CountBoardPieces()} sumX={x:R} sumY={y:R} sumAngle={angle:R}";
         }
 
         /// <summary>

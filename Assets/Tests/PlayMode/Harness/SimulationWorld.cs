@@ -134,8 +134,16 @@ namespace Coika.Tests.PlayMode
                 Audio = new FakeAudioService();
                 Haptics = new FakeHaptics();
                 ScreenFx = new FakeScreenEffects();
+                ISlowMo slowMo = ScreenFx;
+                if (options.SlowMo)
+                {
+                    TimeScale = new FakeTimeScale();
+                    TimeScaleOwner = new TimeScaleOwner(TimeScale, () => SimulatedSeconds);
+                    slowMo = new SlowMoRelay(ScreenFx, TimeScaleOwner);
+                }
+
                 Feedback = new FeedbackDirector(
-                    Audio, Haptics, spawner, ScreenFx, ScreenFx, ScreenFx, Config.Feedback, Tiers, () => SimulatedSeconds);
+                    Audio, Haptics, spawner, ScreenFx, slowMo, ScreenFx, Config.Feedback, Tiers, () => SimulatedSeconds);
                 Feedback.Bind(Merge, Score, Controller, Overflow, Factory, Manager, Jar);
             }
 
@@ -209,6 +217,15 @@ namespace Coika.Tests.PlayMode
         /// </summary>
         public FakeParticleSpawner FakeParticles { get; }
 
+        /// <summary>The recording time scale the slow-mo is applied to, or null when <see cref="SimulationOptions.SlowMo"/> is off.</summary>
+        public FakeTimeScale TimeScale { get; }
+
+        /// <summary>The owner of the time scale, or null when <see cref="SimulationOptions.SlowMo"/> is off.</summary>
+        public TimeScaleOwner TimeScaleOwner { get; }
+
+        /// <summary>Whether the run is paused: <see cref="Step"/> does nothing until <see cref="Resume"/>.</summary>
+        public bool IsPaused => Manager.State == GameState.Paused;
+
         /// <summary>Simulated time in seconds: the steps taken times the fixed step. It is the clock of every system.</summary>
         public double SimulatedSeconds => _steps * (double)_fixedDeltaTime;
 
@@ -262,6 +279,11 @@ namespace Coika.Tests.PlayMode
         /// </summary>
         public void Step()
         {
+            if (IsPaused)
+            {
+                return;
+            }
+
             var dt = _fixedDeltaTime;
 
             Controller.FixedTick(dt);
@@ -283,6 +305,50 @@ namespace Coika.Tests.PlayMode
             SecondsSinceLastDrop += dt;
             TickAnimations(dt);
             Feedback?.Tick();
+            TimeScaleOwner?.Tick();
+        }
+
+        /// <summary>
+        /// Pauses the run in progress, as the game does: the state changes and the time scale goes to 0 (a running
+        /// slow-mo is cancelled). <see cref="Step"/> then does nothing, like a fixed step at time scale 0.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">There is no run in progress to pause, for instance after a game over.</exception>
+        public void Pause()
+        {
+            if (Manager.State != GameState.Playing)
+            {
+                throw new InvalidOperationException($"Only a run in progress can be paused, not state {Manager.State}.");
+            }
+
+            Manager.Pause();
+            SetTimeScalePaused(true);
+        }
+
+        /// <summary>
+        /// Continues the paused run exactly where it stopped, with the time scale back to 1.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The run is not paused.</exception>
+        public void Resume()
+        {
+            if (Manager.State != GameState.Paused)
+            {
+                throw new InvalidOperationException($"Only a paused run can be resumed, not state {Manager.State}.");
+            }
+
+            Manager.Resume();
+            SetTimeScalePaused(false);
+        }
+
+        /// <summary>
+        /// Tells the time scale owner, when there is one, that the game is paused or not.
+        /// </summary>
+        /// <param name="paused">Whether the game is paused.</param>
+        private void SetTimeScalePaused(bool paused)
+        {
+            if (TimeScaleOwner != null)
+            {
+                TimeScaleOwner.Paused = paused;
+            }
         }
 
         /// <summary>

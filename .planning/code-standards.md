@@ -126,7 +126,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 - **S-130 (MUST)** Branch per issue: `feature/<issue>-<short-name>` (or `fix/...`). Commits are small and describe why, in English. PR descriptions reference the issue and any constraint it complies with (e.g. "Complies with C-01").
 - **S-131 (MUST)** Do not commit generated folders (`Library/`, `Temp/`, `Logs/`, `obj/`, `ServerData/`, `UserSettings/`) or IDE files. Commit `.meta` files and `ProjectSettings/`.
 - **S-132 (MUST)** Use Force Text serialization and Visible Meta Files. Resolve scene/prefab merge conflicts by keeping scenes small and splitting content into prefabs; avoid two people editing the same scene.
-- **S-133 (SHOULD)** Before opening a PR: no compiler warnings, no console errors on entering Play mode, all tests green, grep checks from C-01 pass.
+- **S-133 (SHOULD)** Before opening a PR: no compiler warnings, no console errors on entering Play mode, all tests green, and the source grep checks of `Tools/run-tests.ps1` pass (C-01, `OnGUI`, `UnityEngine.Random` in gameplay, `persistentDataPath`, `INTERNET`).
 - **S-134 (MUST)** Before opening a PR, update every document the change touches (`README.md`, `.planning/*.md`) and add the lessons of the issue to `.planning/LEARNINGS.md`.
 
 ---

@@ -100,6 +100,10 @@ namespace Coika.Tests.PlayMode
             for (var i = 0; i < dropXs.Count && !_stopped; i++)
             {
                 Drop(dropXs[i]);
+                if (!_stopped && PausesAfter(i))
+                {
+                    PauseForSteps();
+                }
             }
 
             var settleSteps = Mathf.CeilToInt(_options.SettleSeconds / _world.FixedDeltaTime);
@@ -107,6 +111,45 @@ namespace Coika.Tests.PlayMode
             {
                 Step();
             }
+        }
+
+        /// <summary>
+        /// Whether the options ask for a pause after the drop at the index.
+        /// </summary>
+        /// <param name="dropIndex">Index of the drop in the list being played.</param>
+        /// <returns>True when the run is to be paused.</returns>
+        private bool PausesAfter(int dropIndex)
+        {
+            var pauses = _options.PauseAfterDrops;
+            if (pauses == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < pauses.Count; i++)
+            {
+                if (pauses[i] == dropIndex)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Pauses the run, attempts the steps of the options (nothing advances, and the step callback is not called) and
+        /// resumes it.
+        /// </summary>
+        private void PauseForSteps()
+        {
+            _world.Pause();
+            for (var i = 0; i < _options.PauseSteps; i++)
+            {
+                _world.Step();
+            }
+
+            _world.Resume();
         }
 
         /// <summary>

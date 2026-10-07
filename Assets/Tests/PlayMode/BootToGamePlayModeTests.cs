@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Threading.Tasks;
 using Coika.Core;
+using Coika.Fx;
 using Coika.Gameplay;
 using Coika.UI;
 using NUnit.Framework;
@@ -26,6 +27,7 @@ namespace Coika.Tests.PlayMode
         private const string GAME_SCENE_PATH = "Assets/Scenes/GameScene.unity";
         private const string AUDIO_VOICE_PATH = "Assets/Prefabs/Audio/AudioVoice.prefab";
         private const int MAX_WAIT_FRAMES = 6000;
+        private const int RETRY_RUNS = 3;
 
         private SceneLoaderService _inner;
         private GameObject _host;
@@ -167,7 +169,84 @@ namespace Coika.Tests.PlayMode
         }
 
         /// <summary>
-        /// Reads a private field, for the state of the audio manager that has no public view.
+        /// The M2 services (audio, particles, director, time scale) are created with the Game scene and survive three
+        /// Retry runs and a Pause/Resume cycle unchanged: the same voices, the same particle pool, the same listeners and a
+        /// time scale of 1. Unloading the scene releases all of them and leaves the time scale at 1 (issue #40).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Boot_ThenRetriesAndAPause_KeepsTheM2ServicesAndReleasesThemWithTheScene()
+        {
+            var installer = CreateInstaller();
+            _sceneLoaded = (UnityEngine.Events.UnityAction<Scene, LoadSceneMode>)Delegate.CreateDelegate(
+                typeof(UnityEngine.Events.UnityAction<Scene, LoadSceneMode>), installer, "HandleSceneLoaded", false);
+            SceneManager.sceneLoaded += _sceneLoaded;
+
+            var boot = installer.Boot();
+            yield return new WaitUntil(() => boot.IsCompleted);
+            Assert.IsFalse(boot.IsFaulted, boot.Exception?.ToString());
+
+            var sceneInstaller = UnityEngine.Object.FindAnyObjectByType<GameSceneInstaller>();
+            for (var frame = 0; frame < MAX_WAIT_FRAMES && (sceneInstaller.Manager == null || sceneInstaller.Manager.State != GameState.Playing); frame++)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(GameState.Playing, sceneInstaller.Manager.State);
+            var audio = (AudioManager)installer.Audio;
+            var manager = sceneInstaller.Manager;
+            Assert.IsNotNull(ReadField<object>(sceneInstaller, "_feedbackDirector"), "The scene should create the feedback director.");
+            Assert.IsNotNull(ReadField<object>(sceneInstaller, "_particles"), "The scene should create the particle spawner.");
+            Assert.IsNotNull(ReadField<object>(sceneInstaller, "_timeScale"), "The scene should create the time scale owner.");
+
+            var baseline = DescribeM2Services(sceneInstaller, audio, manager);
+            for (var run = 0; run < RETRY_RUNS; run++)
+            {
+                manager.EndRun();
+                manager.Retry();
+                yield return null;
+
+                Assert.AreEqual(baseline, DescribeM2Services(sceneInstaller, audio, manager), $"Run {run + 2} changed the M2 services.");
+            }
+
+            manager.Pause();
+            Assert.AreEqual(0f, Time.timeScale, "Pausing should stop the time.");
+            manager.Resume();
+            yield return null;
+            Assert.AreEqual(1f, Time.timeScale, "Resuming should give the time back.");
+            Assert.AreEqual(baseline, DescribeM2Services(sceneInstaller, audio, manager), "The pause changed the M2 services.");
+
+            var unload = _inner.UnloadScene(_sceneKey);
+            yield return new WaitUntil(() => unload.IsCompleted);
+            yield return null;
+
+            Assert.AreEqual(1f, Time.timeScale, "Unloading the scene should leave the time scale at 1.");
+            Assert.IsNull(ReadField<object>(sceneInstaller, "_feedbackDirector"), "The feedback director should be released with the scene.");
+            Assert.IsNull(ReadField<object>(sceneInstaller, "_timeScale"), "The time scale owner should be released with the scene.");
+            Assert.IsNull(ReadField<object>(sceneInstaller, "_particles"), "The particle spawner should be released with the scene.");
+            Assert.AreEqual(0, EventListeners.Count(manager, "RunStarted"), "The scene left listeners on the manager.");
+            Assert.AreEqual(0, EventListeners.Count(manager, "RunEnded"), "The scene left listeners on the manager.");
+            Assert.AreEqual(0, EventListeners.Count(manager, "StateChanged"), "The scene left listeners on the manager.");
+        }
+
+        /// <summary>
+        /// Describes the M2 services that must not change from run to run: the voices of the audio engine, the particle
+        /// systems of the pool, the listeners of the manager and the time scale.
+        /// </summary>
+        /// <param name="sceneInstaller">The installer of the Game scene.</param>
+        /// <param name="audio">The audio engine.</param>
+        /// <param name="manager">The manager of the run.</param>
+        /// <returns>A text that is equal at the start of every run when nothing leaks.</returns>
+        private static string DescribeM2Services(GameSceneInstaller sceneInstaller, AudioManager audio, GameManager manager)
+        {
+            var particles = ReadField<ParticleSpawner>(sceneInstaller, "_particles");
+            return $"voices={audio.VoiceCount}/{audio.PooledVoiceCount + audio.ActiveVoiceCount}/{audio.GetComponentsInChildren<AudioVoice>(true).Length}"
+                + $" particleSystems={particles.GetComponentsInChildren<ParticleSystem>(true).Length}"
+                + $" manager={EventListeners.Count(manager, "StateChanged")}/{EventListeners.Count(manager, "RunStarted")}/{EventListeners.Count(manager, "RunEnded")}/{EventListeners.Count(manager, "GameOverReady")}"
+                + $" timeScale={Time.timeScale}";
+        }
+
+        /// <summary>
+        /// Reads a private field, for the state of the audio manager and of the scene installer that has no public view.
         /// </summary>
         /// <typeparam name="T">Type of the field.</typeparam>
         /// <param name="owner">Object that owns the field.</param>

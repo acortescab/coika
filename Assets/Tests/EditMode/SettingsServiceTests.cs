@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using Coika.Core;
 using NUnit.Framework;
 
@@ -104,6 +105,53 @@ namespace Coika.Tests.EditMode
             Assert.That(_events[0].Flag, Is.True);
             Assert.That(_save.Data.settings.fingerOffset, Is.True);
             Assert.That(_storage.WriteCount, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// Every setting that was changed and saved to a real file comes back the same from a new save system on the
+        /// same folder, which is what a restart of the game does (issue #40).
+        /// </summary>
+        [Test]
+        public void Settings_AfterARestart_AreTheSavedOnes()
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "coika-settings-" + System.Guid.NewGuid().ToString("N"));
+            try
+            {
+                var firstSave = new SaveSystem(new FileSaveStorage(directory));
+                firstSave.Load();
+                var first = new SettingsService(firstSave)
+                {
+                    Master = 0.25f,
+                    Music = 0.5f,
+                    Sfx = 0.75f,
+                    Haptics = false,
+                    GuideLine = false,
+                    ReduceShake = true,
+                    LeftHanded = true,
+                    FingerOffset = true
+                };
+                firstSave.FlushIfDirty();
+
+                var secondSave = new SaveSystem(new FileSaveStorage(directory));
+                secondSave.Load();
+                var restarted = new SettingsService(secondSave);
+
+                Assert.That(restarted.Master, Is.EqualTo(first.Master));
+                Assert.That(restarted.Music, Is.EqualTo(first.Music));
+                Assert.That(restarted.Sfx, Is.EqualTo(first.Sfx));
+                Assert.That(restarted.Haptics, Is.False);
+                Assert.That(restarted.GuideLine, Is.False);
+                Assert.That(restarted.ReduceShake, Is.True);
+                Assert.That(restarted.LeftHanded, Is.True);
+                Assert.That(restarted.FingerOffset, Is.True);
+            }
+            finally
+            {
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
         }
 
         /// <summary>
