@@ -81,6 +81,8 @@ From the repository root, with the project **closed** in the Unity Editor and th
 ./Tools/run-tests.ps1 -Repeat 10           # flakiness check: the whole run, ten times
 ```
 
+Before any test, the script greps the sources and exits `1` on a violation: no `Resources.Load`, `SceneManager.LoadScene*` or `Addressables.*` outside their services (C-01); no `OnGUI` outside `DebugOverlay.cs`; no `UnityEngine.Random` in `Assets/Scripts/Gameplay`; no `persistentDataPath` outside `FileSaveStorage.cs` and `GameInstaller.cs`; and no `INTERNET` permission in the Android manifests unless it is removed (`tools:node="remove"`). Comment lines are ignored.
+
 The script runs `unity test` once per mode with `--report-format junit` and writes `TestResults/EditMode.junit.xml` and `TestResults/PlayMode.junit.xml` (git-ignored). Both modes always run, and the exit code is `0` only when every suite passed, so it can gate a commit or a pull request. The Addressables **Play Mode Script** must be *Use Asset Database* (the default).
 
 Inside the Editor, open **Window > General > Test Runner**.
@@ -88,7 +90,7 @@ Inside the Editor, open **Window > General > Test Runner**.
 ### What the suites cover
 
 - **EditMode:** project rules (Build Settings, no `Resources/`, no direct Addressables calls, required groups), test hygiene, the asset services' argument checks, the tier data and the unit tests of each system. They use `FakeAssetService`, so no bundles are needed.
-- **PlayMode:** the unit-level tests of the physics systems, plus the **simulation harness** (`Assets/Tests/PlayMode/Harness`): a `SimulationWorld` builds the whole game from the asset service double and a clock it owns, and a `SimulationRunner` plays a seeded list of drop X positions into it, stepping `Physics2D` by hand, and returns a `SimulationResult`. On top of it: determinism (including a golden file), merge integrity (5 seeds x 1,000 drops), overflow, score and run lifecycle tests. `BootToGamePlayModeTests` and `GameSceneLoadTests` load the Game scene through the real `AssetService` and `SceneLoader` (Use Asset Database mode).
+- **PlayMode:** the unit-level tests of the physics systems, plus the **simulation harness** (`Assets/Tests/PlayMode/Harness`): a `SimulationWorld` builds the whole game from the asset service double and a clock it owns, and a `SimulationRunner` plays a seeded list of drop X positions into it, stepping `Physics2D` by hand, and returns a `SimulationResult`. On top of it: determinism (including a golden file), merge integrity (5 seeds x 1,000 drops), overflow, score and run lifecycle tests. The M2 gate (issue #40) adds `M2DeterminismPlayModeTests` (every M2 system on, with pauses and with slow-mo gives the result of a run with none, over 5 seeds; the world can `Pause()`/`Resume()` and applies the director's slow-mo to a fake time scale), `FeedbackEndToEndPlayModeTests` (a combo, a heavy merge, a Supernova and a game over play the whole feedback table) and a lifecycle test over Retry and Pause/Resume. `.planning/m2-signoff.md` maps the criteria of every M2 issue to its test and holds the on-device checklist. `BootToGamePlayModeTests` and `GameSceneLoadTests` load the Game scene through the real `AssetService` and `SceneLoader` (Use Asset Database mode).
 
 The golden file `Assets/Tests/PlayMode/Golden/simulation-seed-1234.txt` pins the result of one simulation. If a deliberate change of the rules, Unity or the physics settings changes it, regenerate it with `COIKA_UPDATE_GOLDEN=1` and commit the new file.
 

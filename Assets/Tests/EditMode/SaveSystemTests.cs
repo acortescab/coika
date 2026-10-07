@@ -88,6 +88,7 @@ namespace Coika.Tests.EditMode
         [TestCase("")]
         [TestCase("{\"version\":1,\"bestScore\":{\"classic\":50,\"da")]
         [TestCase("{\"version\":99,\"highestTier\":5}")]
+        [TestCase("{\"version\":0,\"highestTier\":5}")]
         public void Load_BadFile_GivesDefaultsAndBackup(string content)
         {
             LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Save was reset to defaults"));

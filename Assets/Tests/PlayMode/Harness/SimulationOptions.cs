@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Coika.Tests.PlayMode
@@ -51,6 +52,22 @@ namespace Coika.Tests.PlayMode
         /// simulation.
         /// </summary>
         public bool Feedback { get; set; } = true;
+
+        /// <summary>
+        /// Whether the slow-mo of the director is applied to a real <see cref="Coika.Fx.TimeScaleOwner"/> on a recording
+        /// time scale, besides being recorded. Off by default; it needs <see cref="Feedback"/>. A test turns it on to
+        /// prove the slow-mo never changes the simulation.
+        /// </summary>
+        public bool SlowMo { get; set; }
+
+        /// <summary>
+        /// Indexes of the drops (in the list given to one play call) after which the runner pauses the run for
+        /// <see cref="PauseSteps"/> attempted steps and resumes it. Null or empty for no pause.
+        /// </summary>
+        public IReadOnlyList<int> PauseAfterDrops { get; set; }
+
+        /// <summary>Steps attempted while paused at each pause. Nothing advances during them.</summary>
+        public int PauseSteps { get; set; } = 30;
 
         /// <summary>Overrides the cap of live pixel particles, so a test can reach it. Null keeps the config default.</summary>
         public int? ParticleCap { get; set; }

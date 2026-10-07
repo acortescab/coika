@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Coika.Core;
@@ -25,6 +26,7 @@ namespace Coika.Tests.PlayMode
         private const string SCENE_KEY = "Assets/Scenes/GameScene.unity";
         private const float LOAD_TIMEOUT = 20f;
         private const float DELAY_MARGIN = 0.15f;
+        private const float MERGE_OVERLAP = 0.45f;
 
         private SceneLoaderService _loader;
         private GameSceneInstaller _installer;
@@ -159,6 +161,51 @@ namespace Coika.Tests.PlayMode
 
             Assert.AreEqual(GameState.Playing, _installer.Manager.State);
             Assert.IsFalse(view.gameObject.activeSelf);
+        }
+
+        /// <summary>
+        /// A run that scores and ends in the real scene folds its score into the save as the new best, and a new save
+        /// system on the same folder (a restart of the game) reads it back (issue #40). The write itself is the job of
+        /// <c>SaveTriggers</c> in the Boot scene, so the test flushes the save as it would.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GameOver_AfterAScoringRun_PersistsTheBestScoreAcrossARestart()
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "coika-gameover-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var save = new SaveSystem(new FileSaveStorage(directory));
+                save.Load();
+                _installer.UseSave(save);
+
+                var factory = Field<PieceFactory>(_installer, "_factory");
+                var score = Field<ScoreSystem>(_installer, "_score");
+                var tier = Field<IReadOnlyList<TierDefinition>>(_installer, "_tiers")[0];
+                var offset = tier.Radius * MERGE_OVERLAP;
+                factory.Create(tier, new Vector2(-offset, 0f), Vector2.zero);
+                factory.Create(tier, new Vector2(offset, 0f), Vector2.zero);
+
+                var until = Time.realtimeSinceStartup + LOAD_TIMEOUT;
+                yield return new WaitUntil(() => score.Merges > 0 || Time.realtimeSinceStartup > until);
+                Assert.Greater(score.Score, 0, "The pair did not merge, so the run scored nothing.");
+
+                var finalScore = score.Score;
+                _installer.Manager.EndRun();
+                save.FlushIfDirty();
+
+                var restarted = new SaveSystem(new FileSaveStorage(directory));
+                restarted.Load();
+                Assert.AreEqual(finalScore, restarted.Data.bestScore.classic);
+                Assert.AreEqual(1, restarted.Data.totals.games);
+                Assert.AreEqual(score.Merges, restarted.Data.totals.merges);
+            }
+            finally
+            {
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
         }
 
         /// <summary>

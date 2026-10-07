@@ -17,15 +17,21 @@ namespace Coika.Tests.PlayMode
         private const int DROPS_PER_RUN = 12;
         private const int RUN_COUNT = 3;
         private const int DROP_SEED = 5;
+        private const float DRAIN_SECONDS = 5f;
 
         /// <summary>
         /// The state at the start of runs 2 and 3 equals the state at the start of run 1, and every run had pieces on
         /// the board before it ended, so the comparison is not an empty one.
         /// </summary>
-        [Test]
-        public void Retry_ThreeConsecutiveRuns_StartEachRunFromTheSameState()
+        /// <param name="seed">Seed of the first run.</param>
+        [TestCase(11)]
+        [TestCase(1)]
+        [TestCase(7)]
+        [TestCase(99)]
+        [TestCase(2026)]
+        public void Retry_ThreeConsecutiveRuns_StartEachRunFromTheSameState(int seed)
         {
-            var options = new SimulationOptions { Seed = 11, SettleSeconds = 1f };
+            var options = new SimulationOptions { Seed = seed, SettleSeconds = 1f, SlowMo = true };
 
             using (var world = new SimulationWorld(options))
             {
@@ -48,8 +54,67 @@ namespace Coika.Tests.PlayMode
                     world.Restart();
 
                     Assert.AreEqual(baseline, Describe(world), $"Run {run + 2} did not start like run 1.");
+                    AssertDrains(world);
                 }
             }
+        }
+
+        /// <summary>
+        /// Pausing and resuming in the middle of a run leaves the pools, the subscribers and the time scale as they were
+        /// before the pause, and the next Retry still starts from the state of the first run.
+        /// </summary>
+        /// <param name="seed">Seed of the run.</param>
+        [TestCase(11)]
+        [TestCase(1)]
+        [TestCase(7)]
+        [TestCase(99)]
+        [TestCase(2026)]
+        public void PauseAndResume_InTheMiddleOfARun_LeaveNothingBehind(int seed)
+        {
+            var options = new SimulationOptions { Seed = seed, SettleSeconds = 1f, SlowMo = true };
+
+            using (var world = new SimulationWorld(options))
+            {
+                var runner = new SimulationRunner(world, options);
+                world.StartRun();
+                var baseline = Describe(world);
+
+                runner.Continue(DropScripts.Random(DROP_SEED, DROPS_PER_RUN));
+                var beforePause = Describe(world);
+                Assert.AreEqual(GameState.Playing, world.Manager.State, "The run ended before it could be paused.");
+
+                world.Pause();
+                Assert.AreEqual(0f, world.TimeScale.Value, "Pausing sets the time scale to 0.");
+                world.Resume();
+
+                Assert.AreEqual(beforePause, Describe(world), "The pause left something behind.");
+
+                if (!world.IsGameOver)
+                {
+                    world.Manager.EndRun();
+                }
+
+                world.Restart();
+                Assert.AreEqual(baseline, Describe(world), "The run after the pause did not start like run 1.");
+                AssertDrains(world);
+            }
+        }
+
+        /// <summary>
+        /// Steps the world with no drops until every effect of the last run has played out, then checks that no particle
+        /// or merge ghost is left alive.
+        /// </summary>
+        /// <param name="world">The world, in a started run.</param>
+        private static void AssertDrains(SimulationWorld world)
+        {
+            var steps = Mathf.CeilToInt(DRAIN_SECONDS / world.FixedDeltaTime);
+            for (var i = 0; i < steps; i++)
+            {
+                world.Step();
+            }
+
+            Assert.AreEqual(0, world.Particles.LiveCount, "Particles stayed alive.");
+            Assert.AreEqual(0, world.Ghosts.ActiveCount, "Merge ghosts stayed alive.");
         }
 
         /// <summary>
@@ -92,6 +157,18 @@ namespace Coika.Tests.PlayMode
             }
 
             builder.Append(" collided=").Append(collided).Append(" landed=").Append(landed);
+
+            // The live particles and ghosts of the last run play out their lifetime in the next one, so only the size of the
+            // pools is compared here; AssertDrains checks that nothing stays alive.
+            var systems = world.Particles.GetComponentsInChildren<ParticleSystem>(true);
+            var capacity = 0;
+            for (var i = 0; i < systems.Length; i++)
+            {
+                capacity += systems[i].main.maxParticles;
+            }
+
+            builder.Append(" particleSystems=").Append(systems.Length).Append('/').Append(capacity)
+                .Append(" timeScale=").Append(world.TimeScale.Value).Append('/').Append(world.TimeScaleOwner.IsSlowMo);
             return builder.ToString();
         }
     }
