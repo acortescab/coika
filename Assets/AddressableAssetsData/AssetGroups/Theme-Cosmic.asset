@@ -15,8 +15,23 @@ MonoBehaviour:
   m_GroupName: Theme-Cosmic
   m_GUID: cf513dccc4062c74aaa432d5d5366cfd
   m_SerializeEntries:
+  - m_GUID: 0001dd13214fdec499c7be294c0d7a0e
+    m_Address: Assets/Art/Sprites/Icons/icon_05_rocky_planet.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0016a89d4b715794fbf93ebc3e5b1b5f
     m_Address: Assets/Art/Sprites/Tiers/Tier_06_OceanPlanet.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 03b892b442c52fc47a5d593114a488a4
+    m_Address: Assets/Art/Sprites/Icons/icon_09_neutron_star.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 03cd77460e1d69348b59d375d9b0949a
+    m_Address: Assets/Art/Atlases/Theme-Cosmic.spriteatlasv2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -45,8 +60,28 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 41b352af51138e24795d277a698e7267
+    m_Address: Assets/Art/Sprites/Icons/icon_03_moon.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 70e39b47865f87248ad56d87ed1520b8
     m_Address: Assets/Art/Sprites/Tiers/Tier_00_Dust.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 73dc84c73eecb044dbb13b97dcbbfdf8
+    m_Address: Assets/Art/Sprites/Icons/icon_07_gas_giant.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 846c6395c7313ef428d665ff282c1185
+    m_Address: Assets/Art/Sprites/Icons/icon_02_asteroid.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 97092934340bbd14290f29ec91beb5d9
+    m_Address: Assets/Art/Sprites/Icons/icon_00_dust.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -60,13 +95,38 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b837ba32b929b914aa807bb1ed146ec8
+    m_Address: Assets/Art/Sprites/Icons/icon_04_dwarf_planet.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c75f70d524e5a044991e61aa4e221432
+    m_Address: Assets/Art/Sprites/Icons/icon_01_pebble.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c762a144667c5014a8b46f84f69cb584
     m_Address: Assets/Art/Sprites/Tiers/Tier_07_GasGiant.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c985863d3ff6bee4a965d9ffb5c99660
+    m_Address: Assets/Art/Sprites/Icons/icon_10_black_hole.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ef285a917b497be4ab9d0210f9569bde
     m_Address: Assets/Art/Sprites/Tiers/Tier_02_Asteroid.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ef8e22e55f0acc747ab96859b38a9d58
+    m_Address: Assets/Art/Sprites/Icons/icon_06_ocean_planet.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f00b7f158b161e448bd5660f974e229a
+    m_Address: Assets/Art/Sprites/Icons/icon_08_star.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

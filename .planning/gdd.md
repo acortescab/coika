@@ -248,11 +248,13 @@ Tier colours (for particles/UI), in order: `#8E8E8E, #B39B7A, #7A7A9E, #C8D0DC, 
 - **Faces:** each piece has a tiny pixel face (2 eyes + mouth) that stays **upright** (child sprite with counter-rotation) for personality; face changes on events (blink idle every 2–4 s, "surprised" when hit hard, "happy" on merge).
 - **Background:** deep-space gradient with parallax star layers (2 layers, very slow scroll). Palette shifts slightly with the highest tier reached (subtle tint) as a progression cue.
 - **Jar:** drawn as a glass-like pixel container with a lighter inner rim; the Danger Line is part of the rim.
-- **Import settings:** Filter Mode **Point**, Compression **None**, Mip Maps **off**, Sprite Mode Single, Pivot **Center**, Pixels Per Unit **16**. Piece sprites pack in a **Sprite Atlas** (Padding ≥ 4, Tight Packing off).
+- **Palette:** `Assets/Art/Palette/coika.gpl` is generated from `CoikaPalette` (32 colours: the shared outline `#1B1230`, the 11 tier colours of §9, 10 shades and 10 highlights; the black hole's shade is the outline, the Moon and Neutron Star share a white highlight). Bodies and chart icons draw only these colours.
+- **Files:** bodies are `piece_XX_<name>` (`Assets/Art/Sprites/Tiers`, width = round(diameter × 16) px, so no runtime resize), chart icons are `icon_XX_<name>` (`Assets/Art/Sprites/Icons`, 12 × 12 px). Both are produced by `Coika/Generate Piece Art`.
+- **Import settings:** Filter Mode **Point**, Compression **None**, Mip Maps **off**, Sprite Mode Single, Pivot **Center**, Pixels Per Unit **16**. A postprocessor applies them to `piece_*` and `icon_*` and `Coika/Validate Piece Art` (an EditMode test) checks them. Piece bodies pack in the **Sprite Atlas** `Assets/Art/Atlases/Theme-Cosmic.spriteatlasv2` (Padding 4, Tight Packing off).
 - **Android is the main target:** the default Android texture format (ASTC) smears pixel art. Set the **Android platform override** (importer and Sprite Atlas) to an uncompressed format (e.g. RGBA32) with Point filtering, and verify it after switching the build profile. Apply the same to iOS.
 - **Sprite sheets per tier:** idle (1 frame), plus separate small face frames: neutral, blink, surprised, happy. Total ≈ 11 body sprites + 4 faces + particles + UI.
 
-Placeholder policy: for the first milestone, **flat-colour circles** generated at runtime with a simple circle sprite, tinted by tier colour. No art blocks gameplay development.
+Placeholder policy: milestones M1 and M2 used flat-colour circles. M3 (issue #61) replaced them with the final bodies; no placeholder remains in a normal run.
 
 ---
 

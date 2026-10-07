@@ -8,8 +8,9 @@ using UnityEngine;
 namespace Coika.Tools
 {
     /// <summary>
-    /// One-shot, idempotent setup of the tier data: generates the sprites, creates Theme_Cosmic with the 11 tiers,
-    /// puts the data assets in the Core-Data group and wires GameConfig.theme.
+    /// One-shot, idempotent setup of the tier data: creates Theme_Cosmic with the 11 tiers, puts the data assets in
+    /// the Core-Data group and wires GameConfig.theme. It never touches the sprites: those come from
+    /// <see cref="PieceArtGenerator"/>.
     /// </summary>
     public static class TierDataSetup
     {
@@ -24,9 +25,7 @@ namespace Coika.Tools
         [MenuItem("Coika/Setup Tier Data")]
         public static void Run()
         {
-            PlaceholderTierSpriteGenerator.Generate();
-
-            var tiers = PlaceholderTierSpriteGenerator.FindTiers();
+            var tiers = PieceArtRules.FindTiers();
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             var dataGroup = settings != null ? settings.FindGroup(DataGroupName) : null;
             var gameConfig = AssetDatabase.LoadAssetAtPath<GameConfig>(GameConfigPath);
