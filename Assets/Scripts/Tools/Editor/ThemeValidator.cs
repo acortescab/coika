@@ -87,7 +87,7 @@ namespace Coika.Tools
                 if (string.IsNullOrEmpty(spritePath))
                     continue; // Missing sprites are reported by ThemeDefinition.Validate
 
-                CheckEntry(settings, spritePath, PlaceholderTierSpriteGenerator.SpriteGroupName, errors);
+                CheckEntry(settings, spritePath, PieceArtRules.GroupName, errors);
             }
 
             return errors;

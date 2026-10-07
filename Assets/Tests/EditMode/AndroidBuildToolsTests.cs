@@ -83,12 +83,12 @@ namespace Coika.Tests.EditMode
         }
 
         /// <summary>
-        /// Every sprite texture has the uncompressed Android override and point filtering (GDD §19 Pixel quality).
+        /// Every sprite texture has the uncompressed Android and iOS overrides and point filtering (GDD §19 Pixel quality).
         /// </summary>
         [Test]
-        public void SpriteTextures_AndroidOverride_AreUncompressedPointFiltered()
+        public void SpriteTextures_MobileOverrides_AreUncompressedPointFiltered()
         {
-            CollectionAssert.IsEmpty(SpriteAndroidOverrides.FindNonCompliant());
+            CollectionAssert.IsEmpty(SpritePlatformOverrides.FindNonCompliant());
         }
     }
 }

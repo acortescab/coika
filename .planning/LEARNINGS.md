@@ -14,6 +14,16 @@ Non-obvious things learned while working on the project. Add a dated section per
 - **Loop allocation tests are bounded by the loop, not by 20.** CreateAndRelease_InSteadyState_AllocatesNoManagedMemory uses MeasureLowest and CYCLES / 5: noise reached 95 to 237 over 1,000 cycles, a real per-cycle allocation gives at least 1,000. CountUp uses MeasureLowest too.
 - **What is left is physics.** The five MergeIntegrity seeds take about 65 s: 12,000 steps each, and Physics2D.Simulate costs 1 to 1.5 ms per step because Piece gets OnCollisionStay2D for every contact every step. Turning animations, particles and feedback off in that test changed nothing.
 
+## Issue #61: final pixel art (2026-10-07)
+
+- **The art is code, not hand-drawn files.** `PieceArtRenderer` draws bodies and icons from `CoikaPalette` (integer maths, no anti-aliasing), so the 32-colour limit, the exact `round(diameter * 16)` width and the closed 1 px outline hold by construction and a rerun changes no byte. Names and sizes are fixed, so hand-drawn PNGs can replace them later with no code change.
+- **The 32-colour budget is tight.** 1 outline + 11 bases + 11 shades + 11 highlights is 34. The black hole's shade is the outline (it is already the darkest tone) and the Moon and Neutron Star, already pale, share a white highlight: 32 exactly.
+- **An `AssetPostprocessor` does not fix the `.meta`.** Settings set in `OnPreprocessTexture` apply to that import but are not reliably saved in the importer, so the generator still checks `GetImporterErrors` and calls `SaveAndReimport`. The negative tests change an importer in memory and never save it.
+- **Rename with `AssetDatabase.MoveAsset`, not delete and create.** The `TierDefinition` references use the sprite GUID; the old `Tier_XX_Name.png` files moved to `piece_XX_<name>.png` kept theirs, so no tier asset changed.
+- **iOS needed the same override as Android.** `SpriteAndroidOverrides` became `SpritePlatformOverrides` (a platform list); the six non-piece sprites (jar, background, GuideDot) had to get the iOS override once.
+- **The collider never reads the sprite.** `Piece.Initialize` sets the radius from `DiameterUnits`, so the collider-vs-sprite check is an editor validation (visible opaque width / 2 vs diameter x 16 / 2, 0.5 px). The numbers are exact (0 px difference): radius 6, 8, 10.5, 13.5, 17, 21, 25.5, 30.5, 36, 42, 48 px. No gameplay code changed and the golden is untouched.
+- **Batch tooling:** `Unity.exe -batchmode -nographics -quit -projectPath . -executeMethod Coika.Tools.PieceArtGenerator.Generate` regenerates everything with the Editor closed. PowerShell has an `h` alias (`Get-History`): do not name a helper function `H`.
+
 ## Issue #66: game mode infrastructure (2026-10-07)
 
 - **A mode is data: `IGameModeRules` in a `GameModeRules` table.** Seed, end condition, Danger Line, best-score recording and save key live in one small class per mode, so Daily/Zen/Menu add table entries and no `switch`. `GameModeRules.Get` throws for a missing mode instead of falling back to Classic, which would hide a wiring bug.
