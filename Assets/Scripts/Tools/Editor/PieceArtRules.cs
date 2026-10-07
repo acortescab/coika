@@ -13,12 +13,12 @@ namespace Coika.Tools
     /// </summary>
     public static class PieceArtRules
     {
-        public const string TiersFolder = "Assets/Data/Tiers";
-        public const string BodiesFolder = "Assets/Art/Sprites/Tiers";
-        public const string IconsFolder = "Assets/Art/Sprites/Icons";
-        public const string AtlasPath = "Assets/Art/Atlases/Theme-Cosmic.spriteatlasv2";
-        public const string GroupName = "Theme-Cosmic";
-        public const int IconSize = 12;
+        public const string TIERS_FOLDER = "Assets/Data/Tiers";
+        public const string BODIES_FOLDER = "Assets/Art/Sprites/Tiers";
+        public const string ICONS_FOLDER = "Assets/Art/Sprites/Icons";
+        public const string ATLAS_PATH = "Assets/Art/Atlases/Theme-Cosmic.spriteatlasv2";
+        public const string GROUP_NAME = "Theme-Cosmic";
+        public const int ICON_SIZE = 12;
 
         private const string BODY_PREFIX = "piece";
         private const string ICON_PREFIX = "icon";
@@ -27,12 +27,12 @@ namespace Coika.Tools
         private static readonly Regex WordBoundary = new Regex(@"(?<=[a-z0-9])(?=[A-Z])");
 
         /// <summary>
-        /// Finds every TierDefinition asset under <see cref="TiersFolder"/>.
+        /// Finds every TierDefinition asset under <see cref="TIERS_FOLDER"/>.
         /// </summary>
         /// <returns>The tiers sorted by their index.</returns>
         public static List<TierDefinition> FindTiers()
         {
-            return AssetDatabase.FindAssets("t:TierDefinition", new[] { TiersFolder })
+            return AssetDatabase.FindAssets("t:TierDefinition", new[] { TIERS_FOLDER })
                 .Select(guid => AssetDatabase.LoadAssetAtPath<TierDefinition>(AssetDatabase.GUIDToAssetPath(guid)))
                 .OrderBy(tier => tier.Index)
                 .ToList();
@@ -70,7 +70,7 @@ namespace Coika.Tools
 
         /// <summary>
         /// Applies the required import settings to an importer, without reimporting it: sprite, single, 16 pixels per
-        /// unit, point filter, no compression, no mip maps, centre pivot and the mobile overrides.
+        /// unit, point filter, no compression, no mip maps, alpha is transparency, centre pivot and the mobile overrides.
         /// </summary>
         /// <param name="importer">The importer of a piece body or chart icon.</param>
         public static void Apply(TextureImporter importer)

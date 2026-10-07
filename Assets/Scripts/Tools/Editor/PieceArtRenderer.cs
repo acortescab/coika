@@ -16,7 +16,7 @@ namespace Coika.Tools
         private const float SQRT_TWO = 1.4142135f;
 
         /// <summary>
-        /// Draws a tier body. Row 0 is the bottom row, as in <see cref="Texture2D.SetPixels32(Color32[])"/>.
+        /// Draws a tier body or, with a size of 12 and <paramref name="simplified"/>, a chart icon. Row 0 is the bottom row, as in <see cref="Texture2D.SetPixels32(Color32[])"/>.
         /// </summary>
         /// <param name="tierIndex">Tier index, 0 to 10, which selects the colours.</param>
         /// <param name="size">Side of the square canvas in pixels; equals the circle diameter.</param>
