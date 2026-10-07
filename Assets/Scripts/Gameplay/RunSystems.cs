@@ -30,6 +30,8 @@ namespace Coika.Gameplay
         private readonly OverflowDetector _overflow;
         private readonly RunTimer _timer;
 
+        private bool _endsOnOverflow = true;
+
         /// <summary>
         /// Creates the systems of the scene and binds the score to the merges and the drops. The controller, the
         /// merge system and the detector must already be initialized.
@@ -80,8 +82,9 @@ namespace Coika.Gameplay
         }
 
         /// <inheritdoc />
-        public RunContext PrepareRun(int seed)
+        public RunContext PrepareRun(int seed, IGameModeRules rules)
         {
+            _endsOnOverflow = (rules ?? throw new ArgumentNullException(nameof(rules))).EndsOnOverflow;
             Physics2D.simulationMode = SimulationMode2D.FixedUpdate;
 
             // The pieces first: everything below clears state that refers to them.
@@ -100,7 +103,11 @@ namespace Coika.Gameplay
             _timer.Start();
             _merge.enabled = true;
             _controller.Enable();
-            _overflow.Enable();
+
+            if (_endsOnOverflow)
+            {
+                _overflow.Enable();
+            }
         }
 
         /// <inheritdoc />

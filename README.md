@@ -48,8 +48,9 @@ Assets/
       Pooling/             Reusable prefab pool (PrefabPool)
       Animation/           Allocation-free easing (Tween, TweenTimer)
       Boot/                Composition root (GameInstaller)
+      Save/                Save file, settings and the game mode plumbing (GameMode, RunSetup, ISeedSource, IUtcClock)
     Data/                  ScriptableObject definitions (Coika.Data)
-    Gameplay/              Game rules (Coika.Gameplay), including the visual piece animations (PieceAnimator and its effects)
+    Gameplay/              Game rules (Coika.Gameplay), including the visual piece animations (PieceAnimator and its effects) and the per-mode rules table (IGameModeRules, GameModeRules)
     Fx/                    Pooled particles and screen effects (Coika.Fx): ParticleSpawner, ScreenShake, ScreenFlash, TimeScaleOwner, FeedbackDirector (the single event-to-feedback table: particles, screen effects, sound, haptics). Setup: menus Coika/Setup Particles and Coika/Setup Screen Effects
     UI/                    Views (Coika.UI)
     Tools/Editor/          Editor-only tools (Coika.Tools.Editor)

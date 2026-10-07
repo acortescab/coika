@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Coika.Core;
 using Coika.Data;
 using Coika.Fx;
 using Coika.Gameplay;
@@ -41,7 +42,7 @@ namespace Coika.Tests.PlayMode
         private readonly float _fixedDeltaTime;
         private readonly int _firstSeed;
 
-        private int _nextSeed;
+        private FakeSeedSource _seeds;
         private long _steps;
         private float _overflowAccumulator;
         private bool _disposed;
@@ -63,7 +64,6 @@ namespace Coika.Tests.PlayMode
             _physics = _scene.GetPhysicsScene2D();
             _fixedDeltaTime = Time.fixedDeltaTime;
             _firstSeed = options.Seed;
-            _nextSeed = options.Seed;
 
             var pieceMaterial = new PhysicsMaterial2D("HarnessPiece") { friction = 0.4f, bounciness = 0.15f };
             var wallMaterial = new PhysicsMaterial2D("HarnessWall") { friction = 0.4f, bounciness = 0f };
@@ -118,7 +118,11 @@ namespace Coika.Tests.PlayMode
 
             Score = new ScoreSystem(Config, Tiers, () => SimulatedSeconds);
             Systems = new RunSystems(Config, Tiers, Assets, Factory, Merge, Controller, Overflow, Score, () => SimulatedSeconds);
-            Manager = new GameManager(Systems, () => _nextSeed);
+            _seeds = new FakeSeedSource { Seed = options.Seed };
+            RunSetup = new RunSetup();
+            RunSetup.Choose(options.Mode);
+            Clock = new FakeUtcClock();
+            Manager = new GameManager(Systems, RunSetup, GameModeRules.CreateDefault(), _seeds, Clock);
 
             if (options.Particles)
             {
@@ -189,6 +193,12 @@ namespace Coika.Tests.PlayMode
 
         /// <summary>The state machine of the game.</summary>
         public GameManager Manager { get; }
+
+        /// <summary>The mode and seed of the runs, as the installer shares them.</summary>
+        public RunSetup RunSetup { get; }
+
+        /// <summary>The UTC clock the Daily seed is read from.</summary>
+        public FakeUtcClock Clock { get; }
 
         /// <summary>Whether the visual animations run in this world.</summary>
         public bool Animations { get; }
@@ -265,7 +275,7 @@ namespace Coika.Tests.PlayMode
         /// </summary>
         public void Restart()
         {
-            _nextSeed++;
+            _seeds.Seed++;
             Manager.Retry();
             UseScriptedPhysics();
             _overflowAccumulator = 0f;

@@ -22,10 +22,12 @@ namespace Coika.Tests.EditMode
 
         private FakeRunSystems _systems;
         private GameManager _manager;
-        private int _nextSeed;
+        private RunSetup _setup;
+        private FakeSeedSource _seeds;
+        private FakeUtcClock _clock;
 
         /// <summary>
-        /// Builds a manager in the boot state with a fake that hands out a new seed each time.
+        /// Builds a manager in the boot state, in Classic, with a seed source that hands out a new seed each time.
         /// </summary>
         [SetUp]
         public void SetUp()
@@ -33,8 +35,10 @@ namespace Coika.Tests.EditMode
             var config = TestGameConfig.CreateWithSpawn(new[] { 1f, 1f, 1f }, 3, 2, new[] { 0, 1, 0 });
             _created.Add(config);
             _systems = new FakeRunSystems(config);
-            _nextSeed = 100;
-            _manager = new GameManager(_systems, () => _nextSeed++);
+            _setup = new RunSetup();
+            _seeds = new FakeSeedSource { Seed = 100, Increments = true };
+            _clock = new FakeUtcClock();
+            _manager = new GameManager(_systems, _setup, GameModeRules.CreateDefault(), _seeds, _clock);
         }
 
         /// <summary>
@@ -340,8 +344,114 @@ namespace Coika.Tests.EditMode
         [Test]
         public void New_WithANullDependency_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => new GameManager(null, () => 0));
-            Assert.Throws<ArgumentNullException>(() => new GameManager(_systems, null));
+            var rules = GameModeRules.CreateDefault();
+
+            Assert.Throws<ArgumentNullException>(() => new GameManager(null, _setup, rules, _seeds, _clock));
+            Assert.Throws<ArgumentNullException>(() => new GameManager(_systems, null, rules, _seeds, _clock));
+            Assert.Throws<ArgumentNullException>(() => new GameManager(_systems, _setup, null, _seeds, _clock));
+            Assert.Throws<ArgumentNullException>(() => new GameManager(_systems, _setup, rules, null, _clock));
+            Assert.Throws<ArgumentNullException>(() => new GameManager(_systems, _setup, rules, _seeds, null));
+        }
+
+        /// <summary>
+        /// A new setup is Classic, so a manager nobody configured plays Classic.
+        /// </summary>
+        [Test]
+        public void StartRun_WithTheDefaultSetup_PlaysClassicRules()
+        {
+            _manager.StartRun();
+
+            Assert.IsInstanceOf<ClassicRules>(_systems.LastRules);
+        }
+
+        /// <summary>
+        /// The mode chosen in the setup is the mode the systems are prepared with.
+        /// </summary>
+        [Test]
+        public void StartRun_AfterChoosingZen_PreparesTheSystemsWithZenRules()
+        {
+            _setup.Choose(GameMode.Zen);
+
+            _manager.StartRun();
+
+            Assert.IsInstanceOf<ZenRules>(_systems.LastRules);
+            Assert.IsFalse(_systems.LastRules.EndsOnOverflow);
+        }
+
+        /// <summary>
+        /// A Classic retry draws a new seed, like a new run.
+        /// </summary>
+        [Test]
+        public void Retry_InClassic_DrawsANewSeed()
+        {
+            _manager.StartRun();
+            _manager.EndRun();
+
+            _manager.Retry();
+
+            Assert.AreEqual(new[] { 100, 101 }, _systems.Seeds.ToArray());
+        }
+
+        /// <summary>
+        /// A Daily retry replays the first seed, even when the clock moved to the next day.
+        /// </summary>
+        [Test]
+        public void Retry_InDailyAfterMidnight_KeepsTheSeedOfTheFirstRun()
+        {
+            _setup.Choose(GameMode.Daily);
+            _clock.UtcNow = new DateTime(2026, 10, 7, 23, 59, 59, DateTimeKind.Utc);
+            _manager.StartRun();
+            _manager.EndRun();
+            _clock.UtcNow = new DateTime(2026, 10, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            _manager.Retry();
+
+            Assert.AreEqual(new[] { 20261007, 20261007 }, _systems.Seeds.ToArray());
+        }
+
+        /// <summary>
+        /// A new Daily start after midnight resolves the new day's seed.
+        /// </summary>
+        [Test]
+        public void StartRun_InDailyOnTheNextDay_UsesTheNewDate()
+        {
+            _setup.Choose(GameMode.Daily);
+            _clock.UtcNow = new DateTime(2026, 10, 7, 23, 59, 59, DateTimeKind.Utc);
+            _manager.StartRun();
+            _clock.UtcNow = new DateTime(2026, 10, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            _manager.StartRun();
+
+            Assert.AreEqual(new[] { 20261007, 20261008 }, _systems.Seeds.ToArray());
+        }
+
+        /// <summary>
+        /// A retry keeps the mode of the run it follows.
+        /// </summary>
+        [Test]
+        public void Retry_AfterAZenRun_StaysInZen()
+        {
+            _setup.Choose(GameMode.Zen);
+            _manager.StartRun();
+            _manager.EndRun();
+
+            _manager.Retry();
+
+            Assert.AreEqual(GameMode.Zen, _setup.Mode);
+            Assert.IsInstanceOf<ZenRules>(_systems.LastRules);
+        }
+
+        /// <summary>
+        /// Choosing a mode forgets the seed, so the first Daily start resolves it instead of replaying a Classic one.
+        /// </summary>
+        [Test]
+        public void Choose_AfterARun_ForgetsTheSeed()
+        {
+            _manager.StartRun();
+
+            _setup.Choose(GameMode.Daily);
+
+            Assert.IsFalse(_setup.HasSeed);
         }
 
         /// <summary>
@@ -372,6 +482,12 @@ namespace Coika.Tests.EditMode
             /// <summary>Seed of the last prepared run.</summary>
             public int LastSeed { get; private set; }
 
+            /// <summary>Seeds of every prepared run, in order.</summary>
+            public List<int> Seeds { get; } = new();
+
+            /// <summary>Rules of the last prepared run.</summary>
+            public IGameModeRules LastRules { get; private set; }
+
             /// <summary>The context handed out by the last <see cref="PrepareRun"/>.</summary>
             public RunContext LastContext { get; private set; }
 
@@ -379,10 +495,12 @@ namespace Coika.Tests.EditMode
             public RunSummary Summary { get; } = new RunSummary(42, 42, true, 3, 7, 12.5f);
 
             /// <inheritdoc />
-            public RunContext PrepareRun(int seed)
+            public RunContext PrepareRun(int seed, IGameModeRules rules)
             {
                 Prepared++;
                 LastSeed = seed;
+                Seeds.Add(seed);
+                LastRules = rules;
                 Calls.Add($"Prepare:{seed}");
                 var tiers = new List<TierDefinition>();
                 LastContext = new RunContext(new ScoreSystem(_config, tiers, () => 0d), new SpawnQueue(_config, seed), tiers, new FakeAssetService());

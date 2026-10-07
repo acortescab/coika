@@ -1,4 +1,5 @@
 using System;
+using Coika.Core;
 using UnityEngine;
 
 namespace Coika.Gameplay
@@ -25,7 +26,10 @@ namespace Coika.Gameplay
         public const float GAME_OVER_DELAY = 1.2f;
 
         private readonly IRunSystems _systems;
-        private readonly Func<int> _seedSource;
+        private readonly RunSetup _setup;
+        private readonly GameModeRules _rules;
+        private readonly ISeedSource _seeds;
+        private readonly IUtcClock _clock;
 
         private RunSummary _summary;
         private float _delayLeft;
@@ -35,12 +39,18 @@ namespace Coika.Gameplay
         /// Creates a manager in <see cref="GameState.Boot"/>.
         /// </summary>
         /// <param name="systems">The gameplay systems the manager drives.</param>
-        /// <param name="seedSource">Gives the seed of a new run; time-based for the Classic mode.</param>
+        /// <param name="setup">The chosen mode, and where the seed of the run is kept for a retry.</param>
+        /// <param name="rules">Rules of every mode.</param>
+        /// <param name="seeds">Gives a fresh seed to the modes that use one.</param>
+        /// <param name="clock">UTC clock, read only when a run starts, for the modes seeded by the date.</param>
         /// <exception cref="ArgumentNullException">A dependency is null.</exception>
-        public GameManager(IRunSystems systems, Func<int> seedSource)
+        public GameManager(IRunSystems systems, RunSetup setup, GameModeRules rules, ISeedSource seeds, IUtcClock clock)
         {
             _systems = systems ?? throw new ArgumentNullException(nameof(systems));
-            _seedSource = seedSource ?? throw new ArgumentNullException(nameof(seedSource));
+            _setup = setup ?? throw new ArgumentNullException(nameof(setup));
+            _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+            _seeds = seeds ?? throw new ArgumentNullException(nameof(seeds));
+            _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             State = GameState.Boot;
         }
 
@@ -64,11 +74,8 @@ namespace Coika.Gameplay
         /// </summary>
         public void StartRun()
         {
-            _waitingForView = false;
-            var context = _systems.PrepareRun(_seedSource());
-            _systems.BeginPlaying();
-            SetState(GameState.Playing);
-            RunStarted?.Invoke(context);
+            var rules = _rules.Get(_setup.Mode);
+            BeginRun(rules, rules.ResolveSeed(_seeds, _clock));
         }
 
         /// <summary>
@@ -107,7 +114,27 @@ namespace Coika.Gameplay
                 return;
             }
 
-            StartRun();
+            var rules = _rules.Get(_setup.Mode);
+            if (rules.IsFreshPerRun || !_setup.HasSeed)
+            {
+                StartRun();
+                return;
+            }
+
+            BeginRun(rules, _setup.Seed);
+        }
+
+        /// <summary>
+        /// Prepares and starts a run with a seed, and remembers the seed for a retry.
+        /// </summary>
+        private void BeginRun(IGameModeRules rules, int seed)
+        {
+            _waitingForView = false;
+            _setup.Remember(seed);
+            var context = _systems.PrepareRun(seed, rules);
+            _systems.BeginPlaying();
+            SetState(GameState.Playing);
+            RunStarted?.Invoke(context);
         }
 
         /// <summary>

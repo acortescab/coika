@@ -93,7 +93,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 
 ## 10. UI (GDD §8)
 
-- **S-90 (MUST)** UI is **uGUI + TextMeshPro**. No `OnGUI`/IMGUI at runtime. Exception (issue #39): the development debug overlay may use IMGUI, because it needs no asset and is compiled out of release builds with `#if UNITY_EDITOR || DEVELOPMENT_BUILD`.
+- **S-90 (MUST)** UI is **uGUI + TextMeshPro**. No `OnGUI`/IMGUI at runtime. Exception (issue #39): the development debug overlay may use IMGUI, because it needs no asset and is compiled out of release builds with `#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION`.
 - **S-91 (MUST)** Views are passive: they render state and raise events (`OnPlayClicked`). They contain no game rules and read no other system directly; a presenter or the installer wires them.
 - **S-92 (MUST)** Respect `Screen.safeArea`. Touch targets are at least 44 px in reference space.
 - **S-93 (SHOULD)** Disable `Raycast Target` on graphics that do not need input. Avoid nested layout groups on hot UI and avoid rebuilding layouts every frame.
@@ -103,7 +103,7 @@ Each rule has an ID (`S-NN`) so PRs can reference it. Never reuse or renumber an
 
 - **S-100 (MUST)** Never crash on bad data or a failed load. Save/load and asset loading return a recoverable result (GDD §13, C-01).
 - **S-101 (MUST)** Do not swallow exceptions. Catch only what you can handle, log with context, and rethrow or fall back deliberately. No empty `catch` blocks.
-- **S-102 (MUST)** Use `Debug.Log*` only through a thin logger or guard with `[Conditional("UNITY_EDITOR")]`/`DEVELOPMENT_BUILD`. No logging in `Update` paths and none that allocate in release builds. Prefer `Debug.LogError` with a context object for real faults.
+- **S-102 (MUST)** Use `Debug.Log*` only through a thin logger or guard with `[Conditional("UNITY_EDITOR")]`/`[Conditional("UNITY_INCLUDE_INSTRUMENTATION")]`. No logging in `Update` paths and none that allocate in release builds. Prefer `Debug.LogError` with a context object for real faults.
 - **S-103 (SHOULD)** Validate invariants with `Debug.Assert` (editor/development only) at API boundaries, and check serialized references in `OnValidate`/`Awake`.
 - **S-104 (MUST)** Writes to disk are atomic (write `save.tmp`, then replace) and happen at the points in GDD §13.
 

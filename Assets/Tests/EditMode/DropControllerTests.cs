@@ -44,7 +44,7 @@ namespace Coika.Tests.EditMode
             JarBuilder.Build(_jar, _config);
             _container = new GameObject("PieceContainer").transform;
             _tiers = new List<TierDefinition> { PieceFixtures.CreateTier(0, 1f, _created), PieceFixtures.CreateTier(1, 2f, _created), PieceFixtures.CreateTier(2, 3f, _created), PieceFixtures.CreateTier(3, 4f, _created), PieceFixtures.CreateTier(4, 5f, _created) };
-            _factory = new PieceFactory(_assets, new AssetReference("piece-prefab"), _config, _container, 8);
+            _factory = new PieceFactory(_assets, new AssetReference("piece-prefab"), _config, _container, 16);
             await _factory.PrewarmAsync(_tiers);
             _input = new FakeDropInput();
             _controller = new GameObject("DropController").AddComponent<DropController>();
